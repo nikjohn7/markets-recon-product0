@@ -2,12 +2,11 @@
 ai_context:
   scope: "MVP (v0)"
   execution_mode: "sequential"
-  next_task: "1.3"
-  next_task_title: "Create Citation and BoundingBox Models"
-  available_tasks: ["1.3"]
+  next_task: "1.4"
+  next_task_title: "Create Document Extraction Models"
+  available_tasks: ["1.4"]
   deferred_tasks: ["6.4"]
   blocked_tasks:
-    - "1.4"
     - "1.5"
     - "1.6"
     - "1.7"
@@ -57,12 +56,12 @@ ai_context:
     - "10.5"
   totals:
     tasks: 54
-    completed: 4
+    completed: 5
     in_progress: 0
     available: 1
-    blocked: 48
+    blocked: 47
     deferred: 1
-  completion_percentage: 7.4
+  completion_percentage: 9.3
   last_updated: "2025-12-18"
 ---
 
@@ -73,12 +72,12 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 ## Project Overview
 
 - **Total tasks**: 54 (11 phases)
-- **Completed**: 4 (7.4%)
+- **Completed**: 5 (9.3%)
 - **In progress**: 0
 - **Available**: 1
-- **Blocked**: 48
+- **Blocked**: 47
 - **Deferred (v1+)**: 1
-- **Next task**: Task 1.3 — Create Citation and BoundingBox Models
+- **Next task**: Task 1.4 — Create Document Extraction Models
 
 ## Execution Rules (MVP)
 
@@ -90,7 +89,7 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 | Phase | Status | Tasks | Completed | Progress | Next Task |
 |-------|--------|-------|-----------|----------|-----------|
 | 0: Spec Alignment | Complete | 2 | 2/2 | 100% | — |
-| 1: Foundation | In progress | 11 | 2/11 | 18% | Task 1.3 |
+| 1: Foundation | In progress | 11 | 3/11 | 27% | Task 1.4 |
 | 2: Taxonomy | Not started | 3 | 0/3 | 0% | Task 2.1 |
 | 3: Infrastructure | Not started | 5 | 0/5 | 0% | Task 3.1 |
 | 4: PDF Extraction | Not started | 5 | 0/5 | 0% | Task 4.1 |
@@ -103,18 +102,17 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 
 ## Current Focus
 
-### Task 1.3: Create Citation and BoundingBox Models
+### Task 1.4: Create Document Extraction Models
 
 **Status**: Available
 **Priority**: High
 **Phase**: 1: Project Foundation
 
 **Deliverables (from `tasks.md`):**
-- `src/models/core.py` with `Citation` and `BoundingBox` Pydantic models
-- Citation is frozen (immutable)
-- Field validations per SCHEMAS.md
+- `src/models/document.py` with `DocumentBlock`, `TableCell`, `ExtractedTable`, `DocumentJSON`
+- Proper field constraints (page >= 1, confidence 0-1, etc.)
 
-**Acceptance:** Unit tests for validation edge cases pass
+**Acceptance:** Can create valid DocumentJSON instances, validation rejects invalid data
 
 ---
 
@@ -133,8 +131,8 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 ### Phase 1: Project Foundation
 - [x] `1.1` Initialize Python Project Structure — **Complete**
 - [x] `1.2` Create Core Enums — **Complete**
-- [ ] `1.3` Create Citation and BoundingBox Models — **Available**
-- [ ] `1.4` Create Document Extraction Models — **Blocked**
+- [x] `1.3` Create Citation and BoundingBox Models — **Complete**
+- [ ] `1.4` Create Document Extraction Models — **Available**
 - [ ] `1.5` Create DocumentProfile Model (Stage 4 Output) — **Blocked**
 - [ ] `1.6` Create Allocation Call Models (Stage 6 Output) — **Blocked**
 - [ ] `1.7` Create Summary Models (Stage 7 Output) — **Blocked**
@@ -240,6 +238,13 @@ After finishing a task:
 - Enums: `CallDirection`, `Conviction`, `Sentiment`, `DocumentType`, `BlockType`, `ConfidenceBand`, `DocumentStatus`, `TagType`, `IndicatorDirection`
 - All enums inherit from `(str, Enum)` for JSON serialization
 - Verified: all enums importable, `mypy --strict` passes
+
+### Task 1.3 — Complete (2025-12-18)
+- Created `src/models/core.py` with `Citation` and `BoundingBox` Pydantic models
+- Citation is frozen (immutable), page >= 1, text_span <= 200 chars
+- BoundingBox coordinates normalized 0-1
+- Created `tests/unit/models/test_core.py` with 9 validation edge case tests
+- Verified: all tests pass, `mypy --strict` passes
 
 ---
 

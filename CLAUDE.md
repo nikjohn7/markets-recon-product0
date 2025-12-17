@@ -306,6 +306,33 @@ Before committing code:
 
 ---
 
+## Git Workflow (Required)
+
+### Branching Rule
+
+- **One branch per phase in `PROGRESS.md`.** All work for tasks in that phase must happen on that phase branch (do not mix phases on a single branch).
+- **No direct commits to `main`** for normal work. Integrate phase work via PR only.
+
+**Branch naming convention:**
+- `phase-<number>-<short-slug>` (example: `phase-1-foundation`)
+
+### Task Commit Rule
+
+After finishing **each task** in `PROGRESS.md`:
+- Stage all files changed for that task.
+- Commit with a clear, task-referenced message (example: `Task 1.2 — Create Core Enums`).
+- Keep the working tree clean before starting the next task.
+
+Prefer including the `PROGRESS.md` checkbox/status updates for that task in the same commit as the code/docs changes.
+
+### Phase PR Rule
+
+After completing **all tasks in a phase** (per `PROGRESS.md`):
+- Open a PR from the phase branch into `main`.
+- Request review and ensure the PR meets the pre-commit checklist/CI requirements before merge.
+
+---
+
 ## When in Doubt
 
 1. **Check the relevant doc** in `docs/` first.

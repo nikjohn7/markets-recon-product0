@@ -2,12 +2,11 @@
 ai_context:
   scope: "MVP (v0)"
   execution_mode: "sequential"
-  next_task: "1.2"
-  next_task_title: "Create Core Enums"
-  available_tasks: ["1.2"]
+  next_task: "1.3"
+  next_task_title: "Create Citation and BoundingBox Models"
+  available_tasks: ["1.3"]
   deferred_tasks: ["6.4"]
   blocked_tasks:
-    - "1.3"
     - "1.4"
     - "1.5"
     - "1.6"
@@ -58,13 +57,13 @@ ai_context:
     - "10.5"
   totals:
     tasks: 54
-    completed: 3
+    completed: 4
     in_progress: 0
     available: 1
-    blocked: 49
+    blocked: 48
     deferred: 1
-  completion_percentage: 5.6
-  last_updated: "2025-12-17"
+  completion_percentage: 7.4
+  last_updated: "2025-12-18"
 ---
 
 # Markets Recon Pipeline — Implementation Progress
@@ -74,12 +73,12 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 ## Project Overview
 
 - **Total tasks**: 54 (11 phases)
-- **Completed**: 3 (5.6%)
+- **Completed**: 4 (7.4%)
 - **In progress**: 0
 - **Available**: 1
-- **Blocked**: 49
+- **Blocked**: 48
 - **Deferred (v1+)**: 1
-- **Next task**: Task 1.2 — Create Core Enums
+- **Next task**: Task 1.3 — Create Citation and BoundingBox Models
 
 ## Execution Rules (MVP)
 
@@ -91,7 +90,7 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 | Phase | Status | Tasks | Completed | Progress | Next Task |
 |-------|--------|-------|-----------|----------|-----------|
 | 0: Spec Alignment | Complete | 2 | 2/2 | 100% | — |
-| 1: Foundation | In progress | 11 | 1/11 | 9% | Task 1.2 |
+| 1: Foundation | In progress | 11 | 2/11 | 18% | Task 1.3 |
 | 2: Taxonomy | Not started | 3 | 0/3 | 0% | Task 2.1 |
 | 3: Infrastructure | Not started | 5 | 0/5 | 0% | Task 3.1 |
 | 4: PDF Extraction | Not started | 5 | 0/5 | 0% | Task 4.1 |
@@ -104,18 +103,18 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 
 ## Current Focus
 
-### Task 1.2: Create Core Enums
+### Task 1.3: Create Citation and BoundingBox Models
 
 **Status**: Available
 **Priority**: High
 **Phase**: 1: Project Foundation
 
 **Deliverables (from `tasks.md`):**
-- `src/models/enums.py` with all enums from SCHEMAS.md
-- `CallDirection`, `Conviction`, `Sentiment`, `DocumentType`, `BlockType`, `ConfidenceBand`, `DocumentStatus`, `TagType`, `IndicatorDirection` enums
-- All enums inherit from `(str, Enum)` for JSON serialization
+- `src/models/core.py` with `Citation` and `BoundingBox` Pydantic models
+- Citation is frozen (immutable)
+- Field validations per SCHEMAS.md
 
-**Acceptance:** All enums importable, `mypy` passes
+**Acceptance:** Unit tests for validation edge cases pass
 
 ---
 
@@ -133,8 +132,8 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 
 ### Phase 1: Project Foundation
 - [x] `1.1` Initialize Python Project Structure — **Complete**
-- [ ] `1.2` Create Core Enums — **Available**
-- [ ] `1.3` Create Citation and BoundingBox Models — **Blocked**
+- [x] `1.2` Create Core Enums — **Complete**
+- [ ] `1.3` Create Citation and BoundingBox Models — **Available**
 - [ ] `1.4` Create Document Extraction Models — **Blocked**
 - [ ] `1.5` Create DocumentProfile Model (Stage 4 Output) — **Blocked**
 - [ ] `1.6` Create Allocation Call Models (Stage 6 Output) — **Blocked**
@@ -236,7 +235,13 @@ After finishing a task:
 - Updated `.gitignore` with project-specific exclusions (data/, chroma_data/, .ruff_cache/)
 - Verified: `pip install -e ".[dev]"` succeeds, `mypy src/ --strict` passes
 
+### Task 1.2 — Complete (2025-12-18)
+- Created `src/models/enums.py` with all 9 enums from SCHEMAS.md
+- Enums: `CallDirection`, `Conviction`, `Sentiment`, `DocumentType`, `BlockType`, `ConfidenceBand`, `DocumentStatus`, `TagType`, `IndicatorDirection`
+- All enums inherit from `(str, Enum)` for JSON serialization
+- Verified: all enums importable, `mypy --strict` passes
+
 ---
 
-**Last Updated**: 2025-12-17
-**Version**: 1.3
+**Last Updated**: 2025-12-18
+**Version**: 1.4

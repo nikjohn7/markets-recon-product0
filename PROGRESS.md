@@ -51,7 +51,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `3.2` Create Logging Configuration
 - [x] `3.3` Create Exception Hierarchy
 - [x] `3.4` Implement Local Blob Storage
-- [ ] `3.5` Implement SQLite Database Layer
+- [x] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
 - [ ] `4.1` Implement Stage 0 - Ingest
@@ -237,5 +237,25 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Comprehensive error handling using `StorageError` exception
 - Created `tests/unit/storage/test_blob.py` with 21 tests covering storage, retrieval, deduplication, error cases, and metadata handling
 - Verified: all tests pass (21/21), `mypy --strict` passes
+
+### Task 3.5 — Complete (2025-12-18)
+- Created `src/storage/database.py` with SQLAlchemy Core-based database layer
+- Implemented 7 tables: `managers`, `documents`, `allocation_calls`, `summaries`, `document_tags`, `evidence_blocks`, `pipeline_runs`
+- PostgreSQL-portable schema design:
+  - UUID as TEXT (will map to UUID type in Postgres)
+  - JSON/JSONB as TEXT (will map to JSONB in Postgres)
+  - CHECK constraints for enum validation (will map to enum types in Postgres)
+  - TIMESTAMPTZ as TEXT with ISO 8601 format
+- `Database` class with methods: `get_connection()`, `execute()`, `close()`, `reset_database()`
+- Factory function `get_database()` for creating database instances
+- All tables include foreign key relationships, unique constraints, and check constraints
+- pipeline_runs table tracks: pipeline version, LLM model/provider, runtime, status
+- Created `tests/unit/storage/test_database.py` with 18 comprehensive tests
+  - Table creation and initialization
+  - Insert and query operations for all tables
+  - Foreign key relationships and unique constraints
+  - CHECK constraint validation (enum values)
+  - Connection management and utility methods
+- Verified: all tests pass (18/18), `mypy --strict` passes
 
 ---

@@ -41,7 +41,7 @@ SYNONYMS: dict[str, str] = {
     "retail": "RE_RETAIL",
     "logistics": "RE_INDUSTRIAL",
     "warehouses": "RE_INDUSTRIAL",
-    "industrial": "RE_INDUSTRIAL",
+    "industrial real estate": "RE_INDUSTRIAL",
     "industrial/logistics": "RE_INDUSTRIAL",
     "housing": "RE_RESIDENTIAL",
     "residential": "RE_RESIDENTIAL",

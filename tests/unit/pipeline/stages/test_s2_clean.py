@@ -224,23 +224,23 @@ class TestSectionDetection:
                 block_type=BlockType.HEADING,
                 confidence=1.0,
             ),
-        DocumentBlock(
-            block_id="2_1",
-            page=2,
-            text="We are overweight equities.",
-            block_type=BlockType.PARAGRAPH,
-            confidence=1.0,
-        ),
-    ]
-    
-    sections = _detect_sections("test_doc", blocks)
-    assert len(sections) == 2
-    assert sections[0].title == "Macro Outlook"
-    assert sections[0].section_type == "macro"
-    assert sections[0].section_id == "test_doc_sec_0"
-    assert sections[1].title == "Equities"
-    assert sections[1].section_type == "equities"
-    assert sections[1].section_id == "test_doc_sec_1"
+            DocumentBlock(
+                block_id="2_1",
+                page=2,
+                text="We are overweight equities.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+        ]
+
+        sections = _detect_sections("test_doc", blocks)
+        assert len(sections) == 2
+        assert sections[0].title == "Macro Outlook"
+        assert sections[0].section_type == "macro"
+        assert sections[0].section_id == "test_doc_sec_0"
+        assert sections[1].title == "Equities"
+        assert sections[1].section_type == "equities"
+        assert sections[1].section_id == "test_doc_sec_1"
 
     def test_detect_sections_no_headings(self) -> None:
         """Test detecting sections when no clear headings exist."""
@@ -252,21 +252,21 @@ class TestSectionDetection:
                 block_type=BlockType.PARAGRAPH,
                 confidence=1.0,
             ),
-        DocumentBlock(
-            block_id="1_1",
-            page=1,
-            text="More content",
-            block_type=BlockType.PARAGRAPH,
-            confidence=1.0,
-        ),
-    ]
-    
-    sections = _detect_sections("test_doc", blocks)
-    assert len(sections) == 1
-    assert sections[0].title is None
-    assert sections[0].start_block_id == "1_0"
-    assert sections[0].end_block_id == "1_1"
-    assert sections[0].section_id == "test_doc_sec_0"
+            DocumentBlock(
+                block_id="1_1",
+                page=1,
+                text="More content",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+        ]
+
+        sections = _detect_sections("test_doc", blocks)
+        assert len(sections) == 1
+        assert sections[0].title is None
+        assert sections[0].start_block_id == "1_0"
+        assert sections[0].end_block_id == "1_1"
+        assert sections[0].section_id == "test_doc_sec_0"
 
     def test_section_ids_unique(self) -> None:
         """Test that section IDs are unique."""
@@ -285,18 +285,18 @@ class TestSectionDetection:
                 block_type=BlockType.PARAGRAPH,
                 confidence=1.0,
             ),
-        DocumentBlock(
-            block_id="doc1_2",
-            page=2,
-            text="Section 2",
-            block_type=BlockType.HEADING,
-            confidence=1.0,
-        ),
-    ]
-    
-    sections = _detect_sections("doc1", blocks)
-    section_ids = [s.section_id for s in sections]
-    assert len(section_ids) == len(set(section_ids))
+            DocumentBlock(
+                block_id="doc1_2",
+                page=2,
+                text="Section 2",
+                block_type=BlockType.HEADING,
+                confidence=1.0,
+            ),
+        ]
+
+        sections = _detect_sections("doc1", blocks)
+        section_ids = [s.section_id for s in sections]
+        assert len(section_ids) == len(set(section_ids))
 
 
 @pytest.mark.asyncio

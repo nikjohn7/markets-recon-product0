@@ -118,6 +118,11 @@ class TestBlobStorageExists:
         """exists() returns False for non-existent blobs."""
         assert storage.exists("nonexistent_blob_id") is False
 
+    def test_exists_empty_blob_id_raises(self, storage: LocalBlobStorage) -> None:
+        """exists() with empty blob_id raises StorageError."""
+        with pytest.raises(StorageError, match="blob_id cannot be empty"):
+            storage.exists("")
+
 
 class TestBlobStorageDelete:
     """Test delete() method."""

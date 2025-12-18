@@ -158,7 +158,13 @@ class LocalBlobStorage:
 
         Returns:
             True if blob exists, False otherwise
+
+        Raises:
+            StorageError: If blob_id is empty
         """
+        if not blob_id:
+            raise StorageError("blob_id cannot be empty")
+
         pdf_path = self.storage_dir / f"{blob_id}.pdf"
         return pdf_path.exists()
 

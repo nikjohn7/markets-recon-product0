@@ -39,6 +39,44 @@ class TestExtractedTable:
         with pytest.raises(ValidationError):
             ExtractedTable(table_id="t1", page=0, cells=[], row_count=0, col_count=0)
 
+    def test_cell_row_bounds(self) -> None:
+        # Valid: cell row within bounds (0-indexed, so row=1 is valid for row_count=2)
+        ExtractedTable(
+            table_id="t1",
+            page=1,
+            cells=[TableCell(row=0, col=0, text="A"), TableCell(row=1, col=0, text="B")],
+            row_count=2,
+            col_count=1,
+        )
+        # Invalid: cell row exceeds row_count
+        with pytest.raises(ValidationError, match="Cell at row=100.*exceeds table row_count=2"):
+            ExtractedTable(
+                table_id="t1",
+                page=1,
+                cells=[TableCell(row=100, col=0, text="Bad")],
+                row_count=2,
+                col_count=1,
+            )
+
+    def test_cell_col_bounds(self) -> None:
+        # Valid: cell col within bounds
+        ExtractedTable(
+            table_id="t1",
+            page=1,
+            cells=[TableCell(row=0, col=0, text="A"), TableCell(row=0, col=1, text="B")],
+            row_count=1,
+            col_count=2,
+        )
+        # Invalid: cell col exceeds col_count
+        with pytest.raises(ValidationError, match="Cell at row=0, col=50.*exceeds table col_count=3"):
+            ExtractedTable(
+                table_id="t1",
+                page=1,
+                cells=[TableCell(row=0, col=50, text="Bad")],
+                row_count=1,
+                col_count=3,
+            )
+
 
 class TestDocumentJSON:
     def test_valid_document(self) -> None:

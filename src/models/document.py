@@ -49,6 +49,16 @@ class ExtractedTable(BaseModel):
     def check_counts_with_cells(self) -> "ExtractedTable":
         if self.cells and (self.row_count == 0 or self.col_count == 0):
             raise ValueError("row_count and col_count must be > 0 when cells exist")
+        # Validate cell positions are within table dimensions
+        for cell in self.cells:
+            if cell.row >= self.row_count:
+                raise ValueError(
+                    f"Cell at row={cell.row}, col={cell.col} exceeds table row_count={self.row_count}"
+                )
+            if cell.col >= self.col_count:
+                raise ValueError(
+                    f"Cell at row={cell.row}, col={cell.col} exceeds table col_count={self.col_count}"
+                )
         return self
 
 

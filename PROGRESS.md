@@ -42,7 +42,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
 
 ### Phase 2: Taxonomy System
-- [ ] `2.1` Implement Asset Class Hierarchy
+- [x] `2.1` Implement Asset Class Hierarchy
 - [ ] `2.2` Implement Synonym Resolution
 - [ ] `2.3` Implement Tag Vocabularies
 
@@ -183,5 +183,15 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Section model defined per docs/DECISIONS.md
 - Created `tests/unit/models/test_pipeline.py` with 9 validation tests
 - Verified: all tests pass, `mypy --strict` passes
+
+### Task 2.1 — Complete (2025-12-18)
+- Created `src/taxonomy/hierarchy.py` with all categories and sub-assets from TAXONOMY.md
+- Implemented CATEGORIES dict mapping category codes to sub-asset lists (31 categories, 100+ sub-assets)
+- Implemented CATEGORY_DISPLAY_NAMES and SUB_ASSET_DISPLAY_NAMES dicts
+- Built reverse index (_SUB_ASSET_TO_CATEGORY) for O(1) lookups
+- Implemented 8 lookup functions: get_category_for_sub_asset, get_sub_assets_for_category, get_category_display_name, get_sub_asset_display_name, is_valid_category, is_valid_sub_asset, get_all_categories, get_all_sub_assets
+- Regional real estate categories (APAC, NA, UK, EU) are empty - they're groupings that share sub-assets with ALT_REAL_ESTATE_GLOBAL
+- Created `tests/unit/taxonomy/test_hierarchy.py` with 24 comprehensive tests
+- Verified: all tests pass (24/24), `mypy --strict` passes
 
 ---

@@ -144,9 +144,9 @@ class TestStageExtractIntegration:
         
         # Run extraction with the same storage instance
         result = await stage_extract(sample_ingest_result, storage=storage)
-        
+
         # Verify coverage (2 out of 3 pages have text)
-        assert result.extraction_coverage == 2/3
+        assert result.extraction_coverage == pytest.approx(2/3)
         assert result.page_count == 3
     
     @pytest.mark.asyncio
@@ -296,10 +296,10 @@ class TestDeterministicPDF:
         
         # Extract with the same storage instance
         result = await stage_extract(ingest_result, storage=storage)
-        
+
         # Assert expected values
         assert result.page_count == 3
-        assert result.extraction_coverage == 2/3  # 2 out of 3 pages have text
+        assert result.extraction_coverage == pytest.approx(2/3)  # 2 out of 3 pages have text
         
         # Should have extracted blocks from pages 1 and 2
         page1_blocks = [b for b in result.blocks if b.page == 1]

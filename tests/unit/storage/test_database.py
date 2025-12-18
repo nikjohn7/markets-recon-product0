@@ -188,6 +188,21 @@ class TestDocumentsTable:
                 )
                 conn.commit()
 
+    def test_document_manager_foreign_key_enforced(self, db: Database) -> None:
+        """Foreign key to managers is enforced for documents."""
+
+        with db.get_connection() as conn:
+            with pytest.raises(IntegrityError):
+                conn.execute(
+                    db.documents.insert().values(
+                        manager_id=str(uuid.uuid4()),
+                        blob_id="blob_with_missing_manager",
+                        file_hash="fk_hash_1",
+                        status="pending",
+                    )
+                )
+                conn.commit()
+
 
 class TestAllocationCallsTable:
     """Test allocation_calls table operations."""

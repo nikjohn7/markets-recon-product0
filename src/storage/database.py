@@ -30,6 +30,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     create_engine,
+    event,
     text,
 )
 from sqlalchemy.engine import Engine
@@ -64,6 +65,7 @@ class Database:
             echo=False,  # Set to True for SQL debugging
             future=True,  # Use SQLAlchemy 2.0 style
         )
+        event.listen(self.engine, "connect", self._enable_foreign_keys)
 
         self.metadata = MetaData()
         self._define_tables()
@@ -216,6 +218,16 @@ class Database:
             self.metadata.create_all(self.engine)
         except Exception as e:
             raise StorageError(f"Failed to create database tables: {e}") from e
+
+    @staticmethod
+    def _enable_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
+        """Ensure SQLite foreign key constraints are enforced for each connection."""
+
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA foreign_keys=ON")
+        finally:
+            cursor.close()
 
     def get_connection(self) -> Connection:
         """Get a database connection.

@@ -81,4 +81,16 @@ class DocumentJSON(BaseModel):
         for p in self.vision_pages:
             if p < 1 or p > self.page_count:
                 raise ValueError(f"vision_pages contains invalid page {p}")
+        for block in self.blocks:
+            if block.page > self.page_count:
+                raise ValueError(
+                    f"Block {block.block_id} references page {block.page} "
+                    f"but document only has {self.page_count} pages"
+                )
+        for table in self.tables:
+            if table.page > self.page_count:
+                raise ValueError(
+                    f"Table {table.table_id} references page {table.page} "
+                    f"but document only has {self.page_count} pages"
+                )
         return self

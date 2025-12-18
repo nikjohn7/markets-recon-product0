@@ -61,3 +61,91 @@ class TestDocumentJSON:
         DocumentJSON(document_id="d1", blob_id="b1", file_hash="h", blocks=[], tables=[], page_count=1, extraction_coverage=1.0)
         with pytest.raises(ValidationError):
             DocumentJSON(document_id="d1", blob_id="b1", file_hash="h", blocks=[], tables=[], page_count=1, extraction_coverage=1.1)
+
+    def test_ocr_pages_bounds(self) -> None:
+        # Valid: within bounds
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+            ocr_pages=[1, 5, 10]
+        )
+        # Invalid: page 0
+        with pytest.raises(ValidationError, match="ocr_pages contains invalid page 0"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+                ocr_pages=[0]
+            )
+        # Invalid: page > page_count
+        with pytest.raises(ValidationError, match="ocr_pages contains invalid page 11"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+                ocr_pages=[11]
+            )
+
+    def test_vision_pages_bounds(self) -> None:
+        # Valid: within bounds
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+            vision_pages=[1, 5, 10]
+        )
+        # Invalid: page 0
+        with pytest.raises(ValidationError, match="vision_pages contains invalid page 0"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+                vision_pages=[0]
+            )
+        # Invalid: page > page_count
+        with pytest.raises(ValidationError, match="vision_pages contains invalid page 15"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[], page_count=10, extraction_coverage=0.8,
+                vision_pages=[15]
+            )
+
+    def test_block_page_bounds(self) -> None:
+        # Valid: block page within bounds
+        block = DocumentBlock(
+            block_id="5_0", page=5, text="Text", block_type=BlockType.PARAGRAPH, confidence=0.9
+        )
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[block], tables=[], page_count=10, extraction_coverage=0.8
+        )
+        # Invalid: block page > page_count
+        block_invalid = DocumentBlock(
+            block_id="999_0", page=999, text="Text", block_type=BlockType.PARAGRAPH, confidence=0.9
+        )
+        with pytest.raises(
+            ValidationError,
+            match="Block 999_0 references page 999 but document only has 10 pages"
+        ):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[block_invalid], tables=[], page_count=10, extraction_coverage=0.8
+            )
+
+    def test_table_page_bounds(self) -> None:
+        # Valid: table page within bounds
+        table = ExtractedTable(
+            table_id="t5", page=5, cells=[], row_count=0, col_count=0
+        )
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[], tables=[table], page_count=10, extraction_coverage=0.8
+        )
+        # Invalid: table page > page_count
+        table_invalid = ExtractedTable(
+            table_id="t999", page=999, cells=[], row_count=0, col_count=0
+        )
+        with pytest.raises(
+            ValidationError,
+            match="Table t999 references page 999 but document only has 10 pages"
+        ):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[table_invalid], page_count=10, extraction_coverage=0.8
+            )

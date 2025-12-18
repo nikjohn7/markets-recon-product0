@@ -39,7 +39,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `1.8` Create Tag Models (Stage 9 Output)
 - [x] `1.9` Create Confidence Models (Stage 10 Output)
 - [x] `1.10` Create ProcessedDocument Model (Final Output)
-- [ ] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
+- [x] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
 
 ### Phase 2: Taxonomy System
 - [ ] `2.1` Implement Asset Class Hierarchy
@@ -176,6 +176,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created `src/models/output.py` with `ProcessedDocument`
 - Implemented `to_allocator_pro_calls()` and `to_search_document()` helper methods
 - Created `tests/unit/models/test_output.py` with 4 tests (serialization + helpers)
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.11 — Complete (2025-12-18)
+- Created `src/models/pipeline.py` with `IngestResult`, `Section`, `CleanedDocument`, `RetrievedChunk`, `CandidateSet`
+- Section model defined per docs/DECISIONS.md
+- Created `tests/unit/models/test_pipeline.py` with 9 validation tests
 - Verified: all tests pass, `mypy --strict` passes
 
 ---

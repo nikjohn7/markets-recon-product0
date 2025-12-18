@@ -44,7 +44,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 2: Taxonomy System
 - [x] `2.1` Implement Asset Class Hierarchy
 - [x] `2.2` Implement Synonym Resolution
-- [ ] `2.3` Implement Tag Vocabularies
+- [x] `2.3` Implement Tag Vocabularies
 
 ### Phase 3: Infrastructure Layer
 - [ ] `3.1` Create Configuration System
@@ -203,5 +203,9 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - All synonym keys are lowercase for consistency
 - Created `tests/unit/taxonomy/test_synonyms.py` with 26 comprehensive tests
 - Verified: all tests pass (26/26), acceptance criteria met ("bunds" → ("FI_SOV_EUROPE", "GERMAN_BUNDS"))
+
+### Task 2.3 — Complete (2025-12-19)
+- Added `src/taxonomy/tags.py` with theme, risk, region, and macro regime vocabularies plus validation helper
+- Added `tests/unit/taxonomy/test_tags.py` to enforce vocabulary coverage and validation behavior
 
 ---

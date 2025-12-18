@@ -50,7 +50,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `3.1` Create Configuration System
 - [x] `3.2` Create Logging Configuration
 - [x] `3.3` Create Exception Hierarchy
-- [ ] `3.4` Implement Local Blob Storage
+- [x] `3.4` Implement Local Blob Storage
 - [ ] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
@@ -226,5 +226,16 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - All exceptions include docstrings explaining their purpose and when to use them
 - Created `tests/unit/test_exceptions.py` with 19 comprehensive tests covering inheritance, instantiation, and catching behavior
 - Verified: all tests pass (19/19), `mypy --strict` passes
+
+### Task 3.4 — Complete (2025-12-18)
+- Created `src/storage/blob.py` with `LocalBlobStorage` class for file-based PDF storage
+- Implements SHA-256 hash-based deterministic blob_id generation
+- Methods: `store()`, `retrieve()`, `retrieve_metadata()`, `exists()`, `delete()`
+- Stores PDFs as `{blob_id}.pdf` and metadata as `{blob_id}.json` in `./data/pdfs/`
+- Metadata JSON is pretty-printed with sorted keys for readability and consistency
+- Idempotent storage: same content = same blob_id (overwrites existing)
+- Comprehensive error handling using `StorageError` exception
+- Created `tests/unit/storage/test_blob.py` with 21 tests covering storage, retrieval, deduplication, error cases, and metadata handling
+- Verified: all tests pass (21/21), `mypy --strict` passes
 
 ---

@@ -1,217 +1,104 @@
 ---
-ai_context:
-  scope: "MVP (v0)"
-  execution_mode: "sequential"
-  next_task: "1.2"
-  next_task_title: "Create Core Enums"
-  available_tasks: ["1.2"]
-  deferred_tasks: ["6.4"]
-  blocked_tasks:
-    - "1.3"
-    - "1.4"
-    - "1.5"
-    - "1.6"
-    - "1.7"
-    - "1.8"
-    - "1.9"
-    - "1.10"
-    - "1.11"
-    - "2.1"
-    - "2.2"
-    - "2.3"
-    - "3.1"
-    - "3.2"
-    - "3.3"
-    - "3.4"
-    - "3.5"
-    - "4.1"
-    - "4.2"
-    - "4.3"
-    - "4.4"
-    - "4.5"
-    - "5.1"
-    - "5.2"
-    - "5.3"
-    - "6.1"
-    - "6.2"
-    - "6.3"
-    - "6.5"
-    - "6.6"
-    - "6.7"
-    - "7.1"
-    - "7.2"
-    - "7.3"
-    - "7.4"
-    - "8.1"
-    - "8.2"
-    - "8.3"
-    - "9.1"
-    - "9.2"
-    - "9.3"
-    - "9.4"
-    - "9.5"
-    - "9.6"
-    - "10.1"
-    - "10.2"
-    - "10.3"
-    - "10.4"
-    - "10.5"
-  totals:
-    tasks: 54
-    completed: 3
-    in_progress: 0
-    available: 1
-    blocked: 49
-    deferred: 1
-  completion_percentage: 5.6
-  last_updated: "2025-12-17"
+progress_format_version: 2
+scope: "MVP (v0)"
+execution_mode: "sequential"
+deferred_tasks:
+  - "6.4"
 ---
 
-# Markets Recon Pipeline — Implementation Progress
+# Markets Recon Pipeline — Progress
 
-This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as the source of truth for deliverables and acceptance criteria.
+This file is a minimal execution log for `tasks.md`.
 
-## Project Overview
+## How To Update (Keep Diffs Small)
 
-- **Total tasks**: 54 (11 phases)
-- **Completed**: 3 (5.6%)
-- **In progress**: 0
-- **Available**: 1
-- **Blocked**: 49
-- **Deferred (v1+)**: 1
-- **Next task**: Task 1.2 — Create Core Enums
+After finishing a task:
+1. Change exactly one checkbox from `[ ]` → `[x]` in **Task Checklist**.
+2. Append a short entry under **Task Notes** with key files changed.
 
-## Execution Rules (MVP)
-
-- **Sequential mode**: complete tasks in `tasks.md` order; do not start later tasks early.
-- **Deferred tasks**: skip anything marked **v1+ / deferred** in `tasks.md` unless explicitly expanding scope.
-
-## Phase Status
-
-| Phase | Status | Tasks | Completed | Progress | Next Task |
-|-------|--------|-------|-----------|----------|-----------|
-| 0: Spec Alignment | Complete | 2 | 2/2 | 100% | — |
-| 1: Foundation | In progress | 11 | 1/11 | 9% | Task 1.2 |
-| 2: Taxonomy | Not started | 3 | 0/3 | 0% | Task 2.1 |
-| 3: Infrastructure | Not started | 5 | 0/5 | 0% | Task 3.1 |
-| 4: PDF Extraction | Not started | 5 | 0/5 | 0% | Task 4.1 |
-| 5: LLM Interaction | Not started | 3 | 0/3 | 0% | Task 5.1 |
-| 6: LLM Stages | Not started | 7 (1 deferred) | 0/7 | 0% | Task 6.1 |
-| 7: Confidence | Not started | 4 | 0/4 | 0% | Task 7.1 |
-| 8: Orchestration | Not started | 3 | 0/3 | 0% | Task 8.1 |
-| 9: Testing | Not started | 6 | 0/6 | 0% | Task 9.1 |
-| 10: Polish | Not started | 5 | 0/5 | 0% | Task 10.1 |
-
-## Current Focus
-
-### Task 1.2: Create Core Enums
-
-**Status**: Available
-**Priority**: High
-**Phase**: 1: Project Foundation
-
-**Deliverables (from `tasks.md`):**
-- `src/models/enums.py` with all enums from SCHEMAS.md
-- `CallDirection`, `Conviction`, `Sentiment`, `DocumentType`, `BlockType`, `ConfidenceBand`, `DocumentStatus`, `TagType`, `IndicatorDirection` enums
-- All enums inherit from `(str, Enum)` for JSON serialization
-
-**Acceptance:** All enums importable, `mypy` passes
-
----
+Do **not** maintain derived dashboards here (totals, percentages, per-phase progress, “blocked/available” lists). In sequential mode, the *current task* is simply the first unchecked item.
 
 ## Deferred (v1+)
 
-- Task 6.4 — Implement Stage 6 Verification Pass (v1+ deferred per `tasks.md` / `CLAUDE.md`)
+- `6.4` Stage 6 verification pass (explicitly deferred in `tasks.md` / `CLAUDE.md`)
 
----
-
-## Task Checklist (Authoritative Order)
+## Task Checklist (Source Of Truth)
 
 ### Phase 0: Spec Alignment
-- [x] `0.1` Resolve Spec Gaps and Contradictions — **Complete**
-- [x] `0.2` Pin MVP Tech Decisions — **Complete**
+- [x] `0.1` Resolve Spec Gaps and Contradictions
+- [x] `0.2` Pin MVP Tech Decisions
 
 ### Phase 1: Project Foundation
-- [x] `1.1` Initialize Python Project Structure — **Complete**
-- [ ] `1.2` Create Core Enums — **Available**
-- [ ] `1.3` Create Citation and BoundingBox Models — **Blocked**
-- [ ] `1.4` Create Document Extraction Models — **Blocked**
-- [ ] `1.5` Create DocumentProfile Model (Stage 4 Output) — **Blocked**
-- [ ] `1.6` Create Allocation Call Models (Stage 6 Output) — **Blocked**
-- [ ] `1.7` Create Summary Models (Stage 7 Output) — **Blocked**
-- [ ] `1.8` Create Tag Models (Stage 9 Output) — **Blocked**
-- [ ] `1.9` Create Confidence Models (Stage 10 Output) — **Blocked**
-- [ ] `1.10` Create ProcessedDocument Model (Final Output) — **Blocked**
-- [ ] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md) — **Blocked**
+- [x] `1.1` Initialize Python Project Structure
+- [x] `1.2` Create Core Enums
+- [x] `1.3` Create Citation and BoundingBox Models
+- [x] `1.4` Create Document Extraction Models
+- [x] `1.5` Create DocumentProfile Model (Stage 4 Output)
+- [x] `1.6` Create Allocation Call Models (Stage 6 Output)
+- [x] `1.7` Create Summary Models (Stage 7 Output)
+- [x] `1.8` Create Tag Models (Stage 9 Output)
+- [x] `1.9` Create Confidence Models (Stage 10 Output)
+- [x] `1.10` Create ProcessedDocument Model (Final Output)
+- [x] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
 
 ### Phase 2: Taxonomy System
-- [ ] `2.1` Implement Asset Class Hierarchy — **Blocked**
-- [ ] `2.2` Implement Synonym Resolution — **Blocked**
-- [ ] `2.3` Implement Tag Vocabularies — **Blocked**
+- [ ] `2.1` Implement Asset Class Hierarchy
+- [ ] `2.2` Implement Synonym Resolution
+- [ ] `2.3` Implement Tag Vocabularies
 
 ### Phase 3: Infrastructure Layer
-- [ ] `3.1` Create Configuration System — **Blocked**
-- [ ] `3.2` Create Logging Configuration — **Blocked**
-- [ ] `3.3` Create Exception Hierarchy — **Blocked**
-- [ ] `3.4` Implement Local Blob Storage — **Blocked**
-- [ ] `3.5` Implement SQLite Database Layer — **Blocked**
+- [ ] `3.1` Create Configuration System
+- [ ] `3.2` Create Logging Configuration
+- [ ] `3.3` Create Exception Hierarchy
+- [ ] `3.4` Implement Local Blob Storage
+- [ ] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
-- [ ] `4.1` Implement Stage 0 - Ingest — **Blocked**
-- [ ] `4.2` Implement Stage 1 - Text Extraction — **Blocked**
-- [ ] `4.3` Implement Table Extraction — **Blocked**
-- [ ] `4.4` Implement Stage 2 - Cleaning — **Blocked**
-- [ ] `4.5` Implement Stage 3 - Retrieval Index — **Blocked**
+- [ ] `4.1` Implement Stage 0 - Ingest
+- [ ] `4.2` Implement Stage 1 - Text Extraction
+- [ ] `4.3` Implement Table Extraction
+- [ ] `4.4` Implement Stage 2 - Cleaning
+- [ ] `4.5` Implement Stage 3 - Retrieval Index
 
 ### Phase 5: LLM Interaction Layer
-- [ ] `5.1` Create LLM Client Wrapper — **Blocked**
-- [ ] `5.2` Create Prompt Templates — **Blocked**
-- [ ] `5.3` Create LLM Output Validation — **Blocked**
+- [ ] `5.1` Create LLM Client Wrapper
+- [ ] `5.2` Create Prompt Templates
+- [ ] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
-- [ ] `6.1` Implement Stage 4 - Metadata Extraction — **Blocked**
-- [ ] `6.2` Implement Stage 5 - Candidate Retrieval — **Blocked**
-- [ ] `6.3` Implement Stage 6 - Call Extraction (Core) — **Blocked**
-- [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ Deferred) — **Deferred**
-- [ ] `6.5` Implement Stage 7 - Summary Generation — **Blocked**
-- [ ] `6.6` Implement Stage 8 - Tooltip Generation — **Blocked**
-- [ ] `6.7` Implement Stage 9 - Tag Generation — **Blocked**
+- [ ] `6.1` Implement Stage 4 - Metadata Extraction
+- [ ] `6.2` Implement Stage 5 - Candidate Retrieval
+- [ ] `6.3` Implement Stage 6 - Call Extraction (Core)
+- [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
+- [ ] `6.5` Implement Stage 7 - Summary Generation
+- [ ] `6.6` Implement Stage 8 - Tooltip Generation
+- [ ] `6.7` Implement Stage 9 - Tag Generation
 
 ### Phase 7: Confidence & Validation (Stage 10)
-- [ ] `7.1` Implement Extraction Quality Scoring — **Blocked**
-- [ ] `7.2` Implement Evidence Strength Scoring — **Blocked**
-- [ ] `7.3` Implement Document-Level Confidence — **Blocked**
-- [ ] `7.4` Implement Review Routing — **Blocked**
+- [ ] `7.1` Implement Extraction Quality Scoring
+- [ ] `7.2` Implement Evidence Strength Scoring
+- [ ] `7.3` Implement Document-Level Confidence
+- [ ] `7.4` Implement Review Routing
 
 ### Phase 8: Pipeline Orchestration
-- [ ] `8.1` Create Pipeline Orchestrator — **Blocked**
-- [ ] `8.2` Create CLI Interface — **Blocked**
-- [ ] `8.3` Create Output Validator — **Blocked**
+- [ ] `8.1` Create Pipeline Orchestrator
+- [ ] `8.2` Create CLI Interface
+- [ ] `8.3` Create Output Validator
 
 ### Phase 9: Testing
-- [ ] `9.1` Create Test Fixtures — **Blocked**
-- [ ] `9.2` Write Model Unit Tests — **Blocked**
-- [ ] `9.3` Write Taxonomy Unit Tests — **Blocked**
-- [ ] `9.4` Write Stage Integration Tests — **Blocked**
-- [ ] `9.5` Write E2E Pipeline Tests — **Blocked**
-- [ ] `9.6` Write Confidence Scoring Tests — **Blocked**
+- [ ] `9.1` Create Test Fixtures
+- [ ] `9.2` Write Model Unit Tests
+- [ ] `9.3` Write Taxonomy Unit Tests
+- [ ] `9.4` Write Stage Integration Tests
+- [ ] `9.5` Write E2E Pipeline Tests
+- [ ] `9.6` Write Confidence Scoring Tests
 
 ### Phase 10: Polish & Documentation
-- [ ] `10.1` Add Type Annotations Check — **Blocked**
-- [ ] `10.2` Add Linting and Formatting — **Blocked**
-- [ ] `10.3` Create Sample Run Script — **Blocked**
-- [ ] `10.4` Final Integration Test — **Blocked**
-- [ ] `10.5` Add MVP Evaluation Script — **Blocked**
-
----
-
-## Maintenance Instructions (For Agents)
-
-After finishing a task:
-1. Mark the task checkbox as complete.
-2. Update `ai_context.next_task`/`available_tasks` to the next task in order.
-3. Update `ai_context.totals` counts and `completion_percentage`.
-4. Add a short note under **Task Notes** (below) with links to key files changed.
+- [ ] `10.1` Add Type Annotations Check
+- [ ] `10.2` Add Linting and Formatting
+- [ ] `10.3` Create Sample Run Script
+- [ ] `10.4` Final Integration Test
+- [ ] `10.5` Add MVP Evaluation Script
 
 ## Task Notes
 
@@ -236,7 +123,65 @@ After finishing a task:
 - Updated `.gitignore` with project-specific exclusions (data/, chroma_data/, .ruff_cache/)
 - Verified: `pip install -e ".[dev]"` succeeds, `mypy src/ --strict` passes
 
----
+### Task 1.2 — Complete (2025-12-18)
+- Created `src/models/enums.py` with all 9 enums from SCHEMAS.md
+- Enums: `CallDirection`, `Conviction`, `Sentiment`, `DocumentType`, `BlockType`, `ConfidenceBand`, `DocumentStatus`, `TagType`, `IndicatorDirection`
+- All enums inherit from `(str, Enum)` for JSON serialization
+- Verified: all enums importable, `mypy --strict` passes
 
-**Last Updated**: 2025-12-17
-**Version**: 1.3
+### Task 1.3 — Complete (2025-12-18)
+- Created `src/models/core.py` with `Citation` and `BoundingBox` Pydantic models
+- Citation is frozen (immutable), page >= 1, text_span <= 200 chars
+- BoundingBox coordinates normalized 0-1
+- Created `tests/unit/models/test_core.py` with 9 validation edge case tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.4 — Complete (2025-12-18)
+- Created `src/models/document.py` with `DocumentBlock`, `TableCell`, `ExtractedTable`, `DocumentJSON`
+- Field constraints: page >= 1, confidence 0-1, extraction_coverage 0-1
+- Created `tests/unit/models/test_document.py` with 8 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.5 — Complete (2025-12-18)
+- Created `src/models/profile.py` with `DocumentProfile`
+- Includes uncertainty flags, min_length=1 for manager_name and citations
+- Created `tests/unit/models/test_profile.py` with 5 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.6 — Complete (2025-12-18)
+- Created `src/models/calls.py` with `KeyIndicator`, `AllocationCall`, `CallExtractionOutput`
+- Validator for non-empty rationale_bullets, constraints: 1-4 bullets, 1-3 citations, tooltip ≤150 chars
+- Created `tests/unit/models/test_calls.py` with 10 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.7 — Complete (2025-12-18)
+- Created `src/models/summaries.py` with `KeyTakeaway`, `DocumentSummaries`
+- Constraints: executive_summary 100-1000 chars, search_descriptor 50-200 chars, 3-5 takeaways
+- Created `tests/unit/models/test_summaries.py` with 8 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.8 — Complete (2025-12-18)
+- Created `src/models/tags.py` with `Tag`, `TagSet`
+- All 7 tag categories represented, confidence 0-1 range
+- Created `tests/unit/models/test_tags.py` with 5 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.9 — Complete (2025-12-18)
+- Created `src/models/confidence.py` with `FieldConfidence`, `ConfidenceResult`, `compute_confidence_band`
+- Band validation: HIGH >= 0.80, MEDIUM 0.60-0.79, LOW < 0.60
+- Created `tests/unit/models/test_confidence.py` with 10 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.10 — Complete (2025-12-18)
+- Created `src/models/output.py` with `ProcessedDocument`
+- Implemented `to_allocator_pro_calls()` and `to_search_document()` helper methods
+- Created `tests/unit/models/test_output.py` with 4 tests (serialization + helpers)
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.11 — Complete (2025-12-18)
+- Created `src/models/pipeline.py` with `IngestResult`, `Section`, `CleanedDocument`, `RetrievedChunk`, `CandidateSet`
+- Section model defined per docs/DECISIONS.md
+- Created `tests/unit/models/test_pipeline.py` with 9 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+---

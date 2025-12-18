@@ -418,7 +418,7 @@ class PDFParser:
                 blob_id=blob_id,
                 file_hash=file_hash,
                 blocks=blocks,
-                tables=tables,  # Empty for now - table extraction will be added later
+                tables=tables,
                 page_count=page_count,
                 extraction_coverage=extraction_coverage,
                 ocr_pages=[],  # Empty for now - OCR will be added later

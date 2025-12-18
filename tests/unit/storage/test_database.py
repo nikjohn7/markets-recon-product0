@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import pytest
@@ -418,7 +418,7 @@ class TestPipelineRunsTable:
             conn.commit()
 
         run_id = str(uuid.uuid4())
-        started_at = datetime.utcnow().isoformat()
+        started_at = datetime.now(UTC).isoformat()
 
         with db.get_connection() as conn:
             conn.execute(

@@ -57,7 +57,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `4.1` Implement Stage 0 - Ingest
 - [x] `4.2` Implement Stage 1 - Text Extraction
 - [x] `4.3` Implement Table Extraction
-- [ ] `4.4` Implement Stage 2 - Cleaning
+- [x] `4.4` Implement Stage 2 - Cleaning
 - [ ] `4.5` Implement Stage 3 - Retrieval Index
 
 ### Phase 5: LLM Interaction Layer
@@ -307,3 +307,18 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Verified: all tests pass (36/36 total: 20 parser + 9 table + 7 integration), `mypy --strict` passes, no existing tests broken
 
 ---
+
+### Task 4.4 — Complete (2025-12-19)
+- Implemented [`src/pipeline/stages/s2_clean.py`](src/pipeline/stages/s2_clean.py) with async `stage_clean()` function
+  - Text normalization: fixes hyphenation across line breaks, normalizes whitespace, strips leading/trailing spaces
+  - Boilerplate detection: identifies repeated headers/footers across 3+ consecutive pages, removes duplicates while keeping first instance
+  - Disclaimer detection: matches standard disclaimer patterns (informational, past performance, forward-looking, etc.), marks as `BlockType.DISCLAIMER`
+  - Section detection: identifies section boundaries using heading patterns, classifies sections (macro, equities, fixed_income, risks, appendix, other)
+  - Fallback: creates single section covering all blocks if no clear sections detected
+  - Boilerplate ratio warning: logs warning if > 30% of blocks removed
+  - Preserves original block IDs (no regeneration)
+- Created comprehensive test suite in [`tests/unit/pipeline/stages/test_s2_clean.py`](tests/unit/pipeline/stages/test_s2_clean.py)
+  - 24 test cases covering: text normalization (4), disclaimer detection (5), boilerplate removal (2), section classification (6), section detection (3), full pipeline (4)
+  - Tests validate: hyphenation fixes, whitespace normalization, disclaimer patterns, repeated header detection, section boundaries, block ID preservation
+  - All async tests use pytest-asyncio
+- Verified: all tests pass (24/24), `mypy --strict` passes, no existing tests broken

@@ -5,8 +5,8 @@ Models for representing extracted PDF content: blocks, tables, and full document
 
 from pydantic import BaseModel, Field
 
-from src.models.core import BoundingBox
-from src.models.enums import BlockType
+from models.core import BoundingBox
+from models.enums import BlockType
 
 
 class DocumentBlock(BaseModel):

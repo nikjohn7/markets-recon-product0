@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models.core import Citation
-from src.models.enums import DocumentType
-from src.models.profile import DocumentProfile
+from models.core import Citation
+from models.enums import DocumentType
+from models.profile import DocumentProfile
 
 
 class TestDocumentProfile:

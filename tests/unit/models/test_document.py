@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from src.models.document import DocumentBlock, DocumentJSON, ExtractedTable, TableCell
-from src.models.enums import BlockType
+from models.document import DocumentBlock, DocumentJSON, ExtractedTable, TableCell
+from models.enums import BlockType
 
 
 class TestDocumentBlock:

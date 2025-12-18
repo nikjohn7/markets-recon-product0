@@ -8,8 +8,6 @@ ai_context:
   deferred_tasks: ["6.4"]
   blocked_tasks:
     - "1.7"
-    - "1.6"
-    - "1.7"
     - "1.8"
     - "1.9"
     - "1.10"

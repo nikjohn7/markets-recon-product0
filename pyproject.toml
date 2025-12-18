@@ -65,6 +65,8 @@ warn_no_return = true
 warn_unreachable = true
 strict_equality = true
 extra_checks = true
+mypy_path = "src"
+explicit_package_bases = true
 
 [[tool.mypy.overrides]]
 module = [

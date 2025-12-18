@@ -36,7 +36,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `1.5` Create DocumentProfile Model (Stage 4 Output)
 - [x] `1.6` Create Allocation Call Models (Stage 6 Output)
 - [x] `1.7` Create Summary Models (Stage 7 Output)
-- [ ] `1.8` Create Tag Models (Stage 9 Output)
+- [x] `1.8` Create Tag Models (Stage 9 Output)
 - [ ] `1.9` Create Confidence Models (Stage 10 Output)
 - [ ] `1.10` Create ProcessedDocument Model (Final Output)
 - [ ] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
@@ -158,6 +158,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created `src/models/summaries.py` with `KeyTakeaway`, `DocumentSummaries`
 - Constraints: executive_summary 100-1000 chars, search_descriptor 50-200 chars, 3-5 takeaways
 - Created `tests/unit/models/test_summaries.py` with 8 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.8 — Complete (2025-12-18)
+- Created `src/models/tags.py` with `Tag`, `TagSet`
+- All 7 tag categories represented, confidence 0-1 range
+- Created `tests/unit/models/test_tags.py` with 5 validation tests
 - Verified: all tests pass, `mypy --strict` passes
 
 ---

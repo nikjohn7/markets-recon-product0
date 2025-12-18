@@ -80,10 +80,19 @@ class JsonFormatter(logging.Formatter):
         
         # Include exception traceback information if available
         if record.exc_info:
+            # Sanitize exception message and traceback to prevent secret leakage
+            exc_type = record.exc_info[0].__name__ if record.exc_info[0] else None
+            exc_message = str(record.exc_info[1]) if record.exc_info[1] else None
+            exc_traceback = traceback.format_exception(*record.exc_info)
+            
+            # Apply sanitization to exception details
+            sanitized_message = sanitize_message(exc_message, self.secrets) if exc_message else None
+            sanitized_traceback = [sanitize_message(line, self.secrets) for line in exc_traceback] if exc_traceback else None
+            
             log_record["exception"] = {
-                "type": record.exc_info[0].__name__ if record.exc_info[0] else None,
-                "message": str(record.exc_info[1]) if record.exc_info[1] else None,
-                "traceback": traceback.format_exception(*record.exc_info),
+                "type": exc_type,
+                "message": sanitized_message,
+                "traceback": sanitized_traceback,
             }
         
         return json.dumps(log_record, ensure_ascii=False)

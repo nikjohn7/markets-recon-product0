@@ -96,11 +96,14 @@ class LocalBlobStorage:
         metadata_path = self.storage_dir / f"{blob_id}.json"
 
         try:
+            # Serialize metadata first to ensure atomicity
+            # If serialization fails, no files are written
+            metadata_json = json.dumps(metadata, indent=2, sort_keys=True)
+
             # Write PDF content
             pdf_path.write_bytes(content)
 
             # Write metadata
-            metadata_json = json.dumps(metadata, indent=2, sort_keys=True)
             metadata_path.write_text(metadata_json, encoding="utf-8")
 
             return blob_id

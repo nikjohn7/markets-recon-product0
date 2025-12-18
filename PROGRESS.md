@@ -49,7 +49,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 3: Infrastructure Layer
 - [x] `3.1` Create Configuration System
 - [x] `3.2` Create Logging Configuration
-- [ ] `3.3` Create Exception Hierarchy
+- [x] `3.3` Create Exception Hierarchy
 - [ ] `3.4` Implement Local Blob Storage
 - [ ] `3.5` Implement SQLite Database Layer
 
@@ -217,5 +217,14 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/config/logging.py` with configurable console/JSON handlers and redaction for secrets and oversized payloads
 - Exported `configure_logging` via `src/config/__init__.py`
 - Added `tests/unit/config/test_logging.py` covering formatting, redaction, and truncation behavior
+
+### Task 3.3 — Complete (2025-12-18)
+- Created `src/exceptions.py` with 7 exception classes in hierarchical structure
+- Base: `PipelineError` → inherits from `Exception`
+- Direct children: `ExtractionError`, `ValidationError`, `LLMError`, `StorageError`
+- Extraction children: `WeakEvidenceError`, `TaxonomyMappingError` (inherit from `ExtractionError`)
+- All exceptions include docstrings explaining their purpose and when to use them
+- Created `tests/unit/test_exceptions.py` with 19 comprehensive tests covering inheritance, instantiation, and catching behavior
+- Verified: all tests pass (19/19), `mypy --strict` passes
 
 ---

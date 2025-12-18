@@ -7,12 +7,15 @@ including block type detection, bounding box capture, table extraction, and conf
 import fitz  # PyMuPDF
 import pdfplumber
 import io
+import logging
 from typing import List, Tuple, Any
 
 from src.models.document import DocumentBlock, ExtractedTable, TableCell, DocumentJSON
 from src.models.core import BoundingBox
 from src.models.enums import BlockType
 from src.exceptions import ExtractionError
+
+logger = logging.getLogger(__name__)
 
 
 class PDFParser:
@@ -237,8 +240,8 @@ class PDFParser:
                         
         except Exception as e:
             # Log error but continue - table extraction is best-effort
-            print(f"Warning: Table extraction failed for page {page_num}: {e}")
-        
+            logger.warning(f"Table extraction failed for page {page_num}: {e}")
+
         return tables, table_cell_blocks
     
     def _estimate_cell_bbox(self, row_idx: int, col_idx: int, total_rows: int, total_cols: int,

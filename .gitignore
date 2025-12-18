@@ -236,6 +236,7 @@ logs/
 # Cache
 .cache/
 *.cache
+kiro-chats
 
 # Temporary files
 tmp/

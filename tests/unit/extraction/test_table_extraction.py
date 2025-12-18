@@ -381,8 +381,8 @@ class TestTableExtraction:
             regular_blocks = [b for b in result.blocks if b.block_type != BlockType.TABLE_CELL]
             assert len(regular_blocks) > 0
     
-    def test_table_extraction_detects_table(self):
-        """Test that table extraction detects tables in PDF."""
+    def test_table_extraction_detects_table_integration(self):
+        """Test that table extraction detects tables in PDF (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -407,8 +407,8 @@ class TestTableExtraction:
         # Verify table ID format
         assert table.table_id.startswith("1_tbl_")  # Page 1, table index
     
-    def test_table_extraction_cell_positions(self):
-        """Test that cells are extracted with correct row/col positions (0-indexed)."""
+    def test_table_extraction_cell_positions_integration(self):
+        """Test that cells are extracted with correct row/col positions (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -440,8 +440,8 @@ class TestTableExtraction:
         data_cells = [c for c in table.cells if c.row > 0]
         assert len(data_cells) == 9  # 3 rows × 3 columns = 9 data cells
     
-    def test_table_extraction_header_detection(self):
-        """Test that header rows are correctly identified."""
+    def test_table_extraction_header_detection_integration(self):
+        """Test that header rows are correctly identified (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -465,8 +465,8 @@ class TestTableExtraction:
         for cell in data_cells:
             assert cell.is_header is False
     
-    def test_table_extraction_cell_text_content(self):
-        """Test that cell text content is correctly extracted."""
+    def test_table_extraction_cell_text_content_integration(self):
+        """Test that cell text content is correctly extracted (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -493,8 +493,8 @@ class TestTableExtraction:
         assert "Banana" in cell_map[(2, 0)]
         assert "Orange" in cell_map[(3, 0)]
     
-    def test_table_extraction_creates_table_cell_blocks(self):
-        """Test that TABLE_CELL blocks are created for searchable text."""
+    def test_table_extraction_creates_table_cell_blocks_integration(self):
+        """Test that TABLE_CELL blocks are created for searchable text (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -517,8 +517,8 @@ class TestTableExtraction:
             assert block.bbox is not None  # Should have bounding box
             assert 0 <= block.confidence <= 1  # Valid confidence
     
-    def test_table_extraction_no_duplicate_positions(self):
-        """Test that no duplicate (row, col) positions exist."""
+    def test_table_extraction_no_duplicate_positions_integration(self):
+        """Test that no duplicate (row, col) positions exist (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -538,8 +538,8 @@ class TestTableExtraction:
         
         assert len(positions) == len(unique_positions), "Found duplicate cell positions"
     
-    def test_table_extraction_row_col_count_validation(self):
-        """Test that row_count and col_count match actual table dimensions."""
+    def test_table_extraction_row_col_count_validation_integration(self):
+        """Test that row_count and col_count match actual table dimensions (integration test)."""
         parser = PDFParser()
         pdf_bytes = self.create_test_pdf_with_table()
         
@@ -561,8 +561,8 @@ class TestTableExtraction:
         assert table.row_count == actual_max_row + 1
         assert table.col_count == actual_max_col + 1
     
-    def test_table_extraction_with_parse_pdf_function(self):
-        """Test table extraction using the convenience parse_pdf function."""
+    def test_table_extraction_with_parse_pdf_function_integration(self):
+        """Test table extraction using the convenience parse_pdf function (integration test)."""
         pdf_bytes = self.create_test_pdf_with_table()
         
         result = parse_pdf(
@@ -583,8 +583,8 @@ class TestTableExtraction:
         table_cell_blocks = [b for b in result.blocks if b.block_type == BlockType.TABLE_CELL]
         assert len(table_cell_blocks) > 0
     
-    def test_table_extraction_empty_pdf(self):
-        """Test that table extraction handles PDFs with no tables gracefully."""
+    def test_table_extraction_empty_pdf_integration(self):
+        """Test that table extraction handles PDFs with no tables gracefully (integration test)."""
         # Create PDF without tables
         doc = fitz.open()
         page = doc.new_page()

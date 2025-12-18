@@ -76,29 +76,42 @@ async def stage_ingest(pdf_bytes: bytes, source_metadata: dict[str, Any]) -> Ing
         # New document - store in blob storage
         blob_id = blob_storage.store(pdf_bytes, source_metadata)
 
-        # Generate new document ID and create database record
-        document_id = str(uuid.uuid4())
-        
-        # Prepare document record
-        document_data = {
-            "id": document_id,
-            "blob_id": blob_id,
-            "file_hash": file_hash,
-            "status": "pending",
-        }
+        try:
+            # Generate new document ID and create database record
+            document_id = str(uuid.uuid4())
 
-        # Insert document record
-        with database.get_connection() as conn:
-            conn.execute(database.documents.insert(), document_data)
-            conn.commit()
+            # Prepare document record
+            document_data = {
+                "id": document_id,
+                "blob_id": blob_id,
+                "file_hash": file_hash,
+                "status": "pending",
+            }
 
-        return IngestResult(
-            document_id=document_id,
-            blob_id=blob_id,
-            file_hash=file_hash,
-            is_duplicate=False,
-            source_metadata=source_metadata,
-        )
+            # Insert document record
+            with database.get_connection() as conn:
+                conn.execute(database.documents.insert(), document_data)
+                conn.commit()
+
+            return IngestResult(
+                document_id=document_id,
+                blob_id=blob_id,
+                file_hash=file_hash,
+                is_duplicate=False,
+                source_metadata=source_metadata,
+            )
+        except Exception as db_error:
+            # Database insert failed - clean up orphaned blob
+            try:
+                blob_storage.delete(blob_id)
+            except Exception as cleanup_error:
+                # Log cleanup failure but raise original error
+                raise StorageError(
+                    f"Failed to insert document record (blob {blob_id} may be orphaned): {db_error}"
+                ) from db_error
+
+            # Re-raise the original database error
+            raise
 
     except Exception as e:
         # Re-raise StorageError and ValidationError as-is

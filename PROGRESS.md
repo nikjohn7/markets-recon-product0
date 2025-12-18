@@ -37,7 +37,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `1.6` Create Allocation Call Models (Stage 6 Output)
 - [x] `1.7` Create Summary Models (Stage 7 Output)
 - [x] `1.8` Create Tag Models (Stage 9 Output)
-- [ ] `1.9` Create Confidence Models (Stage 10 Output)
+- [x] `1.9` Create Confidence Models (Stage 10 Output)
 - [ ] `1.10` Create ProcessedDocument Model (Final Output)
 - [ ] `1.11` Create Pipeline Stage I/O Models (From PIPELINE.md)
 
@@ -164,6 +164,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created `src/models/tags.py` with `Tag`, `TagSet`
 - All 7 tag categories represented, confidence 0-1 range
 - Created `tests/unit/models/test_tags.py` with 5 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.9 — Complete (2025-12-18)
+- Created `src/models/confidence.py` with `FieldConfidence`, `ConfidenceResult`, `compute_confidence_band`
+- Band validation: HIGH >= 0.80, MEDIUM 0.60-0.79, LOW < 0.60
+- Created `tests/unit/models/test_confidence.py` with 10 validation tests
 - Verified: all tests pass, `mypy --strict` passes
 
 ---

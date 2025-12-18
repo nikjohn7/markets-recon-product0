@@ -3,6 +3,8 @@
 Models for document tags and categorization.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from models.enums import TagType
@@ -16,7 +18,7 @@ class Tag(BaseModel):
     tag_type: TagType
     value: str
     confidence: float = Field(..., ge=0, le=1)
-    source: str = Field(..., description="'rule' or 'llm'")
+    source: Literal["rule", "llm"] = Field(..., description="'rule' or 'llm'")
 
 
 class TagSet(BaseModel):

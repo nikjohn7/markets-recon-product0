@@ -21,6 +21,12 @@ class TestTag:
         with pytest.raises(ValidationError):
             Tag(tag_type=TagType.REGION, value="US", confidence=-0.1, source="rule")
 
+    def test_source_must_be_rule_or_llm(self) -> None:
+        Tag(tag_type=TagType.THEME, value="inflation", confidence=0.9, source="rule")
+        Tag(tag_type=TagType.THEME, value="inflation", confidence=0.9, source="llm")
+        with pytest.raises(ValidationError):
+            Tag(tag_type=TagType.THEME, value="inflation", confidence=0.9, source="invalid")
+
 
 class TestTagSet:
     def test_valid_tagset(self) -> None:

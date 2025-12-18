@@ -40,5 +40,5 @@ class DocumentSummaries(BaseModel):
 
     key_takeaways: list[KeyTakeaway] = Field(..., min_length=3, max_length=5)
 
-    citations: list[Citation]
+    citations: list[Citation] = Field(..., min_length=1)
     confidence: float = Field(..., ge=0, le=1)

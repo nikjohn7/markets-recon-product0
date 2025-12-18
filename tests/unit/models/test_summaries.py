@@ -88,3 +88,16 @@ class TestDocumentSummaries:
                 citations=[c],
                 confidence=0.5,
             )
+
+    def test_citations_required(self) -> None:
+        c = Citation(chunk_id="c1", page=1)
+        takeaways = [KeyTakeaway(text=f"Takeaway {i}", citations=[c]) for i in range(3)]
+        with pytest.raises(ValidationError):
+            DocumentSummaries(
+                document_id="d1",
+                executive_summary="x" * 100,
+                search_descriptor="x" * 50,
+                key_takeaways=takeaways,
+                citations=[],  # min 1
+                confidence=0.5,
+            )

@@ -66,10 +66,20 @@ class Database:
             future=True,  # Use SQLAlchemy 2.0 style
         )
         event.listen(self.engine, "connect", self._enable_foreign_keys)
+        self._initialize_foreign_keys()
 
         self.metadata = MetaData()
         self._define_tables()
         self._create_tables()
+
+    def _initialize_foreign_keys(self) -> None:
+        """Ensure foreign key enforcement is active on initial engine connection."""
+
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text("PRAGMA foreign_keys=ON"))
+        except Exception as e:
+            raise StorageError(f"Failed to enable foreign key enforcement: {e}") from e
 
     def _ensure_data_dir(self) -> None:
         """Create data directory if it doesn't exist."""
@@ -257,7 +267,9 @@ class Database:
             with self.get_connection() as conn:
                 result = conn.execute(statement)
                 conn.commit()
-                return result
+                if result.returns_rows:
+                    return result.fetchall()
+                return result.rowcount
         except Exception as e:
             raise StorageError(f"Database query failed: {e}") from e
 

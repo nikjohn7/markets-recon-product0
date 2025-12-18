@@ -100,15 +100,24 @@ class LocalBlobStorage:
             # If serialization fails, no files are written
             metadata_json = json.dumps(metadata, indent=2, sort_keys=True)
 
+            # Write metadata before PDF content so we can fail fast
+            metadata_path.write_text(metadata_json, encoding="utf-8")
+
             # Write PDF content
             pdf_path.write_bytes(content)
-
-            # Write metadata
-            metadata_path.write_text(metadata_json, encoding="utf-8")
 
             return blob_id
 
         except OSError as e:
+            # Best-effort cleanup to avoid orphaned files
+            for path in (pdf_path, metadata_path):
+                try:
+                    if path.exists():
+                        path.unlink()
+                except OSError:
+                    # If cleanup fails, surface the original error
+                    pass
+
             raise StorageError(f"Failed to store blob {blob_id}: {e}") from e
         except (TypeError, ValueError) as e:
             raise StorageError(f"Failed to serialize metadata for blob {blob_id}: {e}") from e

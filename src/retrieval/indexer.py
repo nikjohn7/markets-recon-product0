@@ -384,7 +384,7 @@ class DocumentIndex:
         Args:
             query: Search query text
             top_k: Number of top results to return
-            filters: Optional metadata filters (not implemented in MVP)
+            _filters: Optional metadata filters (not implemented in MVP)
 
         Returns:
             List of retrieved chunks with similarity scores

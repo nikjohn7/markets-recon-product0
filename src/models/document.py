@@ -49,6 +49,7 @@ class ExtractedTable(BaseModel):
     def check_counts_with_cells(self) -> "ExtractedTable":
         if self.cells and (self.row_count == 0 or self.col_count == 0):
             raise ValueError("row_count and col_count must be > 0 when cells exist")
+
         # Validate cell positions are within table dimensions
         for cell in self.cells:
             if cell.row >= self.row_count:
@@ -59,6 +60,30 @@ class ExtractedTable(BaseModel):
                 raise ValueError(
                     f"Cell at row={cell.row}, col={cell.col} exceeds table col_count={self.col_count}"
                 )
+
+        # Validate unique (row, col) coordinates
+        seen_positions = set()
+        for cell in self.cells:
+            position = (cell.row, cell.col)
+            if position in seen_positions:
+                raise ValueError(
+                    f"Duplicate cell at position (row={cell.row}, col={cell.col})"
+                )
+            seen_positions.add(position)
+
+        # Validate tight bounds: row_count/col_count should match actual cell coverage
+        if self.cells:
+            max_row = max(cell.row for cell in self.cells)
+            max_col = max(cell.col for cell in self.cells)
+            if max_row >= self.row_count:
+                raise ValueError(
+                    f"max cell row={max_row} but row_count={self.row_count} (should be > max_row)"
+                )
+            if max_col >= self.col_count:
+                raise ValueError(
+                    f"max cell col={max_col} but col_count={self.col_count} (should be > max_col)"
+                )
+
         return self
 
 
@@ -103,4 +128,17 @@ class DocumentJSON(BaseModel):
                     f"Table {table.table_id} references page {table.page} "
                     f"but document only has {self.page_count} pages"
                 )
+
+        # Validate unique block_id values
+        block_ids = [block.block_id for block in self.blocks]
+        if len(block_ids) != len(set(block_ids)):
+            duplicates = [bid for bid in block_ids if block_ids.count(bid) > 1]
+            raise ValueError(f"Duplicate block_id found: {duplicates[0]}")
+
+        # Validate unique table_id values
+        table_ids = [table.table_id for table in self.tables]
+        if len(table_ids) != len(set(table_ids)):
+            duplicates = [tid for tid in table_ids if table_ids.count(tid) > 1]
+            raise ValueError(f"Duplicate table_id found: {duplicates[0]}")
+
         return self

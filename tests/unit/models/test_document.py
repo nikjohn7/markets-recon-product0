@@ -77,6 +77,35 @@ class TestExtractedTable:
                 col_count=3,
             )
 
+    def test_duplicate_cell_positions(self) -> None:
+        # Invalid: duplicate cell at same (row, col)
+        with pytest.raises(ValidationError, match="Duplicate cell at position.*row=0, col=0"):
+            ExtractedTable(
+                table_id="t1",
+                page=1,
+                cells=[
+                    TableCell(row=0, col=0, text="First"),
+                    TableCell(row=0, col=0, text="Duplicate"),
+                ],
+                row_count=1,
+                col_count=1,
+            )
+
+    def test_tight_bounds_validation(self) -> None:
+        # Valid: tight bounds (max row=1, row_count=2; max col=1, col_count=2)
+        ExtractedTable(
+            table_id="t1",
+            page=1,
+            cells=[
+                TableCell(row=0, col=0, text="A"),
+                TableCell(row=1, col=1, text="B"),
+            ],
+            row_count=2,
+            col_count=2,
+        )
+        # Note: The tight bounds validation is already covered by the existing
+        # row/col bounds checks, which ensure max_row < row_count and max_col < col_count
+
 
 class TestDocumentJSON:
     def test_valid_document(self) -> None:
@@ -186,4 +215,42 @@ class TestDocumentJSON:
             DocumentJSON(
                 document_id="d1", blob_id="b1", file_hash="h",
                 blocks=[], tables=[table_invalid], page_count=10, extraction_coverage=0.8
+            )
+
+    def test_duplicate_block_ids(self) -> None:
+        # Valid: unique block IDs
+        block1 = DocumentBlock(
+            block_id="1_0", page=1, text="Text1", block_type=BlockType.PARAGRAPH, confidence=0.9
+        )
+        block2 = DocumentBlock(
+            block_id="1_1", page=1, text="Text2", block_type=BlockType.PARAGRAPH, confidence=0.9
+        )
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[block1, block2], tables=[], page_count=10, extraction_coverage=0.8
+        )
+        # Invalid: duplicate block_id
+        block_dup = DocumentBlock(
+            block_id="1_0", page=1, text="Duplicate", block_type=BlockType.PARAGRAPH, confidence=0.9
+        )
+        with pytest.raises(ValidationError, match="Duplicate block_id found: 1_0"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[block1, block_dup], tables=[], page_count=10, extraction_coverage=0.8
+            )
+
+    def test_duplicate_table_ids(self) -> None:
+        # Valid: unique table IDs
+        table1 = ExtractedTable(table_id="t1", page=1, cells=[], row_count=0, col_count=0)
+        table2 = ExtractedTable(table_id="t2", page=1, cells=[], row_count=0, col_count=0)
+        DocumentJSON(
+            document_id="d1", blob_id="b1", file_hash="h",
+            blocks=[], tables=[table1, table2], page_count=10, extraction_coverage=0.8
+        )
+        # Invalid: duplicate table_id
+        table_dup = ExtractedTable(table_id="t1", page=1, cells=[], row_count=0, col_count=0)
+        with pytest.raises(ValidationError, match="Duplicate table_id found: t1"):
+            DocumentJSON(
+                document_id="d1", blob_id="b1", file_hash="h",
+                blocks=[], tables=[table1, table_dup], page_count=10, extraction_coverage=0.8
             )

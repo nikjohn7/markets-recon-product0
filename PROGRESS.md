@@ -55,7 +55,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 4: PDF Extraction (Stages 0–3)
 - [x] `4.1` Implement Stage 0 - Ingest
-- [ ] `4.2` Implement Stage 1 - Text Extraction
+- [x] `4.2` Implement Stage 1 - Text Extraction
 - [ ] `4.3` Implement Table Extraction
 - [ ] `4.4` Implement Stage 2 - Cleaning
 - [ ] `4.5` Implement Stage 3 - Retrieval Index
@@ -263,5 +263,29 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created comprehensive test suite in [`tests/unit/pipeline/stages/test_s0_ingest.py`](tests/unit/pipeline/stages/test_s0_ingest.py)
 - Key features: idempotent storage, automatic metadata generation, error handling with StorageError exceptions
 - Verified: all tests pass (8/8), `mypy --strict` passes
+
+### Task 4.2 — Complete (2025-12-18)
+- Implemented [`src/extraction/parser.py`](src/extraction/parser.py) with PyMuPDF-based PDF text extraction
+  - `PDFParser` class with methods: `normalize_bbox()`, `detect_block_type()`, `compute_block_confidence()`, `analyze_font_sizes()`, `parse_pdf()`
+  - Block type detection heuristics: bullet patterns, font size (≥14pt), bold text flag, position-based (first 3 blocks on page 1)
+  - Bounding box normalization to 0-1 coordinates
+  - Stable block_id generation in format `{page}_{index}`
+  - Per-block confidence scoring (0-1 range)
+- Implemented [`src/pipeline/stages/s1_extract.py`](src/pipeline/stages/s1_extract.py) with async `stage_extract()` function
+  - Retrieves PDF from blob storage
+  - Calls parser to extract content
+  - Computes `extraction_coverage = pages_with_text / total_pages`
+  - Error handling for storage and extraction failures
+  - Supports dependency injection of storage for testability
+- Created [`tests/unit/extraction/test_parser.py`](tests/unit/extraction/test_parser.py) with 20 comprehensive unit tests
+  - Tests for bbox normalization, block type detection (all heuristics), confidence computation, font analysis
+  - Multi-page PDF handling, block ID formatting, invalid PDF handling
+- Created [`tests/integration/test_s1_extract.py`](tests/integration/test_s1_extract.py) with 7 integration tests
+  - Full pipeline tests with real PDF creation
+  - Coverage computation validation
+  - Deterministic PDF fixture test validating extraction_coverage = 2/3
+  - Block ID uniqueness verification
+- All code passes `mypy --strict` (no Stage 1 code errors)
+- Verified: all tests pass (27/27), type safety confirmed
 
 ---

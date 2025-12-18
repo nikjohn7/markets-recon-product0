@@ -136,3 +136,17 @@ class TestCallExtractionOutput:
                 model_version="1.0",
                 total_candidates_reviewed=5,
             )
+
+    def test_sentiment_citations_required(self) -> None:
+        with pytest.raises(ValidationError):
+            CallExtractionOutput(
+                document_id="d1",
+                allocation_calls=[],
+                overall_sentiment=Sentiment.NEUTRAL,
+                sentiment_rationale=["Mixed tone"],
+                sentiment_citations=[],
+                sentiment_confidence=0.5,
+                extraction_timestamp=datetime.now(),
+                model_version="1.0",
+                total_candidates_reviewed=5,
+            )

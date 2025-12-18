@@ -72,7 +72,7 @@ class CallExtractionOutput(BaseModel):
     allocation_calls: list[AllocationCall]
     overall_sentiment: Sentiment
     sentiment_rationale: list[str] = Field(..., min_length=1, max_length=3)
-    sentiment_citations: list[Citation]
+    sentiment_citations: list[Citation] = Field(..., min_length=1, max_length=3)
     sentiment_confidence: float = Field(..., ge=0, le=1)
 
     # Metadata

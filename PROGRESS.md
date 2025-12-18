@@ -48,7 +48,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 3: Infrastructure Layer
 - [x] `3.1` Create Configuration System
-- [ ] `3.2` Create Logging Configuration
+- [x] `3.2` Create Logging Configuration
 - [ ] `3.3` Create Exception Hierarchy
 - [ ] `3.4` Implement Local Blob Storage
 - [ ] `3.5` Implement SQLite Database Layer
@@ -212,5 +212,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/config/settings.py` with Pydantic-powered Settings model and cached accessor
 - Implemented validation for required environment variables and logging level normalization
 - Added `tests/unit/config/test_settings.py` covering env file loading and validation failures
+
+### Task 3.2 — Complete (2025-12-19)
+- Added `src/config/logging.py` with configurable console/JSON handlers and redaction for secrets and oversized payloads
+- Exported `configure_logging` via `src/config/__init__.py`
+- Added `tests/unit/config/test_logging.py` covering formatting, redaction, and truncation behavior
 
 ---

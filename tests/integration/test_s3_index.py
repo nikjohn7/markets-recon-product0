@@ -249,9 +249,9 @@ class TestStageIndexIntegration:
             
             # Should still create index even with minimal content
             assert isinstance(index, DocumentIndex)
-            
+
             # May have 0 or 1 chunks depending on size thresholds
-            assert len(index.chunks) >= 0
+            assert len(index.chunks) <= 1
 
 
 class TestDocumentIndexQueryIntegration:

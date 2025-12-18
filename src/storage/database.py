@@ -12,7 +12,7 @@ SQLite adaptations:
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -91,7 +91,7 @@ class Database:
             Column("id", Text, primary_key=True, default=lambda: str(uuid.uuid4())),
             Column("name", Text, nullable=False, unique=True),
             Column("aliases", Text),  # JSON array as TEXT
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
         )
 
         # Documents table
@@ -113,7 +113,7 @@ class Database:
             Column("analyst_attention_required", Boolean, default=False),
             Column("status", Text, nullable=False, default="pending", server_default="pending"),
             CheckConstraint("status IN ('pending', 'processing', 'completed', 'failed', 'review_required')"),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
             Column("reviewed_at", Text),
             Column("reviewed_by", Text),
         )
@@ -138,7 +138,7 @@ class Database:
             Column("citations", Text, nullable=False),  # JSON array
             Column("confidence", Float, nullable=False),
             Column("needs_analyst_review", Boolean, default=False),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
         )
 
         # Summaries table
@@ -154,7 +154,7 @@ class Database:
             CheckConstraint("overall_sentiment IN ('BULLISH', 'NEUTRAL', 'BEARISH', 'MIXED')"),
             Column("sentiment_rationale", Text),  # JSON array
             Column("sentiment_citations", Text),  # JSON array
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
         )
 
         # Document tags table
@@ -169,7 +169,7 @@ class Database:
             ),
             Column("tag_value", Text, nullable=False),
             Column("confidence", Float),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
             UniqueConstraint("document_id", "tag_type", "tag_value", name="uq_document_tag"),
         )
 
@@ -187,7 +187,7 @@ class Database:
                 "block_type IN ('HEADING', 'PARAGRAPH', 'BULLET', 'TABLE_CELL', 'CHART_TEXT', 'CAPTION', 'FOOTER')"
             ),
             Column("bbox", Text),  # JSON
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
             UniqueConstraint("document_id", "chunk_id", name="uq_document_chunk"),
         )
 
@@ -207,7 +207,7 @@ class Database:
             CheckConstraint("status IN ('running', 'completed', 'failed')"),
             Column("error_message", Text),
             Column("stages_completed", Text),  # JSON array of stage names
-            Column("created_at", Text, nullable=False, default=lambda: datetime.utcnow().isoformat()),
+            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
         )
 
     def _create_tables(self) -> None:

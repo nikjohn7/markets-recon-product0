@@ -116,7 +116,9 @@ class TestBlobStorageExists:
 
     def test_exists_returns_false_for_missing_blob(self, storage: LocalBlobStorage) -> None:
         """exists() returns False for non-existent blobs."""
-        assert storage.exists("nonexistent_blob_id") is False
+        # Use a valid SHA-256 hash format for the test
+        valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+        assert storage.exists(valid_blob_id) is False
 
     def test_exists_empty_blob_id_raises(self, storage: LocalBlobStorage) -> None:
         """exists() with empty blob_id raises StorageError."""
@@ -147,7 +149,9 @@ class TestBlobStorageDelete:
 
     def test_delete_nonexistent_blob_succeeds(self, storage: LocalBlobStorage) -> None:
         """Deleting non-existent blob doesn't raise error."""
-        storage.delete("nonexistent_blob_id")  # Should not raise
+        # Use a valid SHA-256 hash format for the test
+        valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+        storage.delete(valid_blob_id)  # Should not raise
 
 
 class TestBlobStorageErrorHandling:
@@ -169,8 +173,10 @@ class TestBlobStorageErrorHandling:
 
     def test_retrieve_missing_blob_raises(self, storage: LocalBlobStorage) -> None:
         """Retrieving non-existent blob raises StorageError."""
+        # Use a valid SHA-256 hash format for the test
+        valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
         with pytest.raises(StorageError, match="Blob not found"):
-            storage.retrieve("nonexistent_blob_id")
+            storage.retrieve(valid_blob_id)
 
     def test_retrieve_empty_blob_id_raises(self, storage: LocalBlobStorage) -> None:
         """Retrieving with empty blob_id raises StorageError."""
@@ -179,8 +185,10 @@ class TestBlobStorageErrorHandling:
 
     def test_retrieve_metadata_missing_blob_raises(self, storage: LocalBlobStorage) -> None:
         """Retrieving metadata for non-existent blob raises StorageError."""
+        # Use a valid SHA-256 hash format for the test
+        valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
         with pytest.raises(StorageError, match="Metadata not found"):
-            storage.retrieve_metadata("nonexistent_blob_id")
+            storage.retrieve_metadata(valid_blob_id)
 
     def test_retrieve_metadata_empty_blob_id_raises(self, storage: LocalBlobStorage) -> None:
         """Retrieving metadata with empty blob_id raises StorageError."""
@@ -205,6 +213,66 @@ class TestBlobStorageErrorHandling:
 
         with pytest.raises(StorageError, match="Failed to parse metadata"):
             storage.retrieve_metadata(blob_id)
+
+
+class TestBlobStoragePathTraversal:
+    """Test path traversal attack prevention."""
+
+    def test_retrieve_with_path_traversal_raises(self, storage: LocalBlobStorage) -> None:
+        """Path traversal attempts in blob_id are rejected."""
+        malicious_ids = [
+            "../../../etc/passwd",
+            "..\\..\\..\\windows\\system32\\config\\sam",
+            "../../../../../../etc/shadow",
+            "..%2F..%2F..%2Fetc%2Fpasswd",  # URL encoded
+            "....//....//....//etc/passwd",  # Double dot variant
+        ]
+        
+        for malicious_id in malicious_ids:
+            with pytest.raises(StorageError, match="Invalid blob_id format"):
+                storage.retrieve(malicious_id)
+
+    def test_retrieve_metadata_with_path_traversal_raises(self, storage: LocalBlobStorage) -> None:
+        """Path traversal attempts in retrieve_metadata are rejected."""
+        with pytest.raises(StorageError, match="Invalid blob_id format"):
+            storage.retrieve_metadata("../../../etc/passwd")
+
+    def test_exists_with_path_traversal_raises(self, storage: LocalBlobStorage) -> None:
+        """Path traversal attempts in exists() are rejected."""
+        with pytest.raises(StorageError, match="Invalid blob_id format"):
+            storage.exists("../../../etc/passwd")
+
+    def test_delete_with_path_traversal_raises(self, storage: LocalBlobStorage) -> None:
+        """Path traversal attempts in delete() are rejected."""
+        with pytest.raises(StorageError, match="Invalid blob_id format"):
+            storage.delete("../../../etc/passwd")
+
+    def test_invalid_blob_id_formats_raise_error(self, storage: LocalBlobStorage) -> None:
+        """Invalid blob_id formats are rejected."""
+        invalid_ids = [
+            "",  # Empty
+            "short",  # Too short
+            "a" * 63,  # 63 characters (should be 64)
+            "a" * 65,  # 65 characters (should be 64)
+            "g" * 64,  # Contains invalid hex character 'g'
+            "G" * 64,  # Contains invalid hex character 'G'
+            "!" * 64,  # Contains non-hex characters
+            "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",  # All 'z's
+        ]
+        
+        for invalid_id in invalid_ids:
+            with pytest.raises(StorageError, match="Invalid blob_id format|blob_id cannot be empty"):
+                storage.retrieve(invalid_id)
+
+    def test_valid_sha256_blob_id_accepted(self, storage: LocalBlobStorage) -> None:
+        """Valid SHA-256 hex strings are accepted."""
+        # This is a real SHA-256 hash of "test content"
+        valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+        
+        # Should not raise an error for format validation
+        # (will raise "Blob not found" since it doesn't exist, but that's expected)
+        with pytest.raises(StorageError, match="Blob not found"):
+            storage.retrieve(valid_blob_id)
 
 
 class TestBlobStorageMetadata:

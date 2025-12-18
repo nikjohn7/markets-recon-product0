@@ -56,6 +56,22 @@ class LocalBlobStorage:
         """
         return hashlib.sha256(content).hexdigest()
 
+    def _validate_blob_id(self, blob_id: str) -> None:
+        """Validate that blob_id is a valid SHA-256 hex string.
+
+        Args:
+            blob_id: The blob ID to validate
+
+        Raises:
+            StorageError: If blob_id is not a valid SHA-256 hex string
+        """
+        if not blob_id:
+            raise StorageError("blob_id cannot be empty")
+        
+        # SHA-256 hex string should be exactly 64 characters and contain only hex digits
+        if len(blob_id) != 64 or not all(c in '0123456789abcdefABCDEF' for c in blob_id):
+            raise StorageError(f"Invalid blob_id format: must be 64-character SHA-256 hex string")
+
     def store(self, content: bytes, metadata: dict[str, Any]) -> str:
         """Store PDF content and metadata.
 
@@ -106,8 +122,7 @@ class LocalBlobStorage:
         Raises:
             StorageError: If blob not found or retrieval fails
         """
-        if not blob_id:
-            raise StorageError("blob_id cannot be empty")
+        self._validate_blob_id(blob_id)
 
         pdf_path = self.storage_dir / f"{blob_id}.pdf"
 
@@ -132,8 +147,7 @@ class LocalBlobStorage:
         Raises:
             StorageError: If metadata not found or retrieval fails
         """
-        if not blob_id:
-            raise StorageError("blob_id cannot be empty")
+        self._validate_blob_id(blob_id)
 
         metadata_path = self.storage_dir / f"{blob_id}.json"
 
@@ -160,10 +174,9 @@ class LocalBlobStorage:
             True if blob exists, False otherwise
 
         Raises:
-            StorageError: If blob_id is empty
+            StorageError: If blob_id is empty or invalid
         """
-        if not blob_id:
-            raise StorageError("blob_id cannot be empty")
+        self._validate_blob_id(blob_id)
 
         pdf_path = self.storage_dir / f"{blob_id}.pdf"
         return pdf_path.exists()
@@ -175,10 +188,9 @@ class LocalBlobStorage:
             blob_id: SHA-256 hash identifying the blob
 
         Raises:
-            StorageError: If deletion fails
+            StorageError: If deletion fails or blob_id is invalid
         """
-        if not blob_id:
-            raise StorageError("blob_id cannot be empty")
+        self._validate_blob_id(blob_id)
 
         pdf_path = self.storage_dir / f"{blob_id}.pdf"
         metadata_path = self.storage_dir / f"{blob_id}.json"

@@ -7,8 +7,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from models.core import Citation
-from models.enums import CallDirection, Conviction, IndicatorDirection, Sentiment
+from src.models.core import Citation
+from src.models.enums import CallDirection, Conviction, IndicatorDirection, Sentiment
 
 
 class KeyIndicator(BaseModel):

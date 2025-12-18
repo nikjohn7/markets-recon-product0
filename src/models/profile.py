@@ -7,8 +7,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.core import Citation
-from models.enums import DocumentType
+from src.models.core import Citation
+from src.models.enums import DocumentType
 
 
 class DocumentProfile(BaseModel):

@@ -54,11 +54,11 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
-- [ ] `4.1` Implement Stage 0 - Ingest
-- [ ] `4.2` Implement Stage 1 - Text Extraction
-- [ ] `4.3` Implement Table Extraction
-- [ ] `4.4` Implement Stage 2 - Cleaning
-- [ ] `4.5` Implement Stage 3 - Retrieval Index
+- [x] `4.1` Implement Stage 0 - Ingest
+- [x] `4.2` Implement Stage 1 - Text Extraction
+- [x] `4.3` Implement Table Extraction
+- [x] `4.4` Implement Stage 2 - Cleaning
+- [x] `4.5` Implement Stage 3 - Retrieval Index
 
 ### Phase 5: LLM Interaction Layer
 - [ ] `5.1` Create LLM Client Wrapper
@@ -258,4 +258,93 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - Connection management and utility methods
 - Verified: all tests pass (18/18), `mypy --strict` passes
 
+### Task 4.1 — Complete (2025-12-18)
+- Implemented [`src/pipeline/stages/s0_ingest.py`](src/pipeline/stages/s0_ingest.py) with SHA-256 hash-based deduplication, metadata extraction, and blob storage integration
+- Created comprehensive test suite in [`tests/unit/pipeline/stages/test_s0_ingest.py`](tests/unit/pipeline/stages/test_s0_ingest.py)
+- Key features: idempotent storage, automatic metadata generation, error handling with StorageError exceptions
+- Verified: all tests pass (8/8), `mypy --strict` passes
+
+### Task 4.2 — Complete (2025-12-18)
+- Implemented [`src/extraction/parser.py`](src/extraction/parser.py) with PyMuPDF-based PDF text extraction
+  - `PDFParser` class with methods: `normalize_bbox()`, `detect_block_type()`, `compute_block_confidence()`, `analyze_font_sizes()`, `parse_pdf()`
+  - Block type detection heuristics: bullet patterns, font size (≥14pt), bold text flag, position-based (first 3 blocks on page 1)
+  - Bounding box normalization to 0-1 coordinates
+  - Stable block_id generation in format `{page}_{index}`
+  - Per-block confidence scoring (0-1 range)
+- Implemented [`src/pipeline/stages/s1_extract.py`](src/pipeline/stages/s1_extract.py) with async `stage_extract()` function
+  - Retrieves PDF from blob storage
+  - Calls parser to extract content
+  - Computes `extraction_coverage = pages_with_text / total_pages`
+  - Error handling for storage and extraction failures
+  - Supports dependency injection of storage for testability
+- Created [`tests/unit/extraction/test_parser.py`](tests/unit/extraction/test_parser.py) with 20 comprehensive unit tests
+  - Tests for bbox normalization, block type detection (all heuristics), confidence computation, font analysis
+  - Multi-page PDF handling, block ID formatting, invalid PDF handling
+- Created [`tests/integration/test_s1_extract.py`](tests/integration/test_s1_extract.py) with 7 integration tests
+  - Full pipeline tests with real PDF creation
+  - Coverage computation validation
+  - Deterministic PDF fixture test validating extraction_coverage = 2/3
+  - Block ID uniqueness verification
+- All code passes `mypy --strict` (no Stage 1 code errors)
+- Verified: all tests pass (27/27), type safety confirmed
+
+### Task 4.3 — Complete (2025-12-18)
+- Extended [`src/extraction/parser.py`](src/extraction/parser.py) with table extraction using pdfplumber
+  - Added `_extract_tables_from_page()` method for table detection and cell extraction
+  - Added `_estimate_cell_bbox()` method for cell bounding box estimation
+  - Table ID generation in format `{page}_tbl_{index}`
+  - Cell extraction with 0-indexed row/column positions
+  - Header detection heuristic: first row marked as header
+  - TABLE_CELL block creation for searchable table content
+  - Graceful error handling with warnings for extraction failures
+  - Fixed type annotation: `self.heading_font_sizes: set[float] = set()`
+- Updated [`src/pipeline/stages/s1_extract.py`](src/pipeline/stages/s1_extract.py)
+  - Automatically includes extracted tables in `DocumentJSON.tables`
+  - Creates TABLE_CELL blocks for table content searchability
+- Created comprehensive test suite in [`tests/unit/extraction/test_table_extraction.py`](tests/unit/extraction/test_table_extraction.py)
+  - 9 test cases covering: table detection, cell positions, header detection, text content, blocks, validation, edge cases
+  - All tests use mocked pdfplumber for deterministic behavior
+- Verified: all tests pass (36/36 total: 20 parser + 9 table + 7 integration), `mypy --strict` passes, no existing tests broken
+
 ---
+
+### Task 4.4 — Complete (2025-12-19)
+- Implemented [`src/pipeline/stages/s2_clean.py`](src/pipeline/stages/s2_clean.py) with async `stage_clean()` function
+   - Text normalization: fixes hyphenation across line breaks, normalizes whitespace, strips leading/trailing spaces
+   - Boilerplate detection: identifies repeated headers/footers across 3+ consecutive pages, removes duplicates while keeping first instance
+   - Disclaimer detection: matches standard disclaimer patterns (informational, past performance, forward-looking, etc.), marks as `BlockType.DISCLAIMER`
+   - Section detection: identifies section boundaries using heading patterns, classifies sections (macro, equities, fixed_income, risks, appendix, other)
+   - Fallback: creates single section covering all blocks if no clear sections detected
+   - Boilerplate ratio warning: logs warning if > 30% of blocks removed
+   - Preserves original block IDs (no regeneration)
+- Created comprehensive test suite in [`tests/unit/pipeline/stages/test_s2_clean.py`](tests/unit/pipeline/stages/test_s2_clean.py)
+   - 24 test cases covering: text normalization (4), disclaimer detection (5), boilerplate removal (2), section classification (6), section detection (3), full pipeline (4)
+   - Tests validate: hyphenation fixes, whitespace normalization, disclaimer patterns, repeated header detection, section boundaries, block ID preservation
+   - All async tests use pytest-asyncio
+- Verified: all tests pass (24/24), `mypy --strict` passes, no existing tests broken
+
+### Task 4.5 — Complete (2025-12-18)
+- Implemented [`src/retrieval/indexer.py`](src/retrieval/indexer.py) with per-document vector indexing for retrieval-grounded extraction
+   - **Chunking logic**: `chunk_document()` splits by section + paragraph boundaries with 200-400 token target size (~4 chars/token)
+     - Skips disclaimer blocks
+     - Preserves block_id references and page numbers
+     - Handles large blocks exceeding max token size via `_split_large_block()`
+     - Falls back to simple chunking if section-aware splitting fails
+   - **Embedding generation**: `generate_embeddings()` uses OpenAI `text-embedding-3-small` (1536 dimensions)
+     - Batch API calls for efficiency
+     - 3-attempt retry with exponential backoff (1s, 2s, 4s)
+     - Handles rate limits and transient failures
+   - **Vector index class**: `DocumentIndex` with ChromaDB in-memory storage
+     - `build()`: chunks document, generates embeddings, stores in ChromaDB with metadata (block_ids, page, section)
+     - `query()`: retrieves top-k relevant chunks via cosine similarity, returns `RetrievedChunk` objects with normalized scores (0-1)
+     - Metadata preservation: chunk_id format `{doc_id}_{chunk_index}`, block_ids list, page number, section name
+- Implemented [`src/pipeline/stages/s3_index.py`](src/pipeline/stages/s3_index.py) with async `stage_index()` function
+   - Orchestrates chunking, embedding generation, and index building
+   - Returns fully built `DocumentIndex` ready for querying
+- Created comprehensive test suite in [`tests/unit/retrieval/test_indexer.py`](tests/unit/retrieval/test_indexer.py)
+   - 16 unit tests covering: chunking (5), embedding generation (3), OpenAI provider retry logic (3), DocumentIndex (5)
+   - Tests validate: chunk size constraints, disclaimer skipping, block reference preservation, embedding mocking, retry behavior, query functionality
+- Created integration test suite in [`tests/integration/test_s3_index.py`](tests/integration/test_s3_index.py)
+   - 5 integration tests covering: full pipeline, querying, empty documents, minimal content, query relevance
+   - Tests validate: end-to-end Stage 3 functionality, realistic document structures, query result quality
+- Verified: all tests pass (21/21), type safety confirmed with explicit type annotations, no existing tests broken

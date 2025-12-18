@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.document import DocumentBlock
+from src.models.document import DocumentBlock
 
 
 class IngestResult(BaseModel):
@@ -46,6 +46,18 @@ class CleanedDocument(BaseModel):
     sections: list[Section]
     removed_boilerplate_count: int = Field(..., ge=0)
     disclaimer_block_id: str | None = None
+
+
+class Chunk(BaseModel):
+    """A text chunk for indexing, before embedding generation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    chunk_id: str = Field(..., description="Unique: {doc_id}_{chunk_index}")
+    block_ids: list[str] = Field(..., description="Source block IDs")
+    page: int = Field(..., ge=1, description="Page of first block")
+    text: str
+    section: str | None = None
 
 
 class RetrievedChunk(BaseModel):

@@ -8,13 +8,13 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.calls import AllocationCall
-from models.confidence import ConfidenceResult
-from models.core import Citation
-from models.enums import Sentiment
-from models.profile import DocumentProfile
-from models.summaries import DocumentSummaries
-from models.tags import TagSet
+from src.models.calls import AllocationCall
+from src.models.confidence import ConfidenceResult
+from src.models.core import Citation
+from src.models.enums import Sentiment
+from src.models.profile import DocumentProfile
+from src.models.summaries import DocumentSummaries
+from src.models.tags import TagSet
 
 
 class ProcessedDocument(BaseModel):

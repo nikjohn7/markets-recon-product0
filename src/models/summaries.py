@@ -5,7 +5,7 @@ Models for document summaries and key takeaways.
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.core import Citation
+from src.models.core import Citation
 
 
 class KeyTakeaway(BaseModel):

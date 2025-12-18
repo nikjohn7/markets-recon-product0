@@ -5,7 +5,7 @@ Models for confidence scoring and review routing.
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from models.enums import ConfidenceBand
+from src.models.enums import ConfidenceBand
 
 
 def compute_confidence_band(confidence: float) -> ConfidenceBand:

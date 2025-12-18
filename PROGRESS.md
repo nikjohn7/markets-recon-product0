@@ -56,7 +56,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 4: PDF Extraction (Stages 0–3)
 - [x] `4.1` Implement Stage 0 - Ingest
 - [x] `4.2` Implement Stage 1 - Text Extraction
-- [ ] `4.3` Implement Table Extraction
+- [x] `4.3` Implement Table Extraction
 - [ ] `4.4` Implement Stage 2 - Cleaning
 - [ ] `4.5` Implement Stage 3 - Retrieval Index
 
@@ -287,5 +287,23 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - Block ID uniqueness verification
 - All code passes `mypy --strict` (no Stage 1 code errors)
 - Verified: all tests pass (27/27), type safety confirmed
+
+### Task 4.3 — Complete (2025-12-18)
+- Extended [`src/extraction/parser.py`](src/extraction/parser.py) with table extraction using pdfplumber
+  - Added `_extract_tables_from_page()` method for table detection and cell extraction
+  - Added `_estimate_cell_bbox()` method for cell bounding box estimation
+  - Table ID generation in format `{page}_tbl_{index}`
+  - Cell extraction with 0-indexed row/column positions
+  - Header detection heuristic: first row marked as header
+  - TABLE_CELL block creation for searchable table content
+  - Graceful error handling with warnings for extraction failures
+  - Fixed type annotation: `self.heading_font_sizes: set[float] = set()`
+- Updated [`src/pipeline/stages/s1_extract.py`](src/pipeline/stages/s1_extract.py)
+  - Automatically includes extracted tables in `DocumentJSON.tables`
+  - Creates TABLE_CELL blocks for table content searchability
+- Created comprehensive test suite in [`tests/unit/extraction/test_table_extraction.py`](tests/unit/extraction/test_table_extraction.py)
+  - 9 test cases covering: table detection, cell positions, header detection, text content, blocks, validation, edge cases
+  - All tests use mocked pdfplumber for deterministic behavior
+- Verified: all tests pass (36/36 total: 20 parser + 9 table + 7 integration), `mypy --strict` passes, no existing tests broken
 
 ---

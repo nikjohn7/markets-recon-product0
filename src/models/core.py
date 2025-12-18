@@ -3,11 +3,13 @@
 Citation and BoundingBox are foundational models referenced by many other schemas.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Citation(BaseModel, frozen=True):
     """Evidence reference back to source document."""
+
+    model_config = ConfigDict(extra="forbid")
 
     chunk_id: str = Field(..., description="Retrieval chunk ID from Stage 3 index")
     block_ids: list[str] = Field(
@@ -15,19 +17,14 @@ class Citation(BaseModel, frozen=True):
     )
     page: int = Field(..., ge=1, description="1-indexed page number")
     text_span: str | None = Field(
-        None, description="Relevant text excerpt (≤200 chars)"
+        None, max_length=200, description="Relevant text excerpt (≤200 chars)"
     )
-
-    @field_validator("text_span")
-    @classmethod
-    def text_span_max_length(cls, v: str | None) -> str | None:
-        if v is not None and len(v) > 200:
-            raise ValueError("text_span must be ≤200 characters")
-        return v
 
 
 class BoundingBox(BaseModel):
     """Coordinates on page (normalized 0-1)."""
+
+    model_config = ConfigDict(extra="forbid")
 
     x0: float = Field(..., ge=0, le=1)
     y0: float = Field(..., ge=0, le=1)

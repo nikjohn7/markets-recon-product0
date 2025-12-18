@@ -5,7 +5,7 @@ Extracted document metadata including manager info, dates, and document type.
 
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from models.core import Citation
 from models.enums import DocumentType
@@ -13,6 +13,8 @@ from models.enums import DocumentType
 
 class DocumentProfile(BaseModel):
     """Extracted document metadata."""
+
+    model_config = ConfigDict(extra="forbid")
 
     document_id: str
     manager_name: str = Field(..., min_length=1)

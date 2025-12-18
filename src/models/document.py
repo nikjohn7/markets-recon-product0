@@ -3,7 +3,7 @@
 Models for representing extracted PDF content: blocks, tables, and full documents.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from models.core import BoundingBox
 from models.enums import BlockType
@@ -11,6 +11,8 @@ from models.enums import BlockType
 
 class DocumentBlock(BaseModel):
     """Single block of content from PDF."""
+
+    model_config = ConfigDict(extra="forbid")
 
     block_id: str = Field(..., description="Stable ID: {page}_{index}")
     page: int = Field(..., ge=1)
@@ -23,6 +25,8 @@ class DocumentBlock(BaseModel):
 class TableCell(BaseModel):
     """Single cell in an extracted table."""
 
+    model_config = ConfigDict(extra="forbid")
+
     row: int
     col: int
     text: str
@@ -31,6 +35,8 @@ class TableCell(BaseModel):
 
 class ExtractedTable(BaseModel):
     """Structured table from PDF."""
+
+    model_config = ConfigDict(extra="forbid")
 
     table_id: str
     page: int = Field(..., ge=1)
@@ -42,6 +48,8 @@ class ExtractedTable(BaseModel):
 
 class DocumentJSON(BaseModel):
     """Full extracted document structure."""
+
+    model_config = ConfigDict(extra="forbid")
 
     document_id: str
     blob_id: str

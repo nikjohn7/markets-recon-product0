@@ -1,0 +1,60 @@
+"""Document extraction models.
+
+Models for representing extracted PDF content: blocks, tables, and full documents.
+"""
+
+from pydantic import BaseModel, Field
+
+from src.models.core import BoundingBox
+from src.models.enums import BlockType
+
+
+class DocumentBlock(BaseModel):
+    """Single block of content from PDF."""
+
+    block_id: str = Field(..., description="Stable ID: {page}_{index}")
+    page: int = Field(..., ge=1)
+    text: str
+    block_type: BlockType
+    bbox: BoundingBox | None = None
+    confidence: float = Field(..., ge=0, le=1, description="Extraction confidence")
+
+
+class TableCell(BaseModel):
+    """Single cell in an extracted table."""
+
+    row: int
+    col: int
+    text: str
+    is_header: bool = False
+
+
+class ExtractedTable(BaseModel):
+    """Structured table from PDF."""
+
+    table_id: str
+    page: int = Field(..., ge=1)
+    cells: list[TableCell]
+    row_count: int = Field(..., ge=0)
+    col_count: int = Field(..., ge=0)
+    caption: str | None = None
+
+
+class DocumentJSON(BaseModel):
+    """Full extracted document structure."""
+
+    document_id: str
+    blob_id: str
+    file_hash: str
+    blocks: list[DocumentBlock]
+    tables: list[ExtractedTable]
+    page_count: int = Field(..., ge=1)
+    extraction_coverage: float = Field(
+        ..., ge=0, le=1, description="% pages with text"
+    )
+    ocr_pages: list[int] = Field(
+        default_factory=list, description="Pages that required OCR"
+    )
+    vision_pages: list[int] = Field(
+        default_factory=list, description="Pages processed with vision"
+    )

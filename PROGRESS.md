@@ -2,12 +2,12 @@
 ai_context:
   scope: "MVP (v0)"
   execution_mode: "sequential"
-  next_task: "1.4"
-  next_task_title: "Create Document Extraction Models"
-  available_tasks: ["1.4"]
+  next_task: "1.5"
+  next_task_title: "Create DocumentProfile Model (Stage 4 Output)"
+  available_tasks: ["1.5"]
   deferred_tasks: ["6.4"]
   blocked_tasks:
-    - "1.5"
+    - "1.6"
     - "1.6"
     - "1.7"
     - "1.8"
@@ -56,12 +56,12 @@ ai_context:
     - "10.5"
   totals:
     tasks: 54
-    completed: 5
+    completed: 6
     in_progress: 0
     available: 1
-    blocked: 47
+    blocked: 46
     deferred: 1
-  completion_percentage: 9.3
+  completion_percentage: 11.1
   last_updated: "2025-12-18"
 ---
 
@@ -72,12 +72,12 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 ## Project Overview
 
 - **Total tasks**: 54 (11 phases)
-- **Completed**: 5 (9.3%)
+- **Completed**: 6 (11.1%)
 - **In progress**: 0
 - **Available**: 1
-- **Blocked**: 47
+- **Blocked**: 46
 - **Deferred (v1+)**: 1
-- **Next task**: Task 1.4 — Create Document Extraction Models
+- **Next task**: Task 1.5 — Create DocumentProfile Model (Stage 4 Output)
 
 ## Execution Rules (MVP)
 
@@ -89,7 +89,7 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 | Phase | Status | Tasks | Completed | Progress | Next Task |
 |-------|--------|-------|-----------|----------|-----------|
 | 0: Spec Alignment | Complete | 2 | 2/2 | 100% | — |
-| 1: Foundation | In progress | 11 | 3/11 | 27% | Task 1.4 |
+| 1: Foundation | In progress | 11 | 4/11 | 36% | Task 1.5 |
 | 2: Taxonomy | Not started | 3 | 0/3 | 0% | Task 2.1 |
 | 3: Infrastructure | Not started | 5 | 0/5 | 0% | Task 3.1 |
 | 4: PDF Extraction | Not started | 5 | 0/5 | 0% | Task 4.1 |
@@ -102,17 +102,18 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 
 ## Current Focus
 
-### Task 1.4: Create Document Extraction Models
+### Task 1.5: Create DocumentProfile Model (Stage 4 Output)
 
 **Status**: Available
 **Priority**: High
 **Phase**: 1: Project Foundation
 
 **Deliverables (from `tasks.md`):**
-- `src/models/document.py` with `DocumentBlock`, `TableCell`, `ExtractedTable`, `DocumentJSON`
-- Proper field constraints (page >= 1, confidence 0-1, etc.)
+- `src/models/profile.py` with `DocumentProfile`
+- Includes uncertainty flags (`manager_name_uncertain`, `publication_date_uncertain`)
+- Requires at least 1 citation
 
-**Acceptance:** Can create valid DocumentJSON instances, validation rejects invalid data
+**Acceptance:** Validation enforces min_length=1 for manager_name and citations
 
 ---
 
@@ -132,8 +133,8 @@ This file tracks **execution progress** against `tasks.md`. Treat `tasks.md` as 
 - [x] `1.1` Initialize Python Project Structure — **Complete**
 - [x] `1.2` Create Core Enums — **Complete**
 - [x] `1.3` Create Citation and BoundingBox Models — **Complete**
-- [ ] `1.4` Create Document Extraction Models — **Available**
-- [ ] `1.5` Create DocumentProfile Model (Stage 4 Output) — **Blocked**
+- [x] `1.4` Create Document Extraction Models — **Complete**
+- [ ] `1.5` Create DocumentProfile Model (Stage 4 Output) — **Available**
 - [ ] `1.6` Create Allocation Call Models (Stage 6 Output) — **Blocked**
 - [ ] `1.7` Create Summary Models (Stage 7 Output) — **Blocked**
 - [ ] `1.8` Create Tag Models (Stage 9 Output) — **Blocked**
@@ -244,6 +245,12 @@ After finishing a task:
 - Citation is frozen (immutable), page >= 1, text_span <= 200 chars
 - BoundingBox coordinates normalized 0-1
 - Created `tests/unit/models/test_core.py` with 9 validation edge case tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.4 — Complete (2025-12-18)
+- Created `src/models/document.py` with `DocumentBlock`, `TableCell`, `ExtractedTable`, `DocumentJSON`
+- Field constraints: page >= 1, confidence 0-1, extraction_coverage 0-1
+- Created `tests/unit/models/test_document.py` with 8 validation tests
 - Verified: all tests pass, `mypy --strict` passes
 
 ---

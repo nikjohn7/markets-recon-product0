@@ -3,7 +3,7 @@
 Citation and BoundingBox are foundational models referenced by many other schemas.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Citation(BaseModel, frozen=True):
@@ -30,3 +30,11 @@ class BoundingBox(BaseModel):
     y0: float = Field(..., ge=0, le=1)
     x1: float = Field(..., ge=0, le=1)
     y1: float = Field(..., ge=0, le=1)
+
+    @model_validator(mode="after")
+    def check_bounds_order(self) -> "BoundingBox":
+        if self.x0 > self.x1:
+            raise ValueError("x0 must be <= x1")
+        if self.y0 > self.y1:
+            raise ValueError("y0 must be <= y1")
+        return self

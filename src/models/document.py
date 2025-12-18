@@ -3,7 +3,7 @@
 Models for representing extracted PDF content: blocks, tables, and full documents.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from models.core import BoundingBox
 from models.enums import BlockType
@@ -27,8 +27,8 @@ class TableCell(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    row: int
-    col: int
+    row: int = Field(..., ge=0)
+    col: int = Field(..., ge=0)
     text: str
     is_header: bool = False
 
@@ -44,6 +44,12 @@ class ExtractedTable(BaseModel):
     row_count: int = Field(..., ge=0)
     col_count: int = Field(..., ge=0)
     caption: str | None = None
+
+    @model_validator(mode="after")
+    def check_counts_with_cells(self) -> "ExtractedTable":
+        if self.cells and (self.row_count == 0 or self.col_count == 0):
+            raise ValueError("row_count and col_count must be > 0 when cells exist")
+        return self
 
 
 class DocumentJSON(BaseModel):
@@ -66,3 +72,13 @@ class DocumentJSON(BaseModel):
     vision_pages: list[int] = Field(
         default_factory=list, description="Pages processed with vision"
     )
+
+    @model_validator(mode="after")
+    def check_page_bounds(self) -> "DocumentJSON":
+        for p in self.ocr_pages:
+            if p < 1 or p > self.page_count:
+                raise ValueError(f"ocr_pages contains invalid page {p}")
+        for p in self.vision_pages:
+            if p < 1 or p > self.page_count:
+                raise ValueError(f"vision_pages contains invalid page {p}")
+        return self

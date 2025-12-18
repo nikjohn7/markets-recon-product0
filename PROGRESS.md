@@ -43,7 +43,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 2: Taxonomy System
 - [x] `2.1` Implement Asset Class Hierarchy
-- [ ] `2.2` Implement Synonym Resolution
+- [x] `2.2` Implement Synonym Resolution
 - [ ] `2.3` Implement Tag Vocabularies
 
 ### Phase 3: Infrastructure Layer
@@ -193,5 +193,15 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Regional real estate categories (APAC, NA, UK, EU) are empty - they're groupings that share sub-assets with ALT_REAL_ESTATE_GLOBAL
 - Created `tests/unit/taxonomy/test_hierarchy.py` with 24 comprehensive tests
 - Verified: all tests pass (24/24), `mypy --strict` passes
+
+### Task 2.2 — Complete (2025-12-18)
+- Created `src/taxonomy/synonyms.py` with comprehensive synonym mappings
+- Implemented SYNONYMS dict with 200+ lowercase synonym → sub-asset code mappings
+- Covers all major asset classes: commodities, equities (DM/EM), fixed income (sovereigns/IG/HY), currencies
+- Implemented resolve_asset() function with case-insensitive matching, returns (category_code, sub_asset_code) or None
+- Implemented helper functions: get_all_synonyms_for_sub_asset(), is_valid_synonym()
+- All synonym keys are lowercase for consistency
+- Created `tests/unit/taxonomy/test_synonyms.py` with 26 comprehensive tests
+- Verified: all tests pass (26/26), acceptance criteria met ("bunds" → ("FI_SOV_EUROPE", "GERMAN_BUNDS"))
 
 ---

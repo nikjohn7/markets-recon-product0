@@ -5,6 +5,7 @@ deduplication, storing PDFs in blob storage, and creating database records.
 """
 
 import hashlib
+import logging
 import uuid
 from typing import Any
 
@@ -12,6 +13,8 @@ from src.exceptions import StorageError, ValidationError
 from src.models.pipeline import IngestResult
 from src.storage.blob import LocalBlobStorage
 from src.storage.database import Database
+
+logger = logging.getLogger(__name__)
 
 
 async def stage_ingest(pdf_bytes: bytes, source_metadata: dict[str, Any]) -> IngestResult:
@@ -105,9 +108,15 @@ async def stage_ingest(pdf_bytes: bytes, source_metadata: dict[str, Any]) -> Ing
             try:
                 blob_storage.delete(blob_id)
             except Exception as cleanup_error:
-                # Log cleanup failure but raise original error
+                # Log cleanup failure with details for debugging orphaned blobs
+                logger.error(
+                    f"Failed to clean up blob {blob_id} after database error. "
+                    f"Blob may be orphaned. Cleanup error: {cleanup_error}"
+                )
                 raise StorageError(
-                    f"Failed to insert document record (blob {blob_id} may be orphaned): {db_error}"
+                    f"Failed to insert document record and clean up blob {blob_id} "
+                    f"(orphaned blob likely). Database error: {db_error}. "
+                    f"Cleanup error: {cleanup_error}"
                 ) from db_error
 
             # Re-raise the original database error

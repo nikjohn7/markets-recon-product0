@@ -150,3 +150,18 @@ class TestCallExtractionOutput:
                 model_version="1.0",
                 total_candidates_reviewed=5,
             )
+
+    def test_sentiment_rationale_not_empty(self) -> None:
+        c = Citation(chunk_id="c1", page=1)
+        with pytest.raises(ValidationError):
+            CallExtractionOutput(
+                document_id="d1",
+                allocation_calls=[],
+                overall_sentiment=Sentiment.NEUTRAL,
+                sentiment_rationale=["Valid rationale", "  "],  # Empty after strip
+                sentiment_citations=[c],
+                sentiment_confidence=0.5,
+                extraction_timestamp=datetime.now(),
+                model_version="1.0",
+                total_candidates_reviewed=5,
+            )

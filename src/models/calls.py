@@ -79,3 +79,10 @@ class CallExtractionOutput(BaseModel):
     extraction_timestamp: datetime
     model_version: str
     total_candidates_reviewed: int = Field(..., ge=0)
+
+    @field_validator("sentiment_rationale")
+    @classmethod
+    def sentiment_rationale_not_empty(cls, v: list[str]) -> list[str]:
+        if any(len(s.strip()) == 0 for s in v):
+            raise ValueError("Sentiment rationale cannot contain empty strings")
+        return v

@@ -35,7 +35,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `1.4` Create Document Extraction Models
 - [x] `1.5` Create DocumentProfile Model (Stage 4 Output)
 - [x] `1.6` Create Allocation Call Models (Stage 6 Output)
-- [ ] `1.7` Create Summary Models (Stage 7 Output)
+- [x] `1.7` Create Summary Models (Stage 7 Output)
 - [ ] `1.8` Create Tag Models (Stage 9 Output)
 - [ ] `1.9` Create Confidence Models (Stage 10 Output)
 - [ ] `1.10` Create ProcessedDocument Model (Final Output)
@@ -152,6 +152,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created `src/models/calls.py` with `KeyIndicator`, `AllocationCall`, `CallExtractionOutput`
 - Validator for non-empty rationale_bullets, constraints: 1-4 bullets, 1-3 citations, tooltip ≤150 chars
 - Created `tests/unit/models/test_calls.py` with 10 validation tests
+- Verified: all tests pass, `mypy --strict` passes
+
+### Task 1.7 — Complete (2025-12-18)
+- Created `src/models/summaries.py` with `KeyTakeaway`, `DocumentSummaries`
+- Constraints: executive_summary 100-1000 chars, search_descriptor 50-200 chars, 3-5 takeaways
+- Created `tests/unit/models/test_summaries.py` with 8 validation tests
 - Verified: all tests pass, `mypy --strict` passes
 
 ---

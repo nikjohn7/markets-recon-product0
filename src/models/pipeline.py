@@ -7,6 +7,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from models.document import DocumentBlock
+
 
 class IngestResult(BaseModel):
     """Output of Stage 0: Ingest."""
@@ -40,11 +42,10 @@ class CleanedDocument(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     document_id: str
-    cleaned_blocks: list[str] = Field(..., description="Block IDs after cleaning")
+    blocks: list[DocumentBlock] = Field(..., description="Cleaned blocks")
     sections: list[Section]
-    removed_block_ids: list[str] = Field(
-        default_factory=list, description="Blocks removed as boilerplate"
-    )
+    removed_boilerplate_count: int = Field(..., ge=0)
+    disclaimer_block_id: str | None = None
 
 
 class RetrievedChunk(BaseModel):
@@ -52,11 +53,12 @@ class RetrievedChunk(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    chunk_id: str
-    text: str
+    chunk_id: str = Field(..., description="Unique: {doc_id}_{chunk_index}")
     block_ids: list[str] = Field(..., description="Source block IDs")
-    page: int = Field(..., ge=1)
-    score: float = Field(..., ge=0, le=1, description="Retrieval similarity score")
+    page: int = Field(..., ge=1, description="Page of first block")
+    text: str
+    score: float
+    section: str | None = None
 
 
 class CandidateSet(BaseModel):
@@ -65,7 +67,8 @@ class CandidateSet(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     document_id: str
-    chunks: list[RetrievedChunk] = Field(..., description="Candidate chunks for LLM")
-    query_terms: list[str] = Field(
-        default_factory=list, description="Terms used for retrieval"
+    candidates: list[RetrievedChunk]
+    keyword_matches: dict[str, list[str]] = Field(
+        default_factory=dict, description="keyword → block_ids"
     )
+    total_chunks_reviewed: int = Field(..., ge=0)

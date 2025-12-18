@@ -57,3 +57,17 @@ def test_invalid_log_level_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ValidationError):
         Settings(_env_file=env_file)
+
+
+def test_empty_blob_storage_path_is_rejected(tmp_path: Path) -> None:
+    env_file = build_env_file(
+        tmp_path,
+        DATABASE_URL="sqlite:///./data/test.db",
+        BLOB_STORAGE_PATH="",
+        ANTHROPIC_API_KEY="ant-key",
+        OPENAI_API_KEY="open-key",
+        LOG_LEVEL="INFO",
+    )
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=env_file)

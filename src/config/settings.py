@@ -34,9 +34,14 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must not be empty")
         return value
 
-    @field_validator("blob_storage_path")
+    @field_validator("blob_storage_path", mode="before")
     @classmethod
-    def validate_blob_storage_path(cls, value: Path) -> Path:
+    def validate_blob_storage_path(cls, value: Path | str) -> Path | str:
+        if isinstance(value, str):
+            if value.strip() == "":
+                raise ValueError("BLOB_STORAGE_PATH must not be empty")
+            return value.strip()
+
         if str(value).strip() == "":
             raise ValueError("BLOB_STORAGE_PATH must not be empty")
         return value

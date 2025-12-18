@@ -322,6 +322,7 @@ After finishing **each task** in `PROGRESS.md`:
 - Stage all files changed for that task.
 - Commit with a clear, task-referenced message (example: `Task 1.2 — Create Core Enums`).
 - Keep the working tree clean before starting the next task.
+- **IMPORTANT:** Do NOT mention AI agents (Claude, GPT, etc.) anywhere in commit messages. Commit messages should be professional and focus on the technical changes made.
 
 Prefer including the `PROGRESS.md` checkbox/status updates for that task in the same commit as the code/docs changes.
 

@@ -48,10 +48,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 3: Infrastructure Layer
 - [x] `3.1` Create Configuration System
-- [ ] `3.2` Create Logging Configuration
-- [ ] `3.3` Create Exception Hierarchy
-- [ ] `3.4` Implement Local Blob Storage
-- [ ] `3.5` Implement SQLite Database Layer
+- [x] `3.2` Create Logging Configuration
+- [x] `3.3` Create Exception Hierarchy
+- [x] `3.4` Implement Local Blob Storage
+- [x] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
 - [ ] `4.1` Implement Stage 0 - Ingest
@@ -212,5 +212,50 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/config/settings.py` with Pydantic-powered Settings model and cached accessor
 - Implemented validation for required environment variables and logging level normalization
 - Added `tests/unit/config/test_settings.py` covering env file loading and validation failures
+
+### Task 3.2 — Complete (2025-12-19)
+- Added `src/config/logging.py` with configurable console/JSON handlers and redaction for secrets and oversized payloads
+- Exported `configure_logging` via `src/config/__init__.py`
+- Added `tests/unit/config/test_logging.py` covering formatting, redaction, and truncation behavior
+
+### Task 3.3 — Complete (2025-12-18)
+- Created `src/exceptions.py` with 7 exception classes in hierarchical structure
+- Base: `PipelineError` → inherits from `Exception`
+- Direct children: `ExtractionError`, `ValidationError`, `LLMError`, `StorageError`
+- Extraction children: `WeakEvidenceError`, `TaxonomyMappingError` (inherit from `ExtractionError`)
+- All exceptions include docstrings explaining their purpose and when to use them
+- Created `tests/unit/test_exceptions.py` with 19 comprehensive tests covering inheritance, instantiation, and catching behavior
+- Verified: all tests pass (19/19), `mypy --strict` passes
+
+### Task 3.4 — Complete (2025-12-18)
+- Created `src/storage/blob.py` with `LocalBlobStorage` class for file-based PDF storage
+- Implements SHA-256 hash-based deterministic blob_id generation
+- Methods: `store()`, `retrieve()`, `retrieve_metadata()`, `exists()`, `delete()`
+- Stores PDFs as `{blob_id}.pdf` and metadata as `{blob_id}.json` in `./data/pdfs/`
+- Metadata JSON is pretty-printed with sorted keys for readability and consistency
+- Idempotent storage: same content = same blob_id (overwrites existing)
+- Comprehensive error handling using `StorageError` exception
+- Created `tests/unit/storage/test_blob.py` with 21 tests covering storage, retrieval, deduplication, error cases, and metadata handling
+- Verified: all tests pass (21/21), `mypy --strict` passes
+
+### Task 3.5 — Complete (2025-12-18)
+- Created `src/storage/database.py` with SQLAlchemy Core-based database layer
+- Implemented 7 tables: `managers`, `documents`, `allocation_calls`, `summaries`, `document_tags`, `evidence_blocks`, `pipeline_runs`
+- PostgreSQL-portable schema design:
+  - UUID as TEXT (will map to UUID type in Postgres)
+  - JSON/JSONB as TEXT (will map to JSONB in Postgres)
+  - CHECK constraints for enum validation (will map to enum types in Postgres)
+  - TIMESTAMPTZ as TEXT with ISO 8601 format
+- `Database` class with methods: `get_connection()`, `execute()`, `close()`, `reset_database()`
+- Factory function `get_database()` for creating database instances
+- All tables include foreign key relationships, unique constraints, and check constraints
+- pipeline_runs table tracks: pipeline version, LLM model/provider, runtime, status
+- Created `tests/unit/storage/test_database.py` with 18 comprehensive tests
+  - Table creation and initialization
+  - Insert and query operations for all tables
+  - Foreign key relationships and unique constraints
+  - CHECK constraint validation (enum values)
+  - Connection management and utility methods
+- Verified: all tests pass (18/18), `mypy --strict` passes
 
 ---

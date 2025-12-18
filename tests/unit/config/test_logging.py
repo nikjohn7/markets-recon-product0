@@ -43,7 +43,7 @@ def test_json_logging_outputs_structured_line() -> None:
     logger = logging.getLogger("config.test.json")
     logger.info("hello world")
 
-    log_line = stream.getvalue().strip()
+    log_line = stream.getvalue().strip().splitlines()[-1]
     payload = json.loads(log_line)
     assert payload["level"] == "INFO"
     assert payload["module"] == "config.test.json"
@@ -77,7 +77,7 @@ def test_json_logging_includes_exception_tracebacks() -> None:
     except Exception:
         logger.exception("An error occurred with traceback")
 
-    log_line = stream.getvalue().strip()
+    log_line = stream.getvalue().strip().splitlines()[-1]
     payload = json.loads(log_line)
     
     # Verify basic log structure

@@ -47,7 +47,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `2.3` Implement Tag Vocabularies
 
 ### Phase 3: Infrastructure Layer
-- [ ] `3.1` Create Configuration System
+- [x] `3.1` Create Configuration System
 - [ ] `3.2` Create Logging Configuration
 - [ ] `3.3` Create Exception Hierarchy
 - [ ] `3.4` Implement Local Blob Storage
@@ -207,5 +207,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 2.3 — Complete (2025-12-19)
 - Added `src/taxonomy/tags.py` with theme, risk, region, and macro regime vocabularies plus validation helper
 - Added `tests/unit/taxonomy/test_tags.py` to enforce vocabulary coverage and validation behavior
+
+### Task 3.1 — Complete (2025-12-19)
+- Added `src/config/settings.py` with Pydantic-powered Settings model and cached accessor
+- Implemented validation for required environment variables and logging level normalization
+- Added `tests/unit/config/test_settings.py` covering env file loading and validation failures
 
 ---

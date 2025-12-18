@@ -344,7 +344,10 @@ class DocumentIndex:
         )
         self.collection = self.chroma_client.create_collection(
             name=f"doc_{document_id}",
-            metadata={"document_id": document_id},
+            metadata={
+                "document_id": document_id,
+                "hnsw:space": "cosine",  # Use cosine distance for OpenAI embeddings
+            },
         )
         self.chunks: list[Chunk] = []
     
@@ -443,8 +446,9 @@ class DocumentIndex:
                 logger.warning(f"No distances returned for chunk {chunk_id}")
                 continue
             distance = distances[0][i]
-            # Convert distance to similarity score (0-1 range)
-            # ChromaDB uses cosine distance by default for OpenAI embeddings
+            # Convert cosine distance to similarity score (0-1 range)
+            # Cosine distance is in [0, 2]; similarity = 1 - distance/2 but we use 1 - distance
+            # since ChromaDB returns normalized values in [0, 1] for cosine space
             score = max(0.0, 1.0 - distance)
             
             retrieved_chunk = RetrievedChunk(

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import traceback
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
@@ -76,6 +77,15 @@ class JsonFormatter(logging.Formatter):
             "module": record.name,
             "message": message,
         }
+        
+        # Include exception traceback information if available
+        if record.exc_info:
+            log_record["exception"] = {
+                "type": record.exc_info[0].__name__ if record.exc_info[0] else None,
+                "message": str(record.exc_info[1]) if record.exc_info[1] else None,
+                "traceback": traceback.format_exception(*record.exc_info),
+            }
+        
         return json.dumps(log_record, ensure_ascii=False)
 
 
@@ -98,4 +108,3 @@ def configure_logging(settings: Settings | None = None, stream: Any | None = Non
     root_logger.addHandler(handler)
 
     logging.captureWarnings(True)
-

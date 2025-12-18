@@ -1,5 +1,6 @@
 import json
 import logging
+import traceback
 from io import StringIO
 
 from src.config import Settings
@@ -61,3 +62,36 @@ def test_oversized_payloads_are_truncated() -> None:
     log_line = stream.getvalue().strip().splitlines()[-1]
     assert "TRUNCATED payload length" in log_line
     assert "x" * 10 not in log_line
+
+
+def test_json_logging_includes_exception_tracebacks() -> None:
+    stream = StringIO()
+    settings = build_settings(LOG_JSON_FORMAT=True)
+
+    configure_logging(settings=settings, stream=stream)
+    logger = logging.getLogger("config.test.exception")
+    
+    # Log an exception with traceback
+    try:
+        raise ValueError("Test exception for traceback verification")
+    except Exception:
+        logger.exception("An error occurred with traceback")
+
+    log_line = stream.getvalue().strip()
+    payload = json.loads(log_line)
+    
+    # Verify basic log structure
+    assert payload["level"] == "ERROR"
+    assert payload["module"] == "config.test.exception"
+    assert payload["message"] == "An error occurred with traceback"
+    assert "timestamp" in payload
+    
+    # Verify exception information is included
+    assert "exception" in payload
+    exception_info = payload["exception"]
+    assert exception_info["type"] == "ValueError"
+    assert exception_info["message"] == "Test exception for traceback verification"
+    assert "traceback" in exception_info
+    assert isinstance(exception_info["traceback"], list)
+    assert len(exception_info["traceback"]) > 0
+    assert "ValueError: Test exception for traceback verification" in "".join(exception_info["traceback"])

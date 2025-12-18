@@ -7,7 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.enums import TagType
+from src.models.enums import TagType
 
 
 class Tag(BaseModel):

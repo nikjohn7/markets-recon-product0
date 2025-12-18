@@ -5,7 +5,7 @@ Source: docs/TAXONOMY.md
 
 from collections.abc import Mapping
 
-from models.enums import TagType
+from src.models.enums import TagType
 
 # =============================================================================
 # Tag Vocabularies

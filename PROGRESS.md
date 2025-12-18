@@ -54,7 +54,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `3.5` Implement SQLite Database Layer
 
 ### Phase 4: PDF Extraction (Stages 0–3)
-- [ ] `4.1` Implement Stage 0 - Ingest
+- [x] `4.1` Implement Stage 0 - Ingest
 - [ ] `4.2` Implement Stage 1 - Text Extraction
 - [ ] `4.3` Implement Table Extraction
 - [ ] `4.4` Implement Stage 2 - Cleaning
@@ -257,5 +257,11 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - CHECK constraint validation (enum values)
   - Connection management and utility methods
 - Verified: all tests pass (18/18), `mypy --strict` passes
+
+### Task 4.1 — Complete (2025-12-18)
+- Implemented [`src/pipeline/stages/s0_ingest.py`](src/pipeline/stages/s0_ingest.py) with SHA-256 hash-based deduplication, metadata extraction, and blob storage integration
+- Created comprehensive test suite in [`tests/unit/pipeline/stages/test_s0_ingest.py`](tests/unit/pipeline/stages/test_s0_ingest.py)
+- Key features: idempotent storage, automatic metadata generation, error handling with StorageError exceptions
+- Verified: all tests pass (8/8), `mypy --strict` passes
 
 ---

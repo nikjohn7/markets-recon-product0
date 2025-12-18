@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from models.document import DocumentBlock
+from src.models.document import DocumentBlock
 
 
 class IngestResult(BaseModel):

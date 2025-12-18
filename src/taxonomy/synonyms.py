@@ -8,7 +8,7 @@ Source: docs/TAXONOMY.md
 
 from typing import Optional
 
-from src.taxonomy.hierarchy import get_category_for_sub_asset
+from .hierarchy import get_category_for_sub_asset
 
 # =============================================================================
 # Synonym Mappings: lowercase synonym → canonical sub-asset code

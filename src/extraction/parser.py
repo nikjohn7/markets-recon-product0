@@ -340,6 +340,7 @@ class PDFParser:
             
             # Process each page
             for page_num, page in enumerate(doc, 1):
+                # Tracks whether the page yielded any extracted content (text or tables)
                 page_has_text = False
                 
                 # Get page dimensions
@@ -352,6 +353,8 @@ class PDFParser:
                 )
                 tables.extend(page_tables)
                 blocks.extend(table_cell_blocks)
+                if page_tables or table_cell_blocks:
+                    page_has_text = True
                 
                 # Extract text blocks
                 text_dict = page.get_text("dict", flags=fitz.TEXTFLAGS_TEXT)

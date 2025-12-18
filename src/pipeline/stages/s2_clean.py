@@ -109,7 +109,7 @@ def _classify_section(text: str) -> str | None:
     return None
 
 
-def _detect_sections(blocks: list[DocumentBlock]) -> list[Section]:
+def _detect_sections(document_id: str, blocks: list[DocumentBlock]) -> list[Section]:
     """Detect section boundaries based on headings."""
     if not blocks:
         return []
@@ -125,7 +125,7 @@ def _detect_sections(blocks: list[DocumentBlock]) -> list[Section]:
             # Save previous section if exists
             if idx > current_section_start:
                 section = Section(
-                    section_id=f"{blocks[0].block_id.split('_')[0]}_sec_{len(sections)}",
+                    section_id=f"{document_id}_sec_{len(sections)}",
                     title=current_section_title,
                     start_block_id=blocks[current_section_start].block_id,
                     end_block_id=blocks[idx - 1].block_id,
@@ -141,7 +141,7 @@ def _detect_sections(blocks: list[DocumentBlock]) -> list[Section]:
     # Add final section
     if current_section_start < len(blocks):
         section = Section(
-            section_id=f"{blocks[0].block_id.split('_')[0]}_sec_{len(sections)}",
+            section_id=f"{document_id}_sec_{len(sections)}",
             title=current_section_title,
             start_block_id=blocks[current_section_start].block_id,
             end_block_id=blocks[-1].block_id,
@@ -152,7 +152,7 @@ def _detect_sections(blocks: list[DocumentBlock]) -> list[Section]:
     # If no sections detected, create one covering all blocks
     if not sections:
         section = Section(
-            section_id=f"{blocks[0].block_id.split('_')[0]}_sec_0",
+            section_id=f"{document_id}_sec_0",
             title=None,
             start_block_id=blocks[0].block_id,
             end_block_id=blocks[-1].block_id,
@@ -213,7 +213,7 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                     disclaimer_block_id = block.block_id
         
         # Detect sections
-        sections = _detect_sections(cleaned_blocks)
+        sections = _detect_sections(doc_json.document_id, cleaned_blocks)
         logger.info(f"Detected {len(sections)} sections")
         
         # Create cleaned document

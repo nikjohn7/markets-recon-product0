@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
 from src.extraction.parser import PDFParser, parse_pdf
-from src.models.document import DocumentBlock, DocumentJSON
+from src.models.document import DocumentBlock, DocumentJSON, ExtractedTable, TableCell
 from src.models.core import BoundingBox
 from src.models.enums import BlockType
 from src.exceptions import ExtractionError
@@ -319,6 +319,49 @@ class TestPDFParser:
         assert len(page1_blocks) > 0
         assert len(page2_blocks) > 0
         assert len(page3_blocks) == 0
+    
+    def test_parse_pdf_counts_table_only_pages(self, monkeypatch):
+        """Table extraction should contribute to coverage even without text blocks."""
+        doc = fitz.open()
+        doc.new_page()  # Page with only table content supplied by mock
+        
+        pdf_bytes = doc.write()
+        doc.close()
+        
+        parser = PDFParser()
+        
+        mock_table = ExtractedTable(
+            table_id="1_tbl_0",
+            page=1,
+            cells=[TableCell(row=0, col=0, text="42", is_header=False)],
+            row_count=1,
+            col_count=1,
+            caption=None
+        )
+        table_cell_block = DocumentBlock(
+            block_id="1_tbl_0_0_0",
+            page=1,
+            text="42",
+            block_type=BlockType.TABLE_CELL,
+            bbox=None,
+            confidence=0.9
+        )
+        
+        def fake_extract_tables(page, page_num, page_width, page_height):
+            return [mock_table], [table_cell_block]
+        
+        monkeypatch.setattr(parser, "_extract_tables_from_page", fake_extract_tables)
+        
+        result = parser.parse_pdf(
+            pdf_bytes=pdf_bytes,
+            document_id="table-only-doc",
+            blob_id="table-blob",
+            file_hash="table-hash"
+        )
+        
+        assert result.extraction_coverage == 1.0
+        assert result.tables == [mock_table]
+        assert result.blocks == [table_cell_block]
     
     def test_parse_pdf_block_id_format(self):
         """Test that block IDs follow the expected format."""

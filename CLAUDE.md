@@ -15,8 +15,8 @@ Build a production-grade AI pipeline that processes fund manager outlook PDFs in
 
 ## Project Status
 
-**Current state:** Specification only—no runnable code yet.  
-**Target:** MVP for personal testing with publicly available fund manager PDFs.  
+**Current state:** Specification only—no runnable code yet.
+**Target:** MVP for personal testing with publicly available fund manager PDFs.
 **Infrastructure:** Local SQLite or PostgreSQL on small GCP instance (2 vCPU, 6GB RAM, 22GB storage).
 
 ---
@@ -69,6 +69,7 @@ Build a production-grade AI pipeline that processes fund manager outlook PDFs in
 | Format | `ruff format src/ tests/` |
 
 > **Note:** Commands above are target interfaces. Code implementation does not exist yet.
+
 ---
 
 ## Documentation Index
@@ -162,48 +163,6 @@ marketsrecon/
 
 ---
 
-## Code Standards
-
-### Absolute Requirements
-
-1. **Type everything.** No `Any` unless unavoidable. Use `mypy --strict`.
-2. **Pydantic for all data.** No raw dicts crossing function boundaries.
-3. **Every LLM output validated** against schema before use.
-4. **Citations mandatory.** If a field comes from the document, include `citations: list[Citation]`.
-5. **Fail loud.** Raise exceptions for invalid states; never silently continue.
-6. **Idempotent stages.** Re-running a stage with same input = same output.
-
-### Style
-
-```python
-# YES: Explicit, typed, validated
-async def extract_calls(
-    doc: DocumentJSON,
-    taxonomy: AssetTaxonomy,
-) -> list[AllocationCall]:
-    ...
-
-# NO: Vague, untyped, implicit
-def process(data, config):
-    ...
-```
-
-### Error Handling
-
-```python
-# Use domain-specific exceptions
-class ExtractionError(Exception):
-    """Base for extraction failures."""
-
-class WeakEvidenceError(ExtractionError):
-    """LLM could not find sufficient evidence."""
-
-class TaxonomyMappingError(ExtractionError):
-    """Asset class could not be mapped to taxonomy."""
-```
-
----
-
 ## Critical Rules for LLM Interactions
 
 **Read [`docs/LLM_CONTRACTS.md`](docs/LLM_CONTRACTS.md) before writing ANY LLM code.**
@@ -243,21 +202,6 @@ Pipeline outputs feed directly into Allocator Pro modules:
 
 ---
 
-## Testing Requirements
-
-**Read [`docs/TESTING.md`](docs/TESTING.md) for full specification.**
-
-Minimum coverage:
-- Unit tests for all Pydantic models (validation edge cases)
-- Unit tests for taxonomy mapping logic
-- Integration tests for each pipeline stage
-- E2E tests with 5+ real PDFs covering different manager formats
-- Golden output tests: known input → expected output
-
-**Every PR must include tests for changed code.**
-
----
-
 ## Confidence & Review Thresholds
 
 | Confidence Band | Range | Action |
@@ -289,48 +233,6 @@ export DATABASE_URL=postgresql://...
 export BLOB_STORAGE_URL=s3://...
 export ANTHROPIC_API_KEY=...
 ```
-
----
-
-## Pre-Commit Checklist
-
-Before committing code:
-
-- [ ] `mypy src/ --strict` passes
-- [ ] `ruff check src/ tests/` passes
-- [ ] `pytest tests/` passes
-- [ ] New code has corresponding tests
-- [ ] Pydantic models match docs/SCHEMAS.md
-- [ ] LLM prompts follow docs/LLM_CONTRACTS.md
-- [ ] No raw dicts crossing function boundaries
-
----
-
-## Git Workflow (Required)
-
-### Branching Rule
-
-- **One branch per phase in `PROGRESS.md`.** All work for tasks in that phase must happen on that phase branch (do not mix phases on a single branch).
-- **No direct commits to `main`** for normal work. Integrate phase work via PR only.
-
-**Branch naming convention:**
-- `phase-<number>-<short-slug>` (example: `phase-1-foundation`)
-
-### Task Commit Rule
-
-After finishing **each task** in `PROGRESS.md`:
-- Stage all files changed for that task.
-- Commit with a clear, task-referenced message (example: `Task 1.2 — Create Core Enums`).
-- Keep the working tree clean before starting the next task.
-- **IMPORTANT:** Do NOT mention AI agents (Claude, GPT, etc.) anywhere in commit messages. Commit messages should be professional and focus on the technical changes made.
-
-Prefer including the `PROGRESS.md` checkbox/status updates for that task in the same commit as the code/docs changes.
-
-### Phase PR Rule
-
-After completing **all tasks in a phase** (per `PROGRESS.md`):
-- Open a PR from the phase branch into `main`.
-- Request review and ensure the PR meets the pre-commit checklist/CI requirements before merge.
 
 ---
 

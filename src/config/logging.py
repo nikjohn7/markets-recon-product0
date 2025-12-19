@@ -18,7 +18,10 @@ SENSITIVE_KEYWORDS = {"api_key", "authorization", "prompt", "document_text", "se
 
 def _collect_secrets(settings: Settings) -> Mapping[str, str]:
     return {
-        "anthropic_api_key": settings.anthropic_api_key.get_secret_value(),
+        "ohmygpt_api_key": settings.ohmygpt_api_key.get_secret_value(),
+        "megallm_api_key": settings.megallm_api_key.get_secret_value(),
+        "nebius_api_key": settings.nebius_api_key.get_secret_value(),
+        "deepinfra_api_key": settings.deepinfra_api_key.get_secret_value(),
         "openai_api_key": settings.openai_api_key.get_secret_value(),
         "database_url": settings.database_url,
     }

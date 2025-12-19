@@ -349,11 +349,6 @@ Return ONLY valid JSON matching this schema (no explanation, no markdown, no cod
             )
             return validated
 
-        except json.JSONDecodeError as e:
-            error_msg = f"Failed to parse LLM response as JSON: {e}"
-            logger.error(error_msg)
-            raise LLMError(error_msg) from e
-
         except Exception as e:
             if isinstance(e, LLMError):
                 raise

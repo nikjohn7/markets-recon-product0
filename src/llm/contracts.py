@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Sequence
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -19,10 +20,12 @@ from src.taxonomy.hierarchy import (
     is_valid_sub_asset,
 )
 
+T = TypeVar("T", bound=BaseModel)
+
 HALLUCINATION_MARKERS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\d{4}-\d{2}-\d{2}"),
     re.compile(r"\d+(?:\.\d+)?%"),
-    re.compile(r'\\"(?:[^"\\\\]|\\\\.){50,}\\"'),
+    re.compile(r'\\"(?:[^"\\]|\\.){50,}\\"'),
 )
 
 
@@ -120,23 +123,34 @@ def find_hallucination_markers(
 
     for pattern in HALLUCINATION_MARKERS:
         for match in pattern.findall(output_text):
+            # Strip surrounding escaped quotes and unescape JSON escape sequences
             normalized = match
-            if match.startswith('\\"'):
+            if match.startswith('\\"') and match.endswith('\\"'):
+                # Remove surrounding escaped quotes (\" ... \")
                 normalized = match[2:-2]
-                normalized = normalized.replace('\\"', '"').replace("\\\\", "\\")
+                # Unescape JSON escape sequences
+                normalized = normalized.replace('\\"', '"').replace('\\\\', '\\')
             if normalized not in source_text:
                 hallucinations.add(match)
 
     return hallucinations
 
 
-def extract_citations(output: BaseModel) -> list[Citation]:
-    """Recursively extract citations from a Pydantic model."""
-    citations: list[Citation] = []
+def extract_instances(output: BaseModel, target_type: type[T]) -> list[T]:
+    """Recursively extract instances of a target type from a Pydantic model.
+
+    Args:
+        output: The root Pydantic model to traverse.
+        target_type: The type to extract instances of.
+
+    Returns:
+        List of instances matching the target type.
+    """
+    instances: list[T] = []
 
     def visit(value: object) -> None:
-        if isinstance(value, Citation):
-            citations.append(value)
+        if isinstance(value, target_type):
+            instances.append(value)
             return
         if isinstance(value, BaseModel):
             for field_name in value.__class__.model_fields:
@@ -151,28 +165,14 @@ def extract_citations(output: BaseModel) -> list[Citation]:
                 visit(item)
 
     visit(output)
-    return citations
+    return instances
+
+
+def extract_citations(output: BaseModel) -> list[Citation]:
+    """Recursively extract citations from a Pydantic model."""
+    return extract_instances(output, Citation)
 
 
 def extract_allocation_calls(output: BaseModel) -> list[AllocationCall]:
     """Recursively extract AllocationCall instances from output."""
-    calls: list[AllocationCall] = []
-
-    def visit(value: object) -> None:
-        if isinstance(value, AllocationCall):
-            calls.append(value)
-            return
-        if isinstance(value, BaseModel):
-            for field_name in value.__class__.model_fields:
-                visit(getattr(value, field_name))
-            return
-        if isinstance(value, dict):
-            for item in value.values():
-                visit(item)
-            return
-        if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
-            for item in value:
-                visit(item)
-
-    visit(output)
-    return calls
+    return extract_instances(output, AllocationCall)

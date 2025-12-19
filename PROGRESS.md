@@ -68,7 +68,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
 - [x] `6.1` Implement Stage 4 - Metadata Extraction
 - [x] `6.2` Implement Stage 5 - Candidate Retrieval
-- [ ] `6.3` Implement Stage 6 - Call Extraction (Core)
+- [x] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
 - [ ] `6.5` Implement Stage 7 - Summary Generation
 - [ ] `6.6` Implement Stage 8 - Tooltip Generation
@@ -425,3 +425,21 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - 16 test cases covering: keyword mining, chunk retrieval, ranking, deduplication, LLM expansion, edge cases
   - Tests validate: positioning keyword detection, asset class keyword detection, disclaimer skipping, signal density ranking, empty index handling
 - Verified: all 16 Stage 5 tests pass, all 76 pipeline/integration tests pass, `mypy --strict` passes
+
+### Task 6.3 — Complete (2025-12-20)
+- Implemented **Stage 6: Call Extraction** in `src/pipeline/stages/s6_calls.py`
+  - **Asset mention detection**: Extracts allocation calls (OVERWEIGHT/NEUTRAL/UNDERWEIGHT/UNCERTAIN) with taxonomy mapping
+  - **Rationale extraction**: 1-4 bullet points per call with supporting evidence
+  - **Key indicators**: Parses economic/market indicators with direction (RISING/FALLING/STABLE/VOLATILE)
+  - **Sentiment extraction**: Overall document sentiment (NET_POSITIVE/NEUTRAL/NET_NEGATIVE) with rationale and citations
+  - **Citation parsing**: Converts LLM output dicts to Citation objects, handles optional text_span field
+  - **Duplicate detection**: Validates no duplicate (category, sub_asset) pairs exist
+  - **Validation**: Uses `validate_llm_output()` to check citations, taxonomy, and hallucination markers
+  - **Model version tracking**: Captures LLM provider model name in output metadata
+- Helper functions: `_parse_citation()`, `_parse_key_indicator()`, `_parse_allocation_call()`, `_check_duplicate_calls()`, `_build_call_extraction_output()`
+- LLM models: `CallLLM` (single call schema), `CallExtractionLLM` (full extraction output schema)
+- Uses `PipelineStage.CALLS` with OhMyGPT provider (Claude Haiku 4.5) for call extraction
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s6_calls.py`
+  - 10 test cases covering: successful extraction, uncertain calls, duplicate detection, multiple calls, empty candidates, citation parsing, key risks, model version, prompt building
+  - Tests validate: CallExtractionOutput structure, sentiment extraction, review flags, UNCERTAIN handling, duplicate call rejection
+- Verified: all 10 Stage 6 tests pass, all 86 pipeline/integration tests pass, `mypy --strict` passes

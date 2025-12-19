@@ -121,8 +121,13 @@ def find_hallucination_markers(
     for pattern in HALLUCINATION_MARKERS:
         for match in pattern.findall(output_text):
             normalized = match
-            if match.startswith('"') and match.endswith('"'):
-                normalized = match[1:-1]
+            if match.startswith('"'):
+                normalized = match[1:]
+                if normalized.endswith('\\"'):
+                    normalized = normalized[:-2]
+                elif normalized.endswith('"'):
+                    normalized = normalized[:-1]
+                normalized = normalized.replace('\\"', '"')
             if normalized not in source_text:
                 hallucinations.add(match)
 

@@ -165,4 +165,4 @@ def test_find_hallucination_markers_handles_long_quotes_without_false_positive()
         )
     ]
     matches = find_hallucination_markers(output, chunks)
-    assert quoted_text not in matches
+    assert not matches

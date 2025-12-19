@@ -61,7 +61,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `4.5` Implement Stage 3 - Retrieval Index
 
 ### Phase 5: LLM Interaction Layer
-- [ ] `5.1` Create LLM Client Wrapper
+- [x] `5.1` Create LLM Client Wrapper
 - [ ] `5.2` Create Prompt Templates
 - [ ] `5.3` Create LLM Output Validation
 
@@ -348,3 +348,28 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
    - 5 integration tests covering: full pipeline, querying, empty documents, minimal content, query relevance
    - Tests validate: end-to-end Stage 3 functionality, realistic document structures, query result quality
 - Verified: all tests pass (21/21), type safety confirmed with explicit type annotations, no existing tests broken
+
+---
+
+### Task 5.1 — Complete (2025-12-19)
+- Implemented **multi-provider LLM client** in [`src/llm/client.py`](src/llm/client.py)
+- Supports 4 providers via OpenAI-compatible API:
+  - **OhMyGPT** (Claude Haiku 4.5) → Metadata & Call Extraction
+  - **MegaLLM** (GPT-OSS-120b) → Candidate Retrieval
+  - **Nebius** (GLM-4.5-Air) → Verification & Summary Generation
+  - **DeepInfra** (Qwen3-235B) → Tooltip & Tag Generation
+- **Stage-to-provider routing**: `STAGE_PROVIDER_MAP` automatically selects the right provider per pipeline stage
+- **Features implemented**:
+  - `LLMProvider` enum for provider selection
+  - `PipelineStage` enum for stage-based routing
+  - `ProviderConfig` dataclass for provider configuration
+  - JSON output mode with Pydantic validation via `complete_json()`
+  - Automatic markdown code block cleaning for JSON responses
+  - Retry logic with exponential backoff (3 retries, 1s/2s/4s delays)
+  - Safe logging: prompts/responses hashed, truncated previews in DEBUG mode
+- Updated [`src/config/settings.py`](src/config/settings.py) with new API key settings:
+  - `OHMYGPT_API_KEY`, `MEGALLM_API_KEY`, `NEBIUS_API_KEY`, `DEEPINFRA_API_KEY`
+- Updated [`.env.example`](.env.example) with all required API keys
+- Created comprehensive test suite in [`tests/unit/llm/test_client.py`](tests/unit/llm/test_client.py)
+  - 18 test cases covering: initialization, provider config, stage routing, completion, JSON parsing, helper methods, logging
+- Verified: all tests pass (18/18), `mypy --strict` passes

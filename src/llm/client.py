@@ -1,0 +1,437 @@
+"""Multi-provider LLM client with unified interface for pipeline stages.
+
+Supports multiple providers via OpenAI-compatible API:
+- OhMyGPT (Claude Haiku 4.5)
+- MegaLLM (GPT-OSS-120b)
+- Nebius (GLM-4.5-Air)
+- DeepInfra (Qwen3-235B)
+"""
+from __future__ import annotations
+
+import asyncio
+import hashlib
+import json
+import logging
+from dataclasses import dataclass
+from enum import Enum
+from typing import TypeVar
+
+from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
+from openai.types.chat import ChatCompletionMessageParam
+from pydantic import BaseModel
+
+from src.config.settings import get_settings
+from src.exceptions import LLMError
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar("T", bound=BaseModel)
+
+
+class LLMProvider(str, Enum):
+    """Supported LLM providers."""
+
+    OHMYGPT = "ohmygpt"  # Claude Haiku 4.5
+    MEGALLM = "megallm"  # GPT-OSS-120b
+    NEBIUS = "nebius"  # GLM-4.5-Air
+    DEEPINFRA = "deepinfra"  # Qwen3-235B
+
+
+class PipelineStage(str, Enum):
+    """Pipeline stages that use LLM."""
+
+    METADATA = "metadata"  # S4
+    CANDIDATES = "candidates"  # S5
+    CALLS = "calls"  # S6
+    VERIFICATION = "verification"  # S6 verification pass
+    SUMMARIES = "summaries"  # S7
+    TOOLTIPS = "tooltips"  # S8
+    TAGS = "tags"  # S9
+
+
+@dataclass(frozen=True)
+class ProviderConfig:
+    """Configuration for an LLM provider."""
+
+    base_url: str
+    model_name: str
+    default_temperature: float = 0.0
+    max_tokens: int = 4096
+
+
+# Provider configurations
+PROVIDER_CONFIGS: dict[LLMProvider, ProviderConfig] = {
+    LLMProvider.OHMYGPT: ProviderConfig(
+        base_url="https://apic1.ohmycdn.com/api/v1/ai/openai/cc-omg",
+        model_name="claude-haiku-4-5",
+        default_temperature=0.0,
+    ),
+    LLMProvider.MEGALLM: ProviderConfig(
+        base_url="https://ai.megallm.io/v1",
+        model_name="openai-gpt-oss-120b",
+        default_temperature=0.0,
+    ),
+    LLMProvider.NEBIUS: ProviderConfig(
+        base_url="https://api.tokenfactory.nebius.com/v1/",
+        model_name="zai-org/GLM-4.5-Air",
+        default_temperature=0.0,
+    ),
+    LLMProvider.DEEPINFRA: ProviderConfig(
+        base_url="https://api.deepinfra.com/v1/openai",
+        model_name="Qwen/Qwen3-235B-A22B-Instruct-2507",
+        default_temperature=0.6,  # Qwen works better with 0.5-0.7
+    ),
+}
+
+
+# Stage to provider mapping
+STAGE_PROVIDER_MAP: dict[PipelineStage, LLMProvider] = {
+    PipelineStage.METADATA: LLMProvider.OHMYGPT,  # Claude Haiku 4.5
+    PipelineStage.CANDIDATES: LLMProvider.MEGALLM,  # GPT-OSS-120b
+    PipelineStage.CALLS: LLMProvider.OHMYGPT,  # Claude Haiku 4.5
+    PipelineStage.VERIFICATION: LLMProvider.NEBIUS,  # GLM-4.5-Air
+    PipelineStage.SUMMARIES: LLMProvider.NEBIUS,  # GLM-4.5-Air
+    PipelineStage.TOOLTIPS: LLMProvider.DEEPINFRA,  # Qwen3-235B
+    PipelineStage.TAGS: LLMProvider.DEEPINFRA,  # Qwen3-235B
+}
+
+
+class LLMClient:
+    """Multi-provider LLM client with unified interface.
+
+    Supports automatic provider selection based on pipeline stage,
+    or explicit provider selection for flexibility.
+
+    Attributes:
+        clients: Dict of AsyncOpenAI clients per provider
+        max_retries: Maximum number of retry attempts on rate limits
+        base_delay: Base delay in seconds for exponential backoff
+    """
+
+    def __init__(
+        self,
+        api_keys: dict[LLMProvider, str] | None = None,
+        max_retries: int = 3,
+        base_delay: float = 1.0,
+    ):
+        """Initialize the multi-provider LLM client.
+
+        Args:
+            api_keys: Dict mapping providers to API keys (if None, loaded from settings)
+            max_retries: Maximum retry attempts on rate limits
+            base_delay: Base delay in seconds for exponential backoff
+        """
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.clients: dict[LLMProvider, AsyncOpenAI] = {}
+
+        # Load API keys from settings if not provided
+        if api_keys is None:
+            settings = get_settings()
+            api_keys = {
+                LLMProvider.OHMYGPT: settings.ohmygpt_api_key.get_secret_value(),
+                LLMProvider.MEGALLM: settings.megallm_api_key.get_secret_value(),
+                LLMProvider.NEBIUS: settings.nebius_api_key.get_secret_value(),
+                LLMProvider.DEEPINFRA: settings.deepinfra_api_key.get_secret_value(),
+            }
+
+        # Initialize clients for each provider
+        for provider, config in PROVIDER_CONFIGS.items():
+            if provider in api_keys:
+                self.clients[provider] = AsyncOpenAI(
+                    api_key=api_keys[provider],
+                    base_url=config.base_url,
+                )
+
+    def get_provider_for_stage(self, stage: PipelineStage) -> LLMProvider:
+        """Get the configured provider for a pipeline stage.
+
+        Args:
+            stage: The pipeline stage
+
+        Returns:
+            The LLM provider to use for this stage
+        """
+        return STAGE_PROVIDER_MAP[stage]
+
+    def get_config(self, provider: LLMProvider) -> ProviderConfig:
+        """Get configuration for a provider.
+
+        Args:
+            provider: The LLM provider
+
+        Returns:
+            Provider configuration
+        """
+        return PROVIDER_CONFIGS[provider]
+
+    async def complete(
+        self,
+        prompt: str,
+        stage: PipelineStage | None = None,
+        provider: LLMProvider | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
+    ) -> str:
+        """Call LLM with automatic provider selection based on stage.
+
+        Args:
+            prompt: The prompt text to send
+            stage: Pipeline stage (auto-selects provider if specified)
+            provider: Explicit provider override (takes precedence over stage)
+            max_tokens: Maximum tokens in response (defaults to provider config)
+            temperature: Sampling temperature (defaults to provider config)
+            system_prompt: Optional system prompt
+
+        Returns:
+            The model's response text
+
+        Raises:
+            LLMError: If API call fails after all retries
+            ValueError: If neither stage nor provider specified
+        """
+        # Determine provider
+        if provider is None:
+            if stage is None:
+                raise ValueError("Either stage or provider must be specified")
+            provider = self.get_provider_for_stage(stage)
+
+        if provider not in self.clients:
+            raise LLMError(f"No API key configured for provider: {provider.value}")
+
+        config = self.get_config(provider)
+        client = self.clients[provider]
+
+        # Use defaults from config if not specified
+        max_tokens = max_tokens or config.max_tokens
+        temperature = temperature if temperature is not None else config.default_temperature
+
+        prompt_hash = self._hash_text(prompt)
+        prompt_tokens = self.count_tokens(prompt)
+
+        # Safe logging
+        logger.info(
+            "LLM request",
+            extra={
+                "provider": provider.value,
+                "model": config.model_name,
+                "stage": stage.value if stage else None,
+                "prompt_hash": prompt_hash,
+                "prompt_tokens": prompt_tokens,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            },
+        )
+
+        if logger.isEnabledFor(logging.DEBUG):
+            preview = self._truncate_text(prompt, max_length=200)
+            logger.debug(f"Prompt preview: {preview}")
+
+        # Build messages
+        messages: list[ChatCompletionMessageParam] = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        # Retry loop with exponential backoff
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries):
+            try:
+                response = await client.chat.completions.create(
+                    model=config.model_name,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+
+                response_text = response.choices[0].message.content or ""
+                response_hash = self._hash_text(response_text)
+
+                logger.info(
+                    "LLM response received",
+                    extra={
+                        "provider": provider.value,
+                        "model": config.model_name,
+                        "response_hash": response_hash,
+                        "prompt_tokens": response.usage.prompt_tokens if response.usage else None,
+                        "completion_tokens": response.usage.completion_tokens if response.usage else None,
+                    },
+                )
+
+                if logger.isEnabledFor(logging.DEBUG):
+                    preview = self._truncate_text(response_text, max_length=200)
+                    logger.debug(f"Response preview: {preview}")
+
+                return response_text
+
+            except RateLimitError as e:
+                last_error = e
+                if attempt < self.max_retries - 1:
+                    delay = self.base_delay * (2**attempt)
+                    logger.warning(
+                        f"Rate limit hit on {provider.value}, retrying in {delay}s "
+                        f"(attempt {attempt + 1}/{self.max_retries})"
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Rate limit exceeded after {self.max_retries} attempts")
+
+            except (APIError, APIConnectionError) as e:
+                last_error = e
+                logger.error(f"API error from {provider.value}: {e}")
+                break
+
+            except Exception as e:
+                last_error = e
+                logger.error(f"Unexpected error during LLM call to {provider.value}: {e}")
+                break
+
+        error_msg = f"LLM API call failed ({provider.value}): {last_error}"
+        raise LLMError(error_msg) from last_error
+
+    async def complete_json(
+        self,
+        prompt: str,
+        response_model: type[T],
+        stage: PipelineStage | None = None,
+        provider: LLMProvider | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        system_prompt: str | None = None,
+    ) -> T:
+        """Call LLM and parse response as JSON matching a Pydantic model.
+
+        Args:
+            prompt: The prompt text to send
+            response_model: Pydantic model class to validate response against
+            stage: Pipeline stage (auto-selects provider if specified)
+            provider: Explicit provider override
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            system_prompt: Optional system prompt
+
+        Returns:
+            Validated Pydantic model instance
+
+        Raises:
+            LLMError: If API call fails or response doesn't match schema
+        """
+        schema = response_model.model_json_schema()
+        enhanced_prompt = f"""{prompt}
+
+## Output Schema
+Return ONLY valid JSON matching this schema (no explanation, no markdown, no code blocks):
+
+{json.dumps(schema, indent=2)}
+
+## Output (JSON only)
+"""
+
+        try:
+            response_text = await self.complete(
+                prompt=enhanced_prompt,
+                stage=stage,
+                provider=provider,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+
+            # Clean response - remove markdown code blocks if present
+            response_text = self._clean_json_response(response_text)
+
+            # Parse and validate JSON
+            validated = response_model.model_validate_json(response_text)
+            logger.info(
+                "JSON response validated",
+                extra={"model_type": response_model.__name__},
+            )
+            return validated
+
+        except json.JSONDecodeError as e:
+            error_msg = f"Failed to parse LLM response as JSON: {e}"
+            logger.error(error_msg)
+            raise LLMError(error_msg) from e
+
+        except Exception as e:
+            if isinstance(e, LLMError):
+                raise
+            error_msg = f"Failed to validate LLM response against {response_model.__name__}: {e}"
+            logger.error(error_msg)
+            raise LLMError(error_msg) from e
+
+    def _clean_json_response(self, text: str) -> str:
+        """Clean JSON response by removing markdown code blocks.
+
+        Args:
+            text: Raw response text
+
+        Returns:
+            Cleaned JSON string
+        """
+        text = text.strip()
+
+        # Remove markdown code blocks
+        if text.startswith("```json"):
+            text = text[7:]
+        elif text.startswith("```"):
+            text = text[3:]
+
+        if text.endswith("```"):
+            text = text[:-3]
+
+        return text.strip()
+
+    def count_tokens(self, text: str) -> int:
+        """Estimate token count for text.
+
+        Uses a simple heuristic: ~4 characters per token.
+
+        Args:
+            text: The text to count tokens for
+
+        Returns:
+            Estimated token count
+        """
+        return len(text) // 4
+
+    def _hash_text(self, text: str) -> str:
+        """Compute SHA-256 hash of text for logging.
+
+        Args:
+            text: Text to hash
+
+        Returns:
+            Hex digest of hash (first 16 characters)
+        """
+        return hashlib.sha256(text.encode()).hexdigest()[:16]
+
+    def _truncate_text(self, text: str, max_length: int = 200) -> str:
+        """Truncate text for debug logging.
+
+        Args:
+            text: Text to truncate
+            max_length: Maximum length
+
+        Returns:
+            Truncated text with ellipsis if needed
+        """
+        if len(text) <= max_length:
+            return text
+        return text[:max_length] + "..."
+
+
+# Convenience function for quick access
+def get_stage_model_info(stage: PipelineStage) -> tuple[LLMProvider, str]:
+    """Get provider and model name for a pipeline stage.
+
+    Args:
+        stage: The pipeline stage
+
+    Returns:
+        Tuple of (provider, model_name)
+    """
+    provider = STAGE_PROVIDER_MAP[stage]
+    config = PROVIDER_CONFIGS[provider]
+    return provider, config.model_name

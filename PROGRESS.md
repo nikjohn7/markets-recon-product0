@@ -70,7 +70,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `6.2` Implement Stage 5 - Candidate Retrieval
 - [x] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
-- [ ] `6.5` Implement Stage 7 - Summary Generation
+- [x] `6.5` Implement Stage 7 - Summary Generation
 - [ ] `6.6` Implement Stage 8 - Tooltip Generation
 - [ ] `6.7` Implement Stage 9 - Tag Generation
 
@@ -443,3 +443,21 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - 10 test cases covering: successful extraction, uncertain calls, duplicate detection, multiple calls, empty candidates, citation parsing, key risks, model version, prompt building
   - Tests validate: CallExtractionOutput structure, sentiment extraction, review flags, UNCERTAIN handling, duplicate call rejection
 - Verified: all 10 Stage 6 tests pass, all 86 pipeline/integration tests pass, `mypy --strict` passes
+
+### Task 6.5 — Complete (2025-12-20)
+- Implemented **Stage 7: Summary Generation** in `src/pipeline/stages/s7_summaries.py`
+  - **Executive summary generation**: 120-180 words with top macro drivers, top 3 calls, 2 key risks
+  - **Search descriptor**: 20-35 words combining document type, implications, and asset focus
+  - **Key takeaways**: 3-5 actionable bullets with citations
+  - **Smart chunk retrieval**: Multi-query retrieval using document metadata, sentiment themes, and top asset classes
+  - **Citation parsing**: Handles citations with optional text_span field
+  - **Word count validation**: Logs warnings for out-of-bounds word counts (non-blocking)
+  - **Model version tracking**: Captures LLM provider model name (Nebius GLM-4.5-Air)
+- LLM models: `KeyTakeawayLLM` (single takeaway schema), `SummaryGenerationLLM` (full output schema)
+- Uses `PipelineStage.SUMMARIES` with Nebius provider (GLM-4.5-Air) for summary generation
+- Helper functions: `_parse_citation()`, `_parse_key_takeaway()`, `_retrieve_key_passages()`, `_validate_word_count()`
+- Chunk retrieval strategy: Deduplicates across multiple queries, ranks by relevance score, returns top 30 chunks
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s7_summaries.py`
+  - 10 test cases covering: complete output generation, word count validation, citation parsing, multiple takeaways, chunk retrieval, no-calls handling, prompt building, error handling
+  - Tests validate: DocumentSummaries structure, citation parsing (with/without text_span), takeaway validation, LLM failure handling
+- Verified: all 10 Stage 7 tests pass, all 84 pipeline stage tests pass, `mypy --strict` passes on all pipeline stages

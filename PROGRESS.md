@@ -61,9 +61,9 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `4.5` Implement Stage 3 - Retrieval Index
 
 ### Phase 5: LLM Interaction Layer
-- [ ] `5.1` Create LLM Client Wrapper
-- [ ] `5.2` Create Prompt Templates
-- [ ] `5.3` Create LLM Output Validation
+- [x] `5.1` Create LLM Client Wrapper
+- [x] `5.2` Create Prompt Templates
+- [x] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
 - [ ] `6.1` Implement Stage 4 - Metadata Extraction
@@ -348,3 +348,58 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
    - 5 integration tests covering: full pipeline, querying, empty documents, minimal content, query relevance
    - Tests validate: end-to-end Stage 3 functionality, realistic document structures, query result quality
 - Verified: all tests pass (21/21), type safety confirmed with explicit type annotations, no existing tests broken
+
+---
+
+### Task 5.1 — Complete (2025-12-19)
+- Implemented **multi-provider LLM client** in [`src/llm/client.py`](src/llm/client.py)
+- Supports 4 providers via OpenAI-compatible API:
+  - **OhMyGPT** (Claude Haiku 4.5) → Metadata & Call Extraction
+  - **MegaLLM** (GPT-OSS-120b) → Candidate Retrieval
+  - **Nebius** (GLM-4.5-Air) → Verification & Summary Generation
+  - **DeepInfra** (Qwen3-235B) → Tooltip & Tag Generation
+- **Stage-to-provider routing**: `STAGE_PROVIDER_MAP` automatically selects the right provider per pipeline stage
+- **Features implemented**:
+  - `LLMProvider` enum for provider selection
+  - `PipelineStage` enum for stage-based routing
+  - `ProviderConfig` dataclass for provider configuration
+  - JSON output mode with Pydantic validation via `complete_json()`
+  - Automatic markdown code block cleaning for JSON responses
+  - Retry logic with exponential backoff (3 retries, 1s/2s/4s delays)
+  - Safe logging: prompts/responses hashed, truncated previews in DEBUG mode
+- Updated [`src/config/settings.py`](src/config/settings.py) with new API key settings:
+  - `OHMYGPT_API_KEY`, `MEGALLM_API_KEY`, `NEBIUS_API_KEY`, `DEEPINFRA_API_KEY`
+- Updated [`.env.example`](.env.example) with all required API keys
+- Created comprehensive test suite in [`tests/unit/llm/test_client.py`](tests/unit/llm/test_client.py)
+  - 18 test cases covering: initialization, provider config, stage routing, completion, JSON parsing, helper methods, logging
+- Verified: all tests pass (18/18), `mypy --strict` passes
+
+### Task 5.2 — Complete (2025-12-19)
+- Created [`src/llm/prompts/metadata.py`](src/llm/prompts/metadata.py) — Stage 4 metadata extraction prompt
+  - Schema with DocumentProfile fields, uncertainty flags, citation requirements
+  - `build_metadata_extraction_prompt()` function for chunk formatting and prompt assembly
+- Created [`src/llm/prompts/calls.py`](src/llm/prompts/calls.py) — Stage 6 call extraction prompt
+  - Schema with AllocationCall fields, taxonomy codes, sentiment extraction
+  - Taxonomy summary helper, call direction rules, conviction mapping
+  - Critical guardrails: NO HALLUCINATION, NO DUPLICATE CALLS, confidence scoring
+- Created [`src/llm/prompts/summaries.py`](src/llm/prompts/summaries.py) — Stage 7 summary generation prompt
+  - Executive summary (120-180 words), search descriptor (20-35 words), key takeaways (3-5 bullets)
+  - Word count enforcement, attribution guidance
+- Created [`src/llm/prompts/tooltips.py`](src/llm/prompts/tooltips.py) — Stage 8 tooltip generation prompt
+  - ≤25 word hover text per call with positioning and key reason
+  - Good/bad examples from LLM_CONTRACTS.md
+- Created [`src/llm/prompts/tags.py`](src/llm/prompts/tags.py) — Stage 9 tag generation prompt
+  - Uses allowed vocabularies from `src/taxonomy/tags.py`
+  - Theme, risk, macro regime tag categories with mapping guidance
+- Created [`src/llm/prompts/verification.py`](src/llm/prompts/verification.py) — Stage 6 verification pass prompt (v1+ deferred)
+  - Direction, taxonomy, rationale verification with evidence strength scoring
+- Updated [`src/llm/prompts/__init__.py`](src/llm/prompts/__init__.py) with all exports
+- Fixed mypy configuration in `pyproject.toml` (removed `mypy_path`, added `namespace_packages = true`)
+- Created comprehensive test suite in [`tests/unit/llm/test_prompts.py`](tests/unit/llm/test_prompts.py)
+  - 33 test cases covering: schema validation, prompt building, guardrails, helper functions
+- Verified: all tests pass (51/51 in llm module), mypy passes on prompts module
+
+### Task 5.3 — Complete (2025-12-19)
+- Added `src/llm/contracts.py` with citation, taxonomy, and hallucination guardrail validation
+- Exported validation helpers via `src/llm/__init__.py`
+- Added `tests/unit/llm/test_contracts.py` covering citations, taxonomy mismatch, hallucination detection

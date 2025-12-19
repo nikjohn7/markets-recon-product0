@@ -149,3 +149,20 @@ def test_validate_llm_output_allows_markers_in_source():
         )
     ]
     validate_llm_output(output, chunks)
+
+
+def test_find_hallucination_markers_handles_long_quotes_without_false_positive():
+    """Quoted long text should match source text without false positives."""
+    quoted_text = "This sentence is intentionally long enough to cross the threshold."
+    output = SimpleOutput(note=f"\"{quoted_text}\"")
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text=f"Context: {quoted_text} Additional context.",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert quoted_text not in matches

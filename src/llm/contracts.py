@@ -120,7 +120,10 @@ def find_hallucination_markers(
 
     for pattern in HALLUCINATION_MARKERS:
         for match in pattern.findall(output_text):
-            if match not in source_text:
+            normalized = match
+            if match.startswith('"') and match.endswith('"'):
+                normalized = match[1:-1]
+            if normalized not in source_text:
                 hallucinations.add(match)
 
     return hallucinations

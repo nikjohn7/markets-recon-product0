@@ -62,7 +62,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 5: LLM Interaction Layer
 - [x] `5.1` Create LLM Client Wrapper
-- [ ] `5.2` Create Prompt Templates
+- [x] `5.2` Create Prompt Templates
 - [ ] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
@@ -373,3 +373,28 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created comprehensive test suite in [`tests/unit/llm/test_client.py`](tests/unit/llm/test_client.py)
   - 18 test cases covering: initialization, provider config, stage routing, completion, JSON parsing, helper methods, logging
 - Verified: all tests pass (18/18), `mypy --strict` passes
+
+### Task 5.2 — Complete (2025-12-19)
+- Created [`src/llm/prompts/metadata.py`](src/llm/prompts/metadata.py) — Stage 4 metadata extraction prompt
+  - Schema with DocumentProfile fields, uncertainty flags, citation requirements
+  - `build_metadata_extraction_prompt()` function for chunk formatting and prompt assembly
+- Created [`src/llm/prompts/calls.py`](src/llm/prompts/calls.py) — Stage 6 call extraction prompt
+  - Schema with AllocationCall fields, taxonomy codes, sentiment extraction
+  - Taxonomy summary helper, call direction rules, conviction mapping
+  - Critical guardrails: NO HALLUCINATION, NO DUPLICATE CALLS, confidence scoring
+- Created [`src/llm/prompts/summaries.py`](src/llm/prompts/summaries.py) — Stage 7 summary generation prompt
+  - Executive summary (120-180 words), search descriptor (20-35 words), key takeaways (3-5 bullets)
+  - Word count enforcement, attribution guidance
+- Created [`src/llm/prompts/tooltips.py`](src/llm/prompts/tooltips.py) — Stage 8 tooltip generation prompt
+  - ≤25 word hover text per call with positioning and key reason
+  - Good/bad examples from LLM_CONTRACTS.md
+- Created [`src/llm/prompts/tags.py`](src/llm/prompts/tags.py) — Stage 9 tag generation prompt
+  - Uses allowed vocabularies from `src/taxonomy/tags.py`
+  - Theme, risk, macro regime tag categories with mapping guidance
+- Created [`src/llm/prompts/verification.py`](src/llm/prompts/verification.py) — Stage 6 verification pass prompt (v1+ deferred)
+  - Direction, taxonomy, rationale verification with evidence strength scoring
+- Updated [`src/llm/prompts/__init__.py`](src/llm/prompts/__init__.py) with all exports
+- Fixed mypy configuration in `pyproject.toml` (removed `mypy_path`, added `namespace_packages = true`)
+- Created comprehensive test suite in [`tests/unit/llm/test_prompts.py`](tests/unit/llm/test_prompts.py)
+  - 33 test cases covering: schema validation, prompt building, guardrails, helper functions
+- Verified: all tests pass (51/51 in llm module), mypy passes on prompts module

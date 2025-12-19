@@ -63,7 +63,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 5: LLM Interaction Layer
 - [x] `5.1` Create LLM Client Wrapper
 - [x] `5.2` Create Prompt Templates
-- [ ] `5.3` Create LLM Output Validation
+- [x] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
 - [ ] `6.1` Implement Stage 4 - Metadata Extraction
@@ -398,3 +398,8 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Created comprehensive test suite in [`tests/unit/llm/test_prompts.py`](tests/unit/llm/test_prompts.py)
   - 33 test cases covering: schema validation, prompt building, guardrails, helper functions
 - Verified: all tests pass (51/51 in llm module), mypy passes on prompts module
+
+### Task 5.3 — Complete (2025-12-19)
+- Added `src/llm/contracts.py` with citation, taxonomy, and hallucination guardrail validation
+- Exported validation helpers via `src/llm/__init__.py`
+- Added `tests/unit/llm/test_contracts.py` covering citations, taxonomy mismatch, hallucination detection

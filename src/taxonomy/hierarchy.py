@@ -6,7 +6,6 @@ allocation calls. All LLM extractions must map to this taxonomy.
 Source: docs/TAXONOMY.md
 """
 
-from typing import Optional
 
 # =============================================================================
 # Category → Sub-Asset Mappings
@@ -323,7 +322,7 @@ for category, sub_assets in CATEGORIES.items():
 # =============================================================================
 
 
-def get_category_for_sub_asset(sub_asset_code: str) -> Optional[str]:
+def get_category_for_sub_asset(sub_asset_code: str) -> str | None:
     """Get the category code for a given sub-asset code.
 
     Args:
@@ -347,7 +346,7 @@ def get_sub_assets_for_category(category_code: str) -> list[str]:
     return CATEGORIES.get(category_code, [])
 
 
-def get_category_display_name(category_code: str) -> Optional[str]:
+def get_category_display_name(category_code: str) -> str | None:
     """Get the display name for a category code.
 
     Args:
@@ -359,7 +358,7 @@ def get_category_display_name(category_code: str) -> Optional[str]:
     return CATEGORY_DISPLAY_NAMES.get(category_code)
 
 
-def get_sub_asset_display_name(sub_asset_code: str) -> Optional[str]:
+def get_sub_asset_display_name(sub_asset_code: str) -> str | None:
     """Get the display name for a sub-asset code.
 
     Args:

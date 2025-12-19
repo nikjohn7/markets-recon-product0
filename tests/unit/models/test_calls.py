@@ -13,7 +13,9 @@ from models.enums import CallDirection, IndicatorDirection, Sentiment
 class TestKeyIndicator:
     def test_valid_indicator(self) -> None:
         ki = KeyIndicator(
-            name="Inflation trend", direction=IndicatorDirection.RISING, why_it_matters="Impacts rates"
+            name="Inflation trend",
+            direction=IndicatorDirection.RISING,
+            why_it_matters="Impacts rates",
         )
         assert ki.name == "Inflation trend"
 

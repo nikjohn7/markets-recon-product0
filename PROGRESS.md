@@ -67,7 +67,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
 - [x] `6.1` Implement Stage 4 - Metadata Extraction
-- [ ] `6.2` Implement Stage 5 - Candidate Retrieval
+- [x] `6.2` Implement Stage 5 - Candidate Retrieval
 - [ ] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
 - [ ] `6.5` Implement Stage 7 - Summary Generation
@@ -408,3 +408,20 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/pipeline/stages/s4_metadata.py` with retrieval-assisted metadata extraction and date plausibility checks
 - Implemented chunk selection for first two pages plus metadata query to build the LLM prompt
 - Added `tests/unit/pipeline/stages/test_s4_metadata.py` covering successful extraction, uncertainty handling, and fallback behavior
+
+### Task 6.2 — Complete (2025-12-20)
+- Implemented **Stage 5: Candidate Retrieval** in `src/pipeline/stages/s5_candidates.py`
+  - **Keyword mining**: Searches for positioning keywords (overweight, underweight, prefer, avoid, etc.) and asset class mentions from taxonomy
+  - **Block-to-chunk retrieval**: Maps keyword-matched blocks to chunks from the document index
+  - **LLM expansion**: Uses LLM to identify additional passages with indirect/implied positioning language not caught by keywords
+  - **Signal density ranking**: Ranks chunks by density of signal keywords
+  - **Deduplication**: Removes duplicate chunks while preserving order
+  - Returns `CandidateSet` with up to 30 candidate chunks (20 keyword + 10 expansion)
+- Created `src/llm/prompts/candidates.py` with expansion prompt template
+  - Asks LLM to find passages with indirect signals (e.g., "find value in", "reducing exposure")
+  - Includes guardrails against selecting pure macro commentary or disclaimers
+- Updated `src/llm/prompts/__init__.py` to export candidate expansion prompt
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s5_candidates.py`
+  - 16 test cases covering: keyword mining, chunk retrieval, ranking, deduplication, LLM expansion, edge cases
+  - Tests validate: positioning keyword detection, asset class keyword detection, disclaimer skipping, signal density ranking, empty index handling
+- Verified: all 16 Stage 5 tests pass, all 76 pipeline/integration tests pass, `mypy --strict` passes

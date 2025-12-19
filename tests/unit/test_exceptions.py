@@ -1,7 +1,6 @@
 """Tests for exception hierarchy in src/exceptions.py."""
 
 import pytest
-
 from src.exceptions import (
     ExtractionError,
     LLMError,

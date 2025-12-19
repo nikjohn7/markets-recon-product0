@@ -9,7 +9,6 @@ Tests verify that:
 from datetime import date
 
 import pytest
-
 from src.llm.prompts import (
     build_call_extraction_prompt,
     build_metadata_extraction_prompt,
@@ -33,7 +32,6 @@ from src.models.core import Citation
 from src.models.enums import CallDirection, Conviction, DocumentType
 from src.models.pipeline import RetrievedChunk
 from src.models.profile import DocumentProfile
-
 
 # ============================================================================
 # Fixtures
@@ -76,9 +74,7 @@ def sample_profile() -> DocumentProfile:
         asset_classes_covered=["EQUITIES", "FIXED_INCOME"],
         regions=["US", "EUROPE"],
         time_horizon="6-12M",
-        citations=[
-            Citation(chunk_id="doc1_0", page=1, text_span="Q3 2025 Investment Outlook")
-        ],
+        citations=[Citation(chunk_id="doc1_0", page=1, text_span="Q3 2025 Investment Outlook")],
     )
 
 
@@ -106,9 +102,7 @@ def sample_calls() -> list[AllocationCall]:
             call=CallDirection.OVERWEIGHT,
             conviction=Conviction.MEDIUM,
             rationale_bullets=["Fed signals easing", "Attractive yield levels"],
-            citations=[
-                Citation(chunk_id="doc1_1", page=2, text_span="US duration is attractive")
-            ],
+            citations=[Citation(chunk_id="doc1_1", page=2, text_span="US duration is attractive")],
             confidence=0.85,
         ),
     ]
@@ -150,9 +144,7 @@ class TestMetadataPrompt:
         for doc_type in DocumentType:
             assert doc_type.value in doc_types_str
 
-    def test_build_prompt_includes_chunks(
-        self, sample_chunks: list[RetrievedChunk]
-    ) -> None:
+    def test_build_prompt_includes_chunks(self, sample_chunks: list[RetrievedChunk]) -> None:
         """Built prompt should include formatted chunks."""
         prompt = build_metadata_extraction_prompt(sample_chunks)
 
@@ -160,9 +152,7 @@ class TestMetadataPrompt:
         assert "Page 1" in prompt
         assert "overweight European equities" in prompt
 
-    def test_build_prompt_includes_schema(
-        self, sample_chunks: list[RetrievedChunk]
-    ) -> None:
+    def test_build_prompt_includes_schema(self, sample_chunks: list[RetrievedChunk]) -> None:
         """Built prompt should include the JSON schema."""
         prompt = build_metadata_extraction_prompt(sample_chunks)
 
@@ -170,9 +160,7 @@ class TestMetadataPrompt:
         assert '"document_type"' in prompt
         assert '"citations"' in prompt
 
-    def test_build_prompt_includes_guardrails(
-        self, sample_chunks: list[RetrievedChunk]
-    ) -> None:
+    def test_build_prompt_includes_guardrails(self, sample_chunks: list[RetrievedChunk]) -> None:
         """Built prompt should include critical guardrails."""
         prompt = build_metadata_extraction_prompt(sample_chunks)
 
@@ -299,9 +287,7 @@ class TestSummaryPrompt:
         sample_profile: DocumentProfile,
     ) -> None:
         """Built prompt should specify word count requirements."""
-        prompt = build_summary_generation_prompt(
-            sample_chunks, sample_calls, sample_profile
-        )
+        prompt = build_summary_generation_prompt(sample_chunks, sample_calls, sample_profile)
 
         assert "120-180 words" in prompt
         assert "20-35 words" in prompt
@@ -331,18 +317,14 @@ class TestTooltipPrompt:
 
         assert tooltip_props["tooltip_text"]["maxLength"] == 150
 
-    def test_build_prompt_includes_examples(
-        self, sample_calls: list[AllocationCall]
-    ) -> None:
+    def test_build_prompt_includes_examples(self, sample_calls: list[AllocationCall]) -> None:
         """Built prompt should include good and bad examples."""
         prompt = build_tooltip_generation_prompt(sample_calls)
 
         assert "Good tooltip" in prompt or "Good:" in prompt
         assert "Bad tooltip" in prompt or "Bad:" in prompt
 
-    def test_build_prompt_formats_calls(
-        self, sample_calls: list[AllocationCall]
-    ) -> None:
+    def test_build_prompt_formats_calls(self, sample_calls: list[AllocationCall]) -> None:
         """Built prompt should format calls correctly."""
         prompt = build_tooltip_generation_prompt(sample_calls)
 
@@ -469,9 +451,7 @@ class TestVerificationPrompt:
 class TestHelperFunctions:
     """Tests for prompt helper functions."""
 
-    def test_format_chunks_for_prompt(
-        self, sample_chunks: list[RetrievedChunk]
-    ) -> None:
+    def test_format_chunks_for_prompt(self, sample_chunks: list[RetrievedChunk]) -> None:
         """Chunks should be formatted with headers and separators."""
         formatted = format_chunks_for_prompt(sample_chunks)
 
@@ -479,9 +459,7 @@ class TestHelperFunctions:
         assert "[Chunk doc1_1 | Page 2]" in formatted
         assert "---" in formatted
 
-    def test_format_chunks_preserves_text(
-        self, sample_chunks: list[RetrievedChunk]
-    ) -> None:
+    def test_format_chunks_preserves_text(self, sample_chunks: list[RetrievedChunk]) -> None:
         """Formatted chunks should preserve original text."""
         formatted = format_chunks_for_prompt(sample_chunks)
 

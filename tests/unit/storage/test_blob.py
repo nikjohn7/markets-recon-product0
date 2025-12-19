@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from src.exceptions import StorageError
 from src.storage.blob import LocalBlobStorage
 
@@ -227,7 +226,7 @@ class TestBlobStoragePathTraversal:
             "..%2F..%2F..%2Fetc%2Fpasswd",  # URL encoded
             "....//....//....//etc/passwd",  # Double dot variant
         ]
-        
+
         for malicious_id in malicious_ids:
             with pytest.raises(StorageError, match="Invalid blob_id format"):
                 storage.retrieve(malicious_id)
@@ -259,16 +258,18 @@ class TestBlobStoragePathTraversal:
             "!" * 64,  # Contains non-hex characters
             "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz",  # All 'z's
         ]
-        
+
         for invalid_id in invalid_ids:
-            with pytest.raises(StorageError, match="Invalid blob_id format|blob_id cannot be empty"):
+            with pytest.raises(
+                StorageError, match="Invalid blob_id format|blob_id cannot be empty"
+            ):
                 storage.retrieve(invalid_id)
 
     def test_valid_sha256_blob_id_accepted(self, storage: LocalBlobStorage) -> None:
         """Valid SHA-256 hex strings are accepted."""
         # This is a real SHA-256 hash of "test content"
         valid_blob_id = "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
-        
+
         # Should not raise an error for format validation
         # (will raise "Blob not found" since it doesn't exist, but that's expected)
         with pytest.raises(StorageError, match="Blob not found"):

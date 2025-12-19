@@ -2,6 +2,7 @@
 
 Validation functions for citations, taxonomy integrity, and hallucination markers.
 """
+
 from __future__ import annotations
 
 import re
@@ -71,9 +72,7 @@ def validate_citations(output: BaseModel, allowed_chunk_ids: set[str]) -> None:
     citations = extract_citations(output)
     for citation in citations:
         if citation.chunk_id not in allowed_chunk_ids:
-            raise ValidationError(
-                f"Invalid citation chunk_id: {citation.chunk_id}"
-            )
+            raise ValidationError(f"Invalid citation chunk_id: {citation.chunk_id}")
 
 
 def validate_taxonomy(output: BaseModel) -> None:
@@ -88,13 +87,9 @@ def validate_taxonomy(output: BaseModel) -> None:
     calls = extract_allocation_calls(output)
     for call in calls:
         if not is_valid_category(call.asset_class_category):
-            raise ValidationError(
-                f"Invalid asset_class_category: {call.asset_class_category}"
-            )
+            raise ValidationError(f"Invalid asset_class_category: {call.asset_class_category}")
         if not is_valid_sub_asset(call.sub_asset_class):
-            raise ValidationError(
-                f"Invalid sub_asset_class: {call.sub_asset_class}"
-            )
+            raise ValidationError(f"Invalid sub_asset_class: {call.sub_asset_class}")
         expected_category = get_category_for_sub_asset(call.sub_asset_class)
         if expected_category != call.asset_class_category:
             raise ValidationError(
@@ -129,7 +124,7 @@ def find_hallucination_markers(
                 # Remove surrounding escaped quotes (\" ... \")
                 normalized = match[2:-2]
                 # Unescape JSON escape sequences
-                normalized = normalized.replace('\\"', '"').replace('\\\\', '\\')
+                normalized = normalized.replace('\\"', '"').replace("\\\\", "\\")
             if normalized not in source_text:
                 hallucinations.add(match)
 

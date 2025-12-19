@@ -4,6 +4,7 @@ This module provides prompt templates and builder functions for each
 LLM-powered pipeline stage, following the contracts in docs/LLM_CONTRACTS.md.
 
 Stage 4 (Metadata): Extract document metadata (manager, date, type)
+Stage 5 (Candidates): Identify signal-containing passages
 Stage 6 (Calls): Extract allocation calls with taxonomy mapping
 Stage 6 (Verification): Verify extracted calls against source (v1+)
 Stage 7 (Summaries): Generate executive summary and key takeaways
@@ -17,6 +18,7 @@ from src.llm.prompts.calls import (
     get_call_extraction_prompt_template,
     get_call_extraction_schema,
 )
+from src.llm.prompts.candidates import build_candidate_expansion_prompt
 from src.llm.prompts.metadata import (
     METADATA_EXTRACTION_PROMPT,
     build_metadata_extraction_prompt,
@@ -55,6 +57,8 @@ __all__ = [
     "get_metadata_extraction_prompt_template",
     "get_document_types_list",
     "format_chunks_for_prompt",
+    # Candidates (Stage 5)
+    "build_candidate_expansion_prompt",
     # Calls (Stage 6)
     "build_call_extraction_prompt",
     "get_call_extraction_schema",

@@ -1,6 +1,5 @@
 import json
 import logging
-import traceback
 from io import StringIO
 
 from src.config import Settings
@@ -70,7 +69,7 @@ def test_json_logging_includes_exception_tracebacks() -> None:
 
     configure_logging(settings=settings, stream=stream)
     logger = logging.getLogger("config.test.exception")
-    
+
     # Log an exception with traceback
     try:
         raise ValueError("Test exception for traceback verification")
@@ -79,13 +78,13 @@ def test_json_logging_includes_exception_tracebacks() -> None:
 
     log_line = stream.getvalue().strip().splitlines()[-1]
     payload = json.loads(log_line)
-    
+
     # Verify basic log structure
     assert payload["level"] == "ERROR"
     assert payload["module"] == "config.test.exception"
     assert payload["message"] == "An error occurred with traceback"
     assert "timestamp" in payload
-    
+
     # Verify exception information is included
     assert "exception" in payload
     exception_info = payload["exception"]
@@ -94,4 +93,6 @@ def test_json_logging_includes_exception_tracebacks() -> None:
     assert "traceback" in exception_info
     assert isinstance(exception_info["traceback"], list)
     assert len(exception_info["traceback"]) > 0
-    assert "ValueError: Test exception for traceback verification" in "".join(exception_info["traceback"])
+    assert "ValueError: Test exception for traceback verification" in "".join(
+        exception_info["traceback"]
+    )

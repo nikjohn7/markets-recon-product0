@@ -115,7 +115,9 @@ def _select_first_page_chunks(index: DocumentIndex) -> list[RetrievedChunk]:
     ]
 
 
-def _merge_chunks(primary: list[RetrievedChunk], secondary: list[RetrievedChunk]) -> list[RetrievedChunk]:
+def _merge_chunks(
+    primary: list[RetrievedChunk], secondary: list[RetrievedChunk]
+) -> list[RetrievedChunk]:
     """Merge retrieved chunks, preserving order and uniqueness."""
     seen: set[str] = set()
     merged: list[RetrievedChunk] = []

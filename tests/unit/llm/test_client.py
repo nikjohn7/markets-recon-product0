@@ -1,24 +1,21 @@
 """Unit tests for multi-provider LLM client."""
+
 from __future__ import annotations
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from openai import APIConnectionError, APIError, RateLimitError
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 from openai.types.chat.chat_completion import Choice
 from openai.types.completion_usage import CompletionUsage
 from pydantic import BaseModel
-
-from src.exceptions import LLMError
 from src.llm.client import (
+    PROVIDER_CONFIGS,
+    STAGE_PROVIDER_MAP,
     LLMClient,
     LLMProvider,
     PipelineStage,
-    ProviderConfig,
-    PROVIDER_CONFIGS,
-    STAGE_PROVIDER_MAP,
     get_stage_model_info,
 )
 
@@ -292,7 +289,9 @@ class TestLLMClientCompleteJSON:
         llm_client: LLMClient,
     ):
         """Test JSON parsing handles markdown code blocks."""
-        json_in_markdown = '```json\n{"asset_class": "BONDS", "direction": "NEUTRAL", "confidence": 0.7}\n```'
+        json_in_markdown = (
+            '```json\n{"asset_class": "BONDS", "direction": "NEUTRAL", "confidence": 0.7}\n```'
+        )
         completion = ChatCompletion(
             id="chatcmpl-789",
             choices=[
@@ -368,7 +367,9 @@ class TestLLMClientHelperMethods:
         assert llm_client._clean_json_response('{"key": "value"}') == '{"key": "value"}'
 
         # With markdown code block
-        assert llm_client._clean_json_response('```json\n{"key": "value"}\n```') == '{"key": "value"}'
+        assert (
+            llm_client._clean_json_response('```json\n{"key": "value"}\n```') == '{"key": "value"}'
+        )
 
         # With generic code block
         assert llm_client._clean_json_response('```\n{"key": "value"}\n```') == '{"key": "value"}'

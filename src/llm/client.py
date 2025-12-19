@@ -6,6 +6,7 @@ Supports multiple providers via OpenAI-compatible API:
 - Nebius (GLM-4.5-Air)
 - DeepInfra (Qwen3-235B)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -16,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TypeVar
 
-from openai import AsyncOpenAI, APIError, RateLimitError, APIConnectionError
+from openai import APIConnectionError, APIError, AsyncOpenAI, RateLimitError
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 
@@ -255,7 +256,9 @@ class LLMClient:
                         "model": config.model_name,
                         "response_hash": response_hash,
                         "prompt_tokens": response.usage.prompt_tokens if response.usage else None,
-                        "completion_tokens": response.usage.completion_tokens if response.usage else None,
+                        "completion_tokens": response.usage.completion_tokens
+                        if response.usage
+                        else None,
                     },
                 )
 

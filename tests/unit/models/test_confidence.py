@@ -36,7 +36,11 @@ class TestFieldConfidence:
     def test_confidence_bounds(self) -> None:
         with pytest.raises(ValidationError):
             FieldConfidence(
-                field_name="x", confidence=1.1, reasons=[], has_explicit_evidence=False, evidence_strength=0.5
+                field_name="x",
+                confidence=1.1,
+                reasons=[],
+                has_explicit_evidence=False,
+                evidence_strength=0.5,
             )
 
 

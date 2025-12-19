@@ -36,8 +36,6 @@ class TagSet(BaseModel):
     style_tags: list[str]
     macro_regime_tags: list[str]
 
-    all_tags: list[Tag] = Field(
-        default_factory=list, description="Denormalized for indexing"
-    )
+    all_tags: list[Tag] = Field(default_factory=list, description="Denormalized for indexing")
 
     confidence: float = Field(..., ge=0, le=1)

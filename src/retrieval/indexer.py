@@ -62,7 +62,9 @@ class OpenAIEmbeddingProvider:
                     logger.error(f"Embedding generation failed after {max_retries} attempts: {e}")
                     break  # Break to raise after loop
 
-                logger.warning(f"Embedding attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s...")
+                logger.warning(
+                    f"Embedding attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s..."
+                )
                 await asyncio.sleep(retry_delay)
                 retry_delay *= 2  # Exponential backoff
 
@@ -70,7 +72,9 @@ class OpenAIEmbeddingProvider:
         raise ExtractionError(f"Failed to generate embeddings: {last_error}") from last_error
 
 
-def _split_large_block(block_text: str, block_id: str, page: int) -> list[tuple[str, list[str], int]]:
+def _split_large_block(
+    block_text: str, block_id: str, page: int
+) -> list[tuple[str, list[str], int]]:
     """Split a large block into smaller pieces that fit within token limits."""
     pieces: list[tuple[str, list[str], int]] = []
     words = block_text.split()
@@ -148,7 +152,10 @@ def chunk_document(cleaned_doc: CleanedDocument) -> list[Chunk]:
 
                 for piece_text, piece_block_ids, piece_page in pieces:
                     # If we have current chunk content, save it first
-                    if current_chunk_text_section and len(current_chunk_text_section) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN:
+                    if (
+                        current_chunk_text_section
+                        and len(current_chunk_text_section) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN
+                    ):
                         chunk = Chunk(
                             chunk_id=f"{cleaned_doc.document_id}_{chunk_index}",
                             block_ids=current_block_ids_section.copy(),
@@ -176,9 +183,11 @@ def chunk_document(cleaned_doc: CleanedDocument) -> list[Chunk]:
                 continue  # Skip to next block
 
             # Start new chunk if adding this block would exceed max tokens
-            if (current_chunk_text_section and
-                len(current_chunk_text_section) + len(block_text) > MAX_CHUNK_TOKENS * CHARS_PER_TOKEN):
-
+            if (
+                current_chunk_text_section
+                and len(current_chunk_text_section) + len(block_text)
+                > MAX_CHUNK_TOKENS * CHARS_PER_TOKEN
+            ):
                 # Save current chunk if it has enough content
                 if len(current_chunk_text_section) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN:
                     chunk = Chunk(
@@ -208,7 +217,10 @@ def chunk_document(cleaned_doc: CleanedDocument) -> list[Chunk]:
             current_block_ids_section.append(block.block_id)
 
         # Save final chunk for this section
-        if current_chunk_text_section and len(current_chunk_text_section) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN:
+        if (
+            current_chunk_text_section
+            and len(current_chunk_text_section) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN
+        ):
             chunk = Chunk(
                 chunk_id=f"{cleaned_doc.document_id}_{chunk_index}",
                 block_ids=current_block_ids_section,
@@ -236,9 +248,10 @@ def chunk_document(cleaned_doc: CleanedDocument) -> list[Chunk]:
             if not block_text:
                 continue
 
-            if (current_chunk_text and
-                len(current_chunk_text) + len(block_text) > MAX_CHUNK_TOKENS * CHARS_PER_TOKEN):
-
+            if (
+                current_chunk_text
+                and len(current_chunk_text) + len(block_text) > MAX_CHUNK_TOKENS * CHARS_PER_TOKEN
+            ):
                 if len(current_chunk_text) >= MIN_CHUNK_TOKENS * CHARS_PER_TOKEN:
                     chunk = Chunk(
                         chunk_id=f"{cleaned_doc.document_id}_{chunk_index}",
@@ -371,7 +384,9 @@ class DocumentIndex:
             ],
         )
 
-        logger.info(f"Index built with {len(self.chunks)} chunks for document {cleaned_doc.document_id}")
+        logger.info(
+            f"Index built with {len(self.chunks)} chunks for document {cleaned_doc.document_id}"
+        )
 
     async def query(
         self,
@@ -441,5 +456,7 @@ class DocumentIndex:
             )
             retrieved_chunks.append(retrieved_chunk)
 
-        logger.info(f"Query returned {len(retrieved_chunks)} chunks for document {self.document_id}")
+        logger.info(
+            f"Query returned {len(retrieved_chunks)} chunks for document {self.document_id}"
+        )
         return retrieved_chunks

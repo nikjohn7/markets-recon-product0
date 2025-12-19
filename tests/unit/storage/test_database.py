@@ -8,8 +8,6 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-
-from src.exceptions import StorageError
 from src.storage.database import Database, get_database
 
 
@@ -63,7 +61,9 @@ class TestDatabaseInitialization:
             from sqlalchemy import text
 
             result = conn.execute(
-                text("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+                text(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+                )
             )
             created_tables = {row[0] for row in result}
 
@@ -191,17 +191,16 @@ class TestDocumentsTable:
     def test_document_manager_foreign_key_enforced(self, db: Database) -> None:
         """Foreign key to managers is enforced for documents."""
 
-        with db.get_connection() as conn:
-            with pytest.raises(IntegrityError):
-                conn.execute(
-                    db.documents.insert().values(
-                        manager_id=str(uuid.uuid4()),
-                        blob_id="blob_with_missing_manager",
-                        file_hash="fk_hash_1",
-                        status="pending",
-                    )
+        with db.get_connection() as conn, pytest.raises(IntegrityError):
+            conn.execute(
+                db.documents.insert().values(
+                    manager_id=str(uuid.uuid4()),
+                    blob_id="blob_with_missing_manager",
+                    file_hash="fk_hash_1",
+                    status="pending",
                 )
-                conn.commit()
+            )
+            conn.commit()
 
 
 class TestAllocationCallsTable:
@@ -240,7 +239,9 @@ class TestAllocationCallsTable:
             )
             conn.commit()
 
-            result = conn.execute(select(db.allocation_calls).where(db.allocation_calls.c.id == call_id))
+            result = conn.execute(
+                select(db.allocation_calls).where(db.allocation_calls.c.id == call_id)
+            )
             row = result.fetchone()
 
         assert row is not None

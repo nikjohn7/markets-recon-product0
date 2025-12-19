@@ -1,18 +1,16 @@
 """Tests for Stage 2: Text cleaning and section detection."""
 
 import pytest
-
-from src.models.document import DocumentJSON, DocumentBlock
-from src.models.pipeline import CleanedDocument, Section
+from src.models.document import DocumentBlock, DocumentJSON
 from src.models.enums import BlockType
-from src.models.core import BoundingBox
+from src.models.pipeline import CleanedDocument
 from src.pipeline.stages.s2_clean import (
-    stage_clean,
-    _normalize_text,
-    _is_disclaimer,
+    _classify_section,
     _detect_boilerplate,
     _detect_sections,
-    _classify_section,
+    _is_disclaimer,
+    _normalize_text,
+    stage_clean,
 )
 
 
@@ -122,7 +120,7 @@ class TestBoilerplateDetection:
                 confidence=1.0,
             ),
         ]
-        
+
         removed = _detect_boilerplate(blocks)
         # Should remove duplicates from pages 2 and 3
         assert len(removed) > 0
@@ -152,7 +150,7 @@ class TestBoilerplateDetection:
                 confidence=1.0,
             ),
         ]
-        
+
         removed = _detect_boilerplate(blocks)
         assert len(removed) == 0
 
@@ -353,7 +351,7 @@ async def test_stage_clean_full_pipeline() -> None:
             confidence=1.0,
         ),
     ]
-    
+
     doc_json = DocumentJSON(
         document_id="test_doc",
         blob_id="blob_123",
@@ -363,9 +361,9 @@ async def test_stage_clean_full_pipeline() -> None:
         page_count=3,
         extraction_coverage=0.95,
     )
-    
+
     result = await stage_clean(doc_json)
-    
+
     assert isinstance(result, CleanedDocument)
     assert result.document_id == "test_doc"
     assert len(result.blocks) > 0
@@ -396,7 +394,7 @@ async def test_stage_clean_disclaimer_detection() -> None:
             confidence=1.0,
         ),
     ]
-    
+
     doc_json = DocumentJSON(
         document_id="test_doc",
         blob_id="blob_123",
@@ -406,9 +404,9 @@ async def test_stage_clean_disclaimer_detection() -> None:
         page_count=1,
         extraction_coverage=1.0,
     )
-    
+
     result = await stage_clean(doc_json)
-    
+
     assert result.disclaimer_block_id is not None
     # Find the disclaimer block
     disclaimer_block = next(
@@ -431,9 +429,9 @@ async def test_stage_clean_empty_blocks() -> None:
         page_count=1,
         extraction_coverage=0.0,
     )
-    
+
     result = await stage_clean(doc_json)
-    
+
     assert result.document_id == "test_doc"
     assert len(result.blocks) == 0
     assert len(result.sections) == 0
@@ -459,7 +457,7 @@ async def test_stage_clean_preserves_block_ids() -> None:
             confidence=1.0,
         ),
     ]
-    
+
     doc_json = DocumentJSON(
         document_id="test_doc",
         blob_id="blob_123",
@@ -469,12 +467,12 @@ async def test_stage_clean_preserves_block_ids() -> None:
         page_count=1,
         extraction_coverage=1.0,
     )
-    
+
     result = await stage_clean(doc_json)
-    
+
     result_ids = [b.block_id for b in result.blocks]
     original_ids = [b.block_id for b in blocks]
-    
+
     # All remaining blocks should have original IDs
     for block_id in result_ids:
         assert block_id in original_ids

@@ -1,6 +1,5 @@
 """Unit tests for taxonomy hierarchy."""
 
-import pytest
 
 from src.taxonomy import hierarchy
 
@@ -108,14 +107,8 @@ class TestDisplayNames:
             hierarchy.get_category_display_name("FI_SOV_EUROPE")
             == "Fixed Income: Sovereigns (Europe)"
         )
-        assert (
-            hierarchy.get_category_display_name("EQ_DM")
-            == "Equities: Developed Markets"
-        )
-        assert (
-            hierarchy.get_category_display_name("ALT_COMMODITIES")
-            == "Alternatives: Commodities"
-        )
+        assert hierarchy.get_category_display_name("EQ_DM") == "Equities: Developed Markets"
+        assert hierarchy.get_category_display_name("ALT_COMMODITIES") == "Alternatives: Commodities"
 
     def test_get_sub_asset_display_name(self) -> None:
         """Should return correct display names for sub-assets."""
@@ -192,13 +185,28 @@ class TestSpecificTaxonomyData:
     def test_commodities_sub_assets(self) -> None:
         """ALT_COMMODITIES should have all expected sub-assets."""
         commodities = hierarchy.get_sub_assets_for_category("ALT_COMMODITIES")
-        expected = {"GOLD", "SILVER", "OIL_CRUDE", "NATURAL_GAS", "COPPER", "AGRICULTURE", "COMMODITIES_BROAD"}
+        expected = {
+            "GOLD",
+            "SILVER",
+            "OIL_CRUDE",
+            "NATURAL_GAS",
+            "COPPER",
+            "AGRICULTURE",
+            "COMMODITIES_BROAD",
+        }
         assert set(commodities) == expected
 
     def test_real_estate_sub_assets(self) -> None:
         """Real estate global category should have expected sub-assets."""
         re_sub_assets = hierarchy.get_sub_assets_for_category("ALT_REAL_ESTATE_GLOBAL")
-        expected = {"RE_OFFICE", "RE_RETAIL", "RE_INDUSTRIAL", "RE_RESIDENTIAL", "RE_DATA_CENTERS", "RE_HOSPITALITY"}
+        expected = {
+            "RE_OFFICE",
+            "RE_RETAIL",
+            "RE_INDUSTRIAL",
+            "RE_RESIDENTIAL",
+            "RE_DATA_CENTERS",
+            "RE_HOSPITALITY",
+        }
         assert set(re_sub_assets) == expected
 
     def test_real_estate_regional_categories_empty(self) -> None:

@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
-
 from src.config import Settings
 
 

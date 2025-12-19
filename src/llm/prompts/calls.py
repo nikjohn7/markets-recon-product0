@@ -6,7 +6,6 @@ with taxonomy mapping, rationale, and sentiment from retrieved document excerpts
 
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING
 
 from src.models.enums import CallDirection, Conviction, IndicatorDirection, Sentiment

@@ -8,6 +8,7 @@ from enum import Enum
 
 class CallDirection(str, Enum):
     """Asset allocation positioning direction."""
+
     OVERWEIGHT = "OVERWEIGHT"
     NEUTRAL = "NEUTRAL"
     UNDERWEIGHT = "UNDERWEIGHT"
@@ -16,6 +17,7 @@ class CallDirection(str, Enum):
 
 class Conviction(str, Enum):
     """Conviction level for allocation calls."""
+
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
@@ -23,6 +25,7 @@ class Conviction(str, Enum):
 
 class Sentiment(str, Enum):
     """Overall document sentiment."""
+
     NET_POSITIVE = "NET_POSITIVE"
     NEUTRAL = "NEUTRAL"
     NET_NEGATIVE = "NET_NEGATIVE"
@@ -30,6 +33,7 @@ class Sentiment(str, Enum):
 
 class DocumentType(str, Enum):
     """Type of fund manager document."""
+
     ANNUAL_OUTLOOK = "ANNUAL_OUTLOOK"
     MID_YEAR_OUTLOOK = "MID_YEAR_OUTLOOK"
     QUARTERLY_OUTLOOK = "QUARTERLY_OUTLOOK"
@@ -40,6 +44,7 @@ class DocumentType(str, Enum):
 
 class BlockType(str, Enum):
     """Type of content block extracted from PDF."""
+
     HEADING = "HEADING"
     PARAGRAPH = "PARAGRAPH"
     BULLET = "BULLET"
@@ -51,11 +56,12 @@ class BlockType(str, Enum):
 
 class ConfidenceBand(str, Enum):
     """Confidence band for routing decisions.
-    
+
     HIGH: ≥0.80 - Auto-publish
     MEDIUM: 0.60–0.79 - Spot-check queue
     LOW: <0.60 - Must-review
     """
+
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
     LOW = "LOW"
@@ -63,6 +69,7 @@ class ConfidenceBand(str, Enum):
 
 class DocumentStatus(str, Enum):
     """Processing status of a document."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     REVIEW_REQUIRED = "review_required"
@@ -72,6 +79,7 @@ class DocumentStatus(str, Enum):
 
 class TagType(str, Enum):
     """Category of document tag."""
+
     ASSET_CLASS = "ASSET_CLASS"
     REGION = "REGION"
     THEME = "THEME"
@@ -83,6 +91,7 @@ class TagType(str, Enum):
 
 class IndicatorDirection(str, Enum):
     """Direction of economic/market indicator."""
+
     RISING = "RISING"
     FALLING = "FALLING"
     STABLE = "STABLE"

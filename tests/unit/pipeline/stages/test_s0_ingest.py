@@ -6,13 +6,11 @@ and idempotency guarantees.
 """
 
 import hashlib
-import json
 import uuid
 from pathlib import Path
 from typing import Any
 
 import pytest
-
 from src.exceptions import StorageError, ValidationError
 from src.models.pipeline import IngestResult
 from src.pipeline.stages.s0_ingest import stage_ingest
@@ -101,7 +99,12 @@ class TestNewPDFCreation:
 
     @pytest.mark.asyncio
     async def test_new_pdf_creates_record_and_returns_is_duplicate_false(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify new PDF creates new record and returns is_duplicate=False."""
         # Mock storage and database to use our test fixtures
@@ -119,7 +122,12 @@ class TestNewPDFCreation:
 
     @pytest.mark.asyncio
     async def test_document_stored_in_blob_storage_and_retrievable(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Check that document is stored in blob storage and retrievable."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -137,7 +145,12 @@ class TestNewPDFCreation:
 
     @pytest.mark.asyncio
     async def test_database_record_created_with_correct_status_and_metadata(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify database record is created with correct status and metadata."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -159,7 +172,12 @@ class TestNewPDFCreation:
 
     @pytest.mark.asyncio
     async def test_uuid_generated_for_new_document_id(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Ensure UUID is generated for new document_id."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -176,7 +194,12 @@ class TestNewPDFCreation:
 
     @pytest.mark.asyncio
     async def test_file_hash_is_sha256_of_pdf_content(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify file_hash is SHA-256 hash of PDF content."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -194,7 +217,12 @@ class TestDuplicateDetection:
 
     @pytest.mark.asyncio
     async def test_same_pdf_submitted_twice_returns_same_document_id_with_is_duplicate_true(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify same PDF submitted twice returns same document_id with is_duplicate=True."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -215,7 +243,12 @@ class TestDuplicateDetection:
 
     @pytest.mark.asyncio
     async def test_no_duplicate_records_created_in_database(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Ensure no duplicate records are created in database."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -237,7 +270,12 @@ class TestDuplicateDetection:
 
     @pytest.mark.asyncio
     async def test_blob_storage_not_duplicated(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify blob storage is not duplicated for duplicate submissions."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -257,7 +295,12 @@ class TestDuplicateDetection:
 
     @pytest.mark.asyncio
     async def test_second_submission_returns_correct_ingest_result_structure(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Check that second submission returns correct IngestResult structure."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -296,7 +339,11 @@ class TestInvalidPDFHandling:
 
     @pytest.mark.asyncio
     async def test_invalid_source_metadata_raises_validation_error(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test invalid source_metadata raises ValidationError."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -322,7 +369,11 @@ class TestSourceMetadataStorage:
 
     @pytest.mark.asyncio
     async def test_source_metadata_stored_correctly_in_blob_storage(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Verify source metadata is stored correctly in blob storage."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -391,15 +442,22 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_storage_failure_raises_storage_error(
-        self, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test storage failures raise StorageError."""
+
         # Create a mock storage that fails
         class FailingStorage:
             def store(self, content: bytes, metadata: dict[str, Any]) -> str:
                 raise StorageError("Storage operation failed")
 
-        monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: FailingStorage())
+        monkeypatch.setattr(
+            "src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: FailingStorage()
+        )
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.Database", lambda: database)
 
         with pytest.raises(StorageError, match="Storage operation failed"):
@@ -407,9 +465,14 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_database_connection_failure_raises_storage_error(
-        self, storage: LocalBlobStorage, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test database connection failures raise StorageError."""
+
         # Create a mock database that fails
         class FailingDatabase:
             def get_connection(self):
@@ -423,19 +486,28 @@ class TestErrorHandling:
 
     @pytest.mark.asyncio
     async def test_unexpected_errors_wrapped_in_storage_error(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test unexpected errors are wrapped in StorageError."""
+
         # Create a mock database that raises unexpected error
         class ErrorDatabase:
             def get_connection(self):
                 class MockConn:
                     def execute(self, *args, **kwargs):
                         raise ValueError("Unexpected error")
+
                     def __enter__(self):
                         return self
+
                     def __exit__(self, *args, **kwargs):
                         pass
+
                 return MockConn()
 
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)
@@ -473,7 +545,12 @@ class TestIdempotency:
 
     @pytest.mark.asyncio
     async def test_multiple_concurrent_submissions_of_same_pdf(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test multiple concurrent submissions of same PDF."""
         import asyncio
@@ -482,10 +559,7 @@ class TestIdempotency:
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.Database", lambda: database)
 
         # Create multiple concurrent tasks
-        tasks = [
-            stage_ingest(valid_pdf_bytes, sample_source_metadata)
-            for _ in range(5)
-        ]
+        tasks = [stage_ingest(valid_pdf_bytes, sample_source_metadata) for _ in range(5)]
 
         # Run concurrently
         results = await asyncio.gather(*tasks)
@@ -512,7 +586,12 @@ class TestIdempotency:
 
     @pytest.mark.asyncio
     async def test_no_race_conditions_in_duplicate_detection(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Ensure no race conditions in duplicate detection."""
         import asyncio
@@ -552,7 +631,12 @@ class TestCleanup:
 
     @pytest.mark.asyncio
     async def test_clean_up_test_data_after_each_test(
-        self, storage: LocalBlobStorage, database: Database, valid_pdf_bytes: bytes, sample_source_metadata: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        storage: LocalBlobStorage,
+        database: Database,
+        valid_pdf_bytes: bytes,
+        sample_source_metadata: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Ensure tests are isolated and don't interfere with each other."""
         monkeypatch.setattr("src.pipeline.stages.s0_ingest.LocalBlobStorage", lambda: storage)

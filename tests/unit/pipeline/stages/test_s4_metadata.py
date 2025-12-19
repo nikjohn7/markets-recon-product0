@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-
 from src.models.core import Citation
 from src.models.document import DocumentBlock
 from src.models.enums import BlockType, DocumentType

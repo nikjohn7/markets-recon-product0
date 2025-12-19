@@ -74,7 +74,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:  # noqa: D401 - overrides base method
         message = sanitize_message(record.getMessage(), self.secrets)
-        log_record = {
+        log_record: dict[str, Any] = {
             "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,
             "module": record.name,
@@ -112,6 +112,7 @@ def configure_logging(settings: Settings | None = None, stream: Any | None = Non
     root_logger.setLevel(active_settings.log_level)
 
     handler = logging.StreamHandler(stream=stream or sys.stderr)
+    formatter: logging.Formatter
     if active_settings.log_json_format:
         formatter = JsonFormatter(secrets)
     else:

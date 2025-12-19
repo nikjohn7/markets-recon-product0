@@ -66,7 +66,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
-- [ ] `6.1` Implement Stage 4 - Metadata Extraction
+- [x] `6.1` Implement Stage 4 - Metadata Extraction
 - [ ] `6.2` Implement Stage 5 - Candidate Retrieval
 - [ ] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
@@ -403,3 +403,8 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/llm/contracts.py` with citation, taxonomy, and hallucination guardrail validation
 - Exported validation helpers via `src/llm/__init__.py`
 - Added `tests/unit/llm/test_contracts.py` covering citations, taxonomy mismatch, hallucination detection
+
+### Task 6.1 — Complete (2025-12-20)
+- Added `src/pipeline/stages/s4_metadata.py` with retrieval-assisted metadata extraction and date plausibility checks
+- Implemented chunk selection for first two pages plus metadata query to build the LLM prompt
+- Added `tests/unit/pipeline/stages/test_s4_metadata.py` covering successful extraction, uncertainty handling, and fallback behavior

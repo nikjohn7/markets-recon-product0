@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     @field_validator("database_url", "log_level", mode="before")
     @classmethod
-    def strip_strings(cls, value: str, _: ValidationInfo) -> str:
+    def strip_strings(cls, value: object, _: ValidationInfo) -> object:
         if isinstance(value, str):
             return value.strip()
         return value
@@ -68,4 +68,4 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return a cached instance of Settings loaded from the environment."""
 
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

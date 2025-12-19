@@ -166,3 +166,22 @@ def test_find_hallucination_markers_handles_long_quotes_without_false_positive()
     ]
     matches = find_hallucination_markers(output, chunks)
     assert not matches
+
+
+def test_find_hallucination_markers_ignores_unquoted_long_text():
+    """Long unquoted text should not trigger hallucination detection."""
+    long_text = (
+        "This sentence is intentionally long enough to cross the threshold without quotes."
+    )
+    output = SimpleOutput(note=long_text)
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text="No matching content required for unquoted long text.",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert not matches

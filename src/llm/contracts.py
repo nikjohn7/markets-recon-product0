@@ -22,7 +22,7 @@ from src.taxonomy.hierarchy import (
 HALLUCINATION_MARKERS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\d{4}-\d{2}-\d{2}"),
     re.compile(r"\d+(?:\.\d+)?%"),
-    re.compile(r'"[^"]{50,}"'),
+    re.compile(r'\\"(?:[^"\\\\]|\\\\.){50,}\\"'),
 )
 
 
@@ -121,13 +121,9 @@ def find_hallucination_markers(
     for pattern in HALLUCINATION_MARKERS:
         for match in pattern.findall(output_text):
             normalized = match
-            if match.startswith('"'):
-                normalized = match[1:]
-                if normalized.endswith('\\"'):
-                    normalized = normalized[:-2]
-                elif normalized.endswith('"'):
-                    normalized = normalized[:-1]
-                normalized = normalized.replace('\\"', '"')
+            if match.startswith('\\"'):
+                normalized = match[2:-2]
+                normalized = normalized.replace('\\"', '"').replace("\\\\", "\\")
             if normalized not in source_text:
                 hallucinations.add(match)
 

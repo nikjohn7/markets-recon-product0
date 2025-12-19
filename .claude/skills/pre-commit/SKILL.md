@@ -27,11 +27,6 @@ pytest tests/
 ```
 All tests must pass.
 
-<!-- ### 4. Formatting (optional auto-fix)
-```bash
-ruff format src/ tests/
-```
-Run to auto-format code before committing. -->
 
 ## Code Quality Verification
 

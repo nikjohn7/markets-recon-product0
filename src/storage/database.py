@@ -11,10 +11,12 @@ SQLite adaptations:
 - Enum types → TEXT with CHECK constraints
 """
 
+from __future__ import annotations
+
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -33,9 +35,11 @@ from sqlalchemy import (
     event,
     text,
 )
-from sqlalchemy.engine import Engine
 
 from src.exceptions import StorageError
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 
 class Database:
@@ -103,7 +107,9 @@ class Database:
             Column("id", Text, primary_key=True, default=lambda: str(uuid.uuid4())),
             Column("name", Text, nullable=False, unique=True),
             Column("aliases", Text),  # JSON array as TEXT
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
         )
 
         # Documents table
@@ -118,14 +124,20 @@ class Database:
             Column("publication_date", Date),
             Column("as_of_date", Date),
             Column("document_type", Text),
-            CheckConstraint("document_type IN ('outlook', 'quarterly_review', 'special_report', 'whitepaper')"),
+            CheckConstraint(
+                "document_type IN ('outlook', 'quarterly_review', 'special_report', 'whitepaper')"
+            ),
             Column("time_snapshot", Text),
             Column("extraction_coverage", Float),
             Column("overall_confidence", Float),
             Column("analyst_attention_required", Boolean, default=False),
             Column("status", Text, nullable=False, default="pending", server_default="pending"),
-            CheckConstraint("status IN ('pending', 'processing', 'completed', 'failed', 'review_required')"),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            CheckConstraint(
+                "status IN ('pending', 'processing', 'completed', 'failed', 'review_required')"
+            ),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
             Column("reviewed_at", Text),
             Column("reviewed_by", Text),
         )
@@ -150,7 +162,9 @@ class Database:
             Column("citations", Text, nullable=False),  # JSON array
             Column("confidence", Float, nullable=False),
             Column("needs_analyst_review", Boolean, default=False),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
         )
 
         # Summaries table
@@ -166,7 +180,9 @@ class Database:
             CheckConstraint("overall_sentiment IN ('BULLISH', 'NEUTRAL', 'BEARISH', 'MIXED')"),
             Column("sentiment_rationale", Text),  # JSON array
             Column("sentiment_citations", Text),  # JSON array
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
         )
 
         # Document tags table
@@ -181,7 +197,9 @@ class Database:
             ),
             Column("tag_value", Text, nullable=False),
             Column("confidence", Float),
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
             UniqueConstraint("document_id", "tag_type", "tag_value", name="uq_document_tag"),
         )
 
@@ -199,7 +217,9 @@ class Database:
                 "block_type IN ('HEADING', 'PARAGRAPH', 'BULLET', 'TABLE_CELL', 'CHART_TEXT', 'CAPTION', 'FOOTER')"
             ),
             Column("bbox", Text),  # JSON
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
             UniqueConstraint("document_id", "chunk_id", name="uq_document_chunk"),
         )
 
@@ -219,7 +239,9 @@ class Database:
             CheckConstraint("status IN ('running', 'completed', 'failed')"),
             Column("error_message", Text),
             Column("stages_completed", Text),  # JSON array of stage names
-            Column("created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()),
+            Column(
+                "created_at", Text, nullable=False, default=lambda: datetime.now(UTC).isoformat()
+            ),
         )
 
     def _create_tables(self) -> None:
@@ -230,7 +252,9 @@ class Database:
             raise StorageError(f"Failed to create database tables: {e}") from e
 
     @staticmethod
-    def _enable_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
+    def _enable_foreign_keys(
+        dbapi_connection: Any, connection_record: Any  # noqa: ARG004
+    ) -> None:
         """Ensure SQLite foreign key constraints are enforced for each connection."""
 
         cursor = dbapi_connection.cursor()

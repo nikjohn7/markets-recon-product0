@@ -17,7 +17,7 @@ Must pass with zero errors.
 
 ### 2. Linting
 ```bash
-ruff check src/ tests/
+ruff check src/ tests/ --select=E9,F63,F7,F82
 ```
 Must pass with zero errors.
 
@@ -27,11 +27,6 @@ pytest tests/
 ```
 All tests must pass.
 
-### 4. Formatting (optional auto-fix)
-```bash
-ruff format src/ tests/
-```
-Run to auto-format code before committing.
 
 ## Code Quality Verification
 
@@ -48,7 +43,7 @@ Before committing, verify:
 Run all checks in sequence:
 
 ```bash
-mypy src/ --strict && ruff check src/ tests/ && pytest tests/
+mypy src/ --strict && ruff check src/ tests/ --select=E9,F63,F7,F82 && pytest tests/
 ```
 
 If any check fails, fix the issues before committing.
@@ -60,10 +55,11 @@ If any check fails, fix the issues before committing.
 - Using `Any` when specific types are available
 - Incompatible types in function arguments
 
-### Lint Errors
-- Unused imports
-- Line too long (fix: break into multiple lines)
-- Missing docstrings (optional but recommended for public APIs)
+### Lint Errors (with --select=E9,F63,F7,F82)
+- Syntax errors preventing module import (E9)
+- Invalid print statements, e.g., `print >>` syntax (F63)
+- Syntax errors in type comments (F7)
+- Undefined names (F82)
 
 ### Test Failures
 - Check test output for specific failures

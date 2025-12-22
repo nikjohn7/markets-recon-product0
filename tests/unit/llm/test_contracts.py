@@ -1,11 +1,11 @@
 """Unit tests for LLM output validation guardrails."""
+
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from pydantic import BaseModel
-
 from src.exceptions import ValidationError
 from src.llm.contracts import (
     extract_citations,
@@ -112,7 +112,7 @@ def test_validate_taxonomy_rejects_mismatched_category():
         sentiment_rationale=["Rising growth outlook"],
         sentiment_citations=[citation],
         sentiment_confidence=0.7,
-        extraction_timestamp=datetime.now(timezone.utc),
+        extraction_timestamp=datetime.now(UTC),
         model_version="test",
         total_candidates_reviewed=2,
     )
@@ -154,7 +154,7 @@ def test_validate_llm_output_allows_markers_in_source():
 def test_find_hallucination_markers_handles_long_quotes_without_false_positive():
     """Quoted long text should match source text without false positives."""
     quoted_text = "This sentence is intentionally long enough to cross the threshold."
-    output = SimpleOutput(note=f"\"{quoted_text}\"")
+    output = SimpleOutput(note=f'"{quoted_text}"')
     chunks = [
         Chunk(
             chunk_id="doc_1",
@@ -170,9 +170,7 @@ def test_find_hallucination_markers_handles_long_quotes_without_false_positive()
 
 def test_find_hallucination_markers_ignores_unquoted_long_text():
     """Long unquoted text should not trigger hallucination detection."""
-    long_text = (
-        "This sentence is intentionally long enough to cross the threshold without quotes."
-    )
+    long_text = "This sentence is intentionally long enough to cross the threshold without quotes."
     output = SimpleOutput(note=long_text)
     chunks = [
         Chunk(

@@ -144,7 +144,9 @@ class TestChunkDocument:
         # ~4 chars/token, so 800 chars = ~200 tokens, 1600 chars = ~400 tokens
         short_text = "Short. " * 50  # ~300 chars = ~75 tokens
         medium_text = "Medium length paragraph. " * 40  # ~960 chars = ~240 tokens
-        long_text = "This is a very long paragraph that should trigger chunk splitting. " * 80  # ~4000 chars = ~1000 tokens
+        long_text = (
+            "This is a very long paragraph that should trigger chunk splitting. " * 80
+        )  # ~4000 chars = ~1000 tokens
 
         blocks = [
             DocumentBlock(

@@ -55,9 +55,7 @@ def format_calls_for_tags(calls: list[AllocationCall]) -> str:
     for call in calls:
         direction = call.call.value
         risks = ", ".join(call.key_risks) if call.key_risks else "None"
-        lines.append(
-            f"- {call.sub_asset_class}: {direction} | Risks: {risks}"
-        )
+        lines.append(f"- {call.sub_asset_class}: {direction} | Risks: {risks}")
 
     return "\n".join(lines)
 

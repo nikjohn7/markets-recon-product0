@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from models.core import BoundingBox, Citation
+from src.models.core import BoundingBox, Citation
 
 
 class TestCitation:

@@ -3,9 +3,9 @@
 import pytest
 from pydantic import ValidationError
 
-from models.document import DocumentBlock
-from models.enums import BlockType
-from models.pipeline import (
+from src.models.document import DocumentBlock
+from src.models.enums import BlockType
+from src.models.pipeline import (
     CandidateSet,
     CleanedDocument,
     IngestResult,

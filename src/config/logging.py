@@ -1,12 +1,14 @@
 """Centralized logging configuration with redaction utilities."""
+
 from __future__ import annotations
 
 import json
 import logging
 import sys
 import traceback
-from datetime import datetime, timezone
-from typing import Any, Mapping
+from collections.abc import Mapping  # noqa: TC003 - used at runtime
+from datetime import UTC, datetime
+from typing import Any
 
 from .settings import Settings, get_settings
 
@@ -56,10 +58,12 @@ class ConsoleFormatter(logging.Formatter):
     """Formatter for human-readable console logs with redaction."""
 
     def __init__(self, secrets: Mapping[str, str]):
-        super().__init__(fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
+        super().__init__(
+            fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
+        )
         self.secrets = secrets
 
-    def format(self, record: logging.LogRecord) -> str:  # noqa: D401 - overrides base method
+    def format(self, record: logging.LogRecord) -> str:
         message = sanitize_message(record.getMessage(), self.secrets)
         timestamp = self.formatTime(record, self.datefmt)
         return f"{timestamp} | {record.levelname} | {record.name} | {message}"
@@ -72,32 +76,36 @@ class JsonFormatter(logging.Formatter):
         super().__init__()
         self.secrets = secrets
 
-    def format(self, record: logging.LogRecord) -> str:  # noqa: D401 - overrides base method
+    def format(self, record: logging.LogRecord) -> str:
         message = sanitize_message(record.getMessage(), self.secrets)
-        log_record = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
+        log_record: dict[str, Any] = {
+            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
             "level": record.levelname,
             "module": record.name,
             "message": message,
         }
-        
+
         # Include exception traceback information if available
         if record.exc_info:
             # Sanitize exception message and traceback to prevent secret leakage
             exc_type = record.exc_info[0].__name__ if record.exc_info[0] else None
             exc_message = str(record.exc_info[1]) if record.exc_info[1] else None
             exc_traceback = traceback.format_exception(*record.exc_info)
-            
+
             # Apply sanitization to exception details
             sanitized_message = sanitize_message(exc_message, self.secrets) if exc_message else None
-            sanitized_traceback = [sanitize_message(line, self.secrets) for line in exc_traceback] if exc_traceback else None
-            
+            sanitized_traceback = (
+                [sanitize_message(line, self.secrets) for line in exc_traceback]
+                if exc_traceback
+                else None
+            )
+
             log_record["exception"] = {
                 "type": exc_type,
                 "message": sanitized_message,
                 "traceback": sanitized_traceback,
             }
-        
+
         return json.dumps(log_record, ensure_ascii=False)
 
 
@@ -112,6 +120,7 @@ def configure_logging(settings: Settings | None = None, stream: Any | None = Non
     root_logger.setLevel(active_settings.log_level)
 
     handler = logging.StreamHandler(stream=stream or sys.stderr)
+    formatter: logging.Formatter
     if active_settings.log_json_format:
         formatter = JsonFormatter(secrets)
     else:

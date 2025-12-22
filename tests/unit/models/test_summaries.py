@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from models.core import Citation
-from models.summaries import DocumentSummaries, KeyTakeaway
+from src.models.core import Citation
+from src.models.summaries import DocumentSummaries, KeyTakeaway
 
 
 class TestKeyTakeaway:

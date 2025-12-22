@@ -66,9 +66,7 @@ class ExtractedTable(BaseModel):
         for cell in self.cells:
             position = (cell.row, cell.col)
             if position in seen_positions:
-                raise ValueError(
-                    f"Duplicate cell at position (row={cell.row}, col={cell.col})"
-                )
+                raise ValueError(f"Duplicate cell at position (row={cell.row}, col={cell.col})")
             seen_positions.add(position)
 
         # Validate tight bounds: row_count/col_count should match actual cell coverage
@@ -98,15 +96,9 @@ class DocumentJSON(BaseModel):
     blocks: list[DocumentBlock]
     tables: list[ExtractedTable]
     page_count: int = Field(..., ge=1)
-    extraction_coverage: float = Field(
-        ..., ge=0, le=1, description="% pages with text"
-    )
-    ocr_pages: list[int] = Field(
-        default_factory=list, description="Pages that required OCR"
-    )
-    vision_pages: list[int] = Field(
-        default_factory=list, description="Pages processed with vision"
-    )
+    extraction_coverage: float = Field(..., ge=0, le=1, description="% pages with text")
+    ocr_pages: list[int] = Field(default_factory=list, description="Pages that required OCR")
+    vision_pages: list[int] = Field(default_factory=list, description="Pages processed with vision")
 
     @model_validator(mode="after")
     def check_page_bounds(self) -> "DocumentJSON":

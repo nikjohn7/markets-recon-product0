@@ -66,13 +66,13 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `5.3` Create LLM Output Validation
 
 ### Phase 6: LLM Pipeline Stages (Stages 4–9)
-- [ ] `6.1` Implement Stage 4 - Metadata Extraction
-- [ ] `6.2` Implement Stage 5 - Candidate Retrieval
-- [ ] `6.3` Implement Stage 6 - Call Extraction (Core)
+- [x] `6.1` Implement Stage 4 - Metadata Extraction
+- [x] `6.2` Implement Stage 5 - Candidate Retrieval
+- [x] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
-- [ ] `6.5` Implement Stage 7 - Summary Generation
-- [ ] `6.6` Implement Stage 8 - Tooltip Generation
-- [ ] `6.7` Implement Stage 9 - Tag Generation
+- [x] `6.5` Implement Stage 7 - Summary Generation
+- [x] `6.6` Implement Stage 8 - Tooltip Generation
+- [x] `6.7` Implement Stage 9 - Tag Generation
 
 ### Phase 7: Confidence & Validation (Stage 10)
 - [ ] `7.1` Implement Extraction Quality Scoring
@@ -403,3 +403,108 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `src/llm/contracts.py` with citation, taxonomy, and hallucination guardrail validation
 - Exported validation helpers via `src/llm/__init__.py`
 - Added `tests/unit/llm/test_contracts.py` covering citations, taxonomy mismatch, hallucination detection
+
+### Task 6.1 — Complete (2025-12-20)
+- Added `src/pipeline/stages/s4_metadata.py` with retrieval-assisted metadata extraction and date plausibility checks
+- Implemented chunk selection for first two pages plus metadata query to build the LLM prompt
+- Added `tests/unit/pipeline/stages/test_s4_metadata.py` covering successful extraction, uncertainty handling, and fallback behavior
+
+### Task 6.2 — Complete (2025-12-20)
+- Implemented **Stage 5: Candidate Retrieval** in `src/pipeline/stages/s5_candidates.py`
+  - **Keyword mining**: Searches for positioning keywords (overweight, underweight, prefer, avoid, etc.) and asset class mentions from taxonomy
+  - **Block-to-chunk retrieval**: Maps keyword-matched blocks to chunks from the document index
+  - **LLM expansion**: Uses LLM to identify additional passages with indirect/implied positioning language not caught by keywords
+  - **Signal density ranking**: Ranks chunks by density of signal keywords
+  - **Deduplication**: Removes duplicate chunks while preserving order
+  - Returns `CandidateSet` with up to 30 candidate chunks (20 keyword + 10 expansion)
+- Created `src/llm/prompts/candidates.py` with expansion prompt template
+  - Asks LLM to find passages with indirect signals (e.g., "find value in", "reducing exposure")
+  - Includes guardrails against selecting pure macro commentary or disclaimers
+- Updated `src/llm/prompts/__init__.py` to export candidate expansion prompt
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s5_candidates.py`
+  - 16 test cases covering: keyword mining, chunk retrieval, ranking, deduplication, LLM expansion, edge cases
+  - Tests validate: positioning keyword detection, asset class keyword detection, disclaimer skipping, signal density ranking, empty index handling
+- Verified: all 16 Stage 5 tests pass, all 76 pipeline/integration tests pass, `mypy --strict` passes
+
+### Task 6.3 — Complete (2025-12-20)
+- Implemented **Stage 6: Call Extraction** in `src/pipeline/stages/s6_calls.py`
+  - **Asset mention detection**: Extracts allocation calls (OVERWEIGHT/NEUTRAL/UNDERWEIGHT/UNCERTAIN) with taxonomy mapping
+  - **Rationale extraction**: 1-4 bullet points per call with supporting evidence
+  - **Key indicators**: Parses economic/market indicators with direction (RISING/FALLING/STABLE/VOLATILE)
+  - **Sentiment extraction**: Overall document sentiment (NET_POSITIVE/NEUTRAL/NET_NEGATIVE) with rationale and citations
+  - **Citation parsing**: Converts LLM output dicts to Citation objects, handles optional text_span field
+  - **Duplicate detection**: Validates no duplicate (category, sub_asset) pairs exist
+  - **Validation**: Uses `validate_llm_output()` to check citations, taxonomy, and hallucination markers
+  - **Model version tracking**: Captures LLM provider model name in output metadata
+- Helper functions: `_parse_citation()`, `_parse_key_indicator()`, `_parse_allocation_call()`, `_check_duplicate_calls()`, `_build_call_extraction_output()`
+- LLM models: `CallLLM` (single call schema), `CallExtractionLLM` (full extraction output schema)
+- Uses `PipelineStage.CALLS` with OhMyGPT provider (Claude Haiku 4.5) for call extraction
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s6_calls.py`
+  - 10 test cases covering: successful extraction, uncertain calls, duplicate detection, multiple calls, empty candidates, citation parsing, key risks, model version, prompt building
+  - Tests validate: CallExtractionOutput structure, sentiment extraction, review flags, UNCERTAIN handling, duplicate call rejection
+- Verified: all 10 Stage 6 tests pass, all 86 pipeline/integration tests pass, `mypy --strict` passes
+
+### Task 6.5 — Complete (2025-12-20)
+- Implemented **Stage 7: Summary Generation** in `src/pipeline/stages/s7_summaries.py`
+  - **Executive summary generation**: 120-180 words with top macro drivers, top 3 calls, 2 key risks
+  - **Search descriptor**: 20-35 words combining document type, implications, and asset focus
+  - **Key takeaways**: 3-5 actionable bullets with citations
+  - **Smart chunk retrieval**: Multi-query retrieval using document metadata, sentiment themes, and top asset classes
+  - **Citation parsing**: Handles citations with optional text_span field
+  - **Word count validation**: Logs warnings for out-of-bounds word counts (non-blocking)
+  - **Model version tracking**: Captures LLM provider model name (Nebius GLM-4.5-Air)
+- LLM models: `KeyTakeawayLLM` (single takeaway schema), `SummaryGenerationLLM` (full output schema)
+- Uses `PipelineStage.SUMMARIES` with Nebius provider (GLM-4.5-Air) for summary generation
+- Helper functions: `_parse_citation()`, `_parse_key_takeaway()`, `_retrieve_key_passages()`, `_validate_word_count()`
+- Chunk retrieval strategy: Deduplicates across multiple queries, ranks by relevance score, returns top 30 chunks
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s7_summaries.py`
+  - 10 test cases covering: complete output generation, word count validation, citation parsing, multiple takeaways, chunk retrieval, no-calls handling, prompt building, error handling
+  - Tests validate: DocumentSummaries structure, citation parsing (with/without text_span), takeaway validation, LLM failure handling
+- Verified: all 10 Stage 7 tests pass, all 84 pipeline stage tests pass, `mypy --strict` passes on all pipeline stages
+
+### Task 6.6 — Complete (2025-12-22)
+- Implemented **Stage 8: Tooltip Generation** in `src/pipeline/stages/s8_tooltips.py`
+  - **Tooltip generation**: Generates concise hover text (≤25 words, ≤150 chars) for each allocation call
+  - **Quality validation**: Enforces character limit (≤150 chars, hard requirement), word count (≤25 words, warning), generic pattern detection (warnings)
+  - **In-place mutation**: Updates `CallExtractionOutput.allocation_calls[].tooltip_text` field directly
+  - **Asset mapping**: Maps LLM-generated tooltips to calls via `sub_asset_class` identifier
+  - **Comprehensive validation**: Count mismatch detection, missing tooltip detection, quality checks
+- LLM models: `TooltipItem` (single tooltip schema), `TooltipGenerationLLM` (full output schema)
+- Uses `PipelineStage.TOOLTIPS` with DeepInfra provider (Qwen3-235B) for tooltip generation
+- Helper functions: `_validate_tooltip_quality()` for quality validation (word count, char count, generic pattern detection)
+- Quality checks: Character limit enforcement (raises ValidationError), word count warning (logs only), generic pattern detection (logs warning)
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s8_tooltips.py`
+  - 11 test cases covering: successful generation, empty calls handling, count mismatch, missing asset, quality validation (char/word limits), generic patterns, in-place mutation, prompt building, multiple calls
+  - Tests validate: TooltipGenerationLLM output parsing, validation logic, error handling, in-place mutation behavior
+- Verified: all 11 Stage 8 tests pass, all 95 pipeline stage tests pass, `mypy --strict` passes
+
+### Task 6.7 — Complete (2025-12-22)
+- Implemented **Stage 9: Tag Generation** in `src/pipeline/stages/s9_tags.py`
+  - **Hybrid tagging approach**: Combines deterministic rule-based tags with LLM-generated tags
+  - **Deterministic tagging** (`_extract_deterministic_tags()`):
+    - Asset class tags: Extracted from call categories (e.g., EQUITIES_DM, FIXED_INCOME_SOVEREIGNS_EUROPE)
+    - Region tags: Extracted from profile.regions, normalized to lowercase, filtered against allowed REGION_TAGS
+    - Instrument tags: Extracted from sub-asset codes (e.g., german_bunds, us_large_cap), normalized to lowercase
+  - **LLM tagging** (`_retrieve_passages_for_tagging()` + LLM call):
+    - Theme tags: Key themes (inflation, fed_policy, recession_risk, etc.) from THEME_TAGS vocabulary
+    - Risk tags: Key risks (duration_risk, credit_spreads, etc.) from RISK_TAGS vocabulary
+    - Macro regime tags: Economic regime view (soft_landing, stagflation, etc.) from MACRO_REGIME_TAGS vocabulary
+    - Retrieves top 20 chunks using multi-query strategy (macro outlook, risks, sentiment)
+  - **Tag validation & normalization** (`_validate_and_normalize_llm_tags()`):
+    - Validates all LLM tags against allowed vocabularies
+    - Normalizes to lowercase
+    - Filters out invalid tags with warnings
+    - Detects novel themes for vocabulary expansion
+  - **Tag object construction** (`_build_tag_objects()`):
+    - Creates Tag objects with type, value, confidence, source
+    - Rule-based tags: confidence=1.0, source="rule"
+    - LLM-based tags: confidence from LLM output, source="llm"
+  - **Acceptance validation**: Ensures ≥1 asset class tag (hard requirement), warns if <5 total tags
+- LLM model: `TagGenerationLLM` with theme_tags, risk_tags, macro_regime_tags, novel_themes fields
+- Uses `PipelineStage.TAGS` with DeepInfra provider (Qwen3-235B) for tag generation
+- Helper functions: `_extract_deterministic_tags()`, `_retrieve_passages_for_tagging()`, `_validate_and_normalize_llm_tags()`, `_build_tag_objects()`
+- Chunk retrieval strategy: Multi-query (macro outlook, risks, sentiment) + deduplication + top 20 chunks
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s9_tags.py`
+  - 12 test cases covering: deterministic extraction, deduplication, LLM validation, tag normalization, case-insensitive validation, tag object construction, full pipeline, empty calls handling, insufficient tags warning, novel themes logging, prompt building, invalid region filtering
+  - Tests validate: TagSet structure, deterministic tag extraction, LLM tag validation, vocabulary enforcement, novel theme detection, minimum tag requirements
+- Verified: all 12 Stage 9 tests pass, all 107 pipeline stage tests pass, `mypy --strict` passes

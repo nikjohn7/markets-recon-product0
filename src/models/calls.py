@@ -29,26 +29,18 @@ class AllocationCall(BaseModel):
     asset_class_category: str = Field(
         ..., description="From taxonomy, e.g., 'FIXED_INCOME_SOVEREIGNS_EUROPE'"
     )
-    sub_asset_class: str = Field(
-        ..., description="From taxonomy, e.g., 'GERMAN_BUNDS'"
-    )
+    sub_asset_class: str = Field(..., description="From taxonomy, e.g., 'GERMAN_BUNDS'")
 
     call: CallDirection
-    conviction: Conviction | None = Field(
-        None, description="Only if inferable from language"
-    )
-    time_horizon: str | None = Field(
-        None, description="Explicit if stated; else inherit from doc"
-    )
+    conviction: Conviction | None = Field(None, description="Only if inferable from language")
+    time_horizon: str | None = Field(None, description="Explicit if stated; else inherit from doc")
 
     rationale_bullets: list[str] = Field(..., min_length=1, max_length=4)
     key_indicators: list[KeyIndicator] = Field(default_factory=list, max_length=5)
     key_risks: list[str] = Field(default_factory=list, max_length=3)
     actionable_takeaways: list[str] = Field(default_factory=list, max_length=3)
 
-    tooltip_text: str | None = Field(
-        None, max_length=150, description="Generated in Stage 8"
-    )
+    tooltip_text: str | None = Field(None, max_length=150, description="Generated in Stage 8")
 
     citations: list[Citation] = Field(..., min_length=1, max_length=3)
     confidence: float = Field(..., ge=0, le=1)

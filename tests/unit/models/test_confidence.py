@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from models.confidence import ConfidenceResult, FieldConfidence, compute_confidence_band
-from models.enums import ConfidenceBand
+from src.models.confidence import ConfidenceResult, FieldConfidence, compute_confidence_band
+from src.models.enums import ConfidenceBand
 
 
 class TestComputeConfidenceBand:
@@ -36,7 +36,11 @@ class TestFieldConfidence:
     def test_confidence_bounds(self) -> None:
         with pytest.raises(ValidationError):
             FieldConfidence(
-                field_name="x", confidence=1.1, reasons=[], has_explicit_evidence=False, evidence_strength=0.5
+                field_name="x",
+                confidence=1.1,
+                reasons=[],
+                has_explicit_evidence=False,
+                evidence_strength=0.5,
             )
 
 

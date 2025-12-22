@@ -126,6 +126,6 @@ async def stage_ingest(pdf_bytes: bytes, source_metadata: dict[str, Any]) -> Ing
         # Re-raise StorageError and ValidationError as-is
         if isinstance(e, (StorageError, ValidationError)):
             raise
-        
+
         # Wrap other exceptions in StorageError
         raise StorageError(f"Failed to ingest document: {e}") from e

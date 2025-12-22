@@ -67,10 +67,10 @@ class LocalBlobStorage:
         """
         if not blob_id:
             raise StorageError("blob_id cannot be empty")
-        
+
         # SHA-256 hex string should be exactly 64 characters and contain only hex digits
-        if len(blob_id) != 64 or not all(c in '0123456789abcdefABCDEF' for c in blob_id):
-            raise StorageError(f"Invalid blob_id format: must be 64-character SHA-256 hex string")
+        if len(blob_id) != 64 or not all(c in "0123456789abcdefABCDEF" for c in blob_id):
+            raise StorageError("Invalid blob_id format: must be 64-character SHA-256 hex string")
 
     def store(self, content: bytes, metadata: dict[str, Any]) -> str:
         """Store PDF content and metadata.

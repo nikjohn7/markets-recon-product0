@@ -6,7 +6,6 @@ to canonical taxonomy codes. Enables fuzzy matching of common alternative names.
 Source: docs/TAXONOMY.md
 """
 
-from typing import Optional
 
 from .hierarchy import get_category_for_sub_asset
 
@@ -271,7 +270,7 @@ SYNONYMS: dict[str, str] = {
 # =============================================================================
 
 
-def resolve_asset(raw_text: str) -> Optional[tuple[str, str]]:
+def resolve_asset(raw_text: str) -> tuple[str, str] | None:
     """Resolve a raw asset mention to (category_code, sub_asset_code).
 
     Performs case-insensitive synonym matching. Returns None if the asset
@@ -322,11 +321,7 @@ def get_all_synonyms_for_sub_asset(sub_asset_code: str) -> list[str]:
     Returns:
         List of all synonym strings (lowercase) that resolve to this sub-asset
     """
-    return [
-        synonym
-        for synonym, code in SYNONYMS.items()
-        if code == sub_asset_code
-    ]
+    return [synonym for synonym, code in SYNONYMS.items() if code == sub_asset_code]
 
 
 def is_valid_synonym(synonym: str) -> bool:

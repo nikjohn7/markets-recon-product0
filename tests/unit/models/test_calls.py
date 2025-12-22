@@ -5,15 +5,17 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
-from models.core import Citation
-from models.enums import CallDirection, IndicatorDirection, Sentiment
+from src.models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
+from src.models.core import Citation
+from src.models.enums import CallDirection, IndicatorDirection, Sentiment
 
 
 class TestKeyIndicator:
     def test_valid_indicator(self) -> None:
         ki = KeyIndicator(
-            name="Inflation trend", direction=IndicatorDirection.RISING, why_it_matters="Impacts rates"
+            name="Inflation trend",
+            direction=IndicatorDirection.RISING,
+            why_it_matters="Impacts rates",
         )
         assert ki.name == "Inflation trend"
 

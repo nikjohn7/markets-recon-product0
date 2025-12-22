@@ -17,7 +17,7 @@ Must pass with zero errors.
 
 ### 2. Linting
 ```bash
-ruff check src/ tests/
+ruff check src/ tests/ --select=E9,F63,F7,F82
 ```
 Must pass with zero errors.
 

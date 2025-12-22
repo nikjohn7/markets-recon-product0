@@ -22,8 +22,8 @@ def build_candidate_expansion_prompt(
     """
     # Format keyword-matched chunks
     keyword_section = "\n\n".join(
-        f"CHUNK {i + 1} (page {chunk.page}):\n{chunk.text}"
-        for i, chunk in enumerate(keyword_chunks[:8])  # Limit to avoid prompt bloat
+        f"[{chunk.chunk_id}] (page {chunk.page}):\n{chunk.text}"
+        for chunk in keyword_chunks[:8]  # Limit to avoid prompt bloat
     )
 
     # Format preview of other chunks (limited to avoid prompt size issues)
@@ -31,8 +31,8 @@ def build_candidate_expansion_prompt(
         c for c in all_chunks if c.chunk_id not in {kc.chunk_id for kc in keyword_chunks}
     ]
     other_section = "\n\n".join(
-        f"CHUNK {i + 1} (page {chunk.page}):\n{chunk.text[:300]}..."
-        for i, chunk in enumerate(other_chunks[:15])  # Preview only
+        f"[{chunk.chunk_id}] (page {chunk.page}):\n{chunk.text[:300]}{'...' if len(chunk.text) > 300 else ''}"
+        for chunk in other_chunks[:15]  # Preview only
     )
 
     prompt = f"""# Task: Identify Additional Allocation Signal Passages
@@ -57,15 +57,15 @@ Return a JSON object with this structure:
 ```json
 {{
     "additional_chunk_ids": [
-        "chunk_id_1",
-        "chunk_id_2"
+        "doc_123_chunk_5",
+        "doc_123_chunk_8"
     ],
     "reasoning": "Brief explanation of why each additional chunk was selected"
 }}
 ```
 
 **IMPORTANT RULES:**
-1. ONLY return chunk IDs from the "Other Document Sections" above
+1. ONLY return chunk IDs (the bracketed identifiers like [doc_123_chunk_5]) from the "Other Document Sections" above
 2. Do NOT return chunk IDs already in the keyword-matched section
 3. Return EMPTY LIST if no additional passages contain positioning signals
 4. Maximum 10 additional chunks

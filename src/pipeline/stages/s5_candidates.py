@@ -7,6 +7,7 @@ and LLM-assisted retrieval expansion.
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -92,11 +93,38 @@ ASSET_CLASS_KEYWORDS = set(SYNONYMS.keys())
 # Combined signal keywords
 SIGNAL_KEYWORDS = POSITIONING_KEYWORDS | ASSET_CLASS_KEYWORDS
 
+# Short keywords that require word boundary matching to avoid false positives
+# These are abbreviations common in financial documents
+WORD_BOUNDARY_KEYWORDS = {"n", "ow", "uw", "add"}
+
 # Retrieval expansion settings
 MAX_KEYWORD_CHUNKS = 20
 MAX_EXPANSION_CHUNKS = 10
 MIN_CANDIDATE_CHUNKS = 3
 TOP_K_QUERY = 50
+
+
+# Pre-compile word boundary patterns for short keywords
+_WORD_BOUNDARY_PATTERNS: dict[str, re.Pattern[str]] = {
+    keyword: re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
+    for keyword in WORD_BOUNDARY_KEYWORDS
+}
+
+
+def _keyword_in_text(keyword: str, text_lower: str) -> bool:
+    """Check if keyword appears in text, using word boundaries for short keywords.
+
+    Args:
+        keyword: The keyword to search for
+        text_lower: Lowercased text to search in
+
+    Returns:
+        True if keyword is found (with appropriate matching strategy)
+    """
+    if keyword in WORD_BOUNDARY_KEYWORDS:
+        pattern = _WORD_BOUNDARY_PATTERNS[keyword]
+        return pattern.search(text_lower) is not None
+    return keyword in text_lower
 
 
 class ExpansionOutput(BaseModel):
@@ -128,7 +156,7 @@ def _search_keywords_in_blocks(cleaned_doc: CleanedDocument) -> dict[str, list[s
 
         # Check each keyword
         for keyword in SIGNAL_KEYWORDS:
-            if keyword in text_lower:
+            if _keyword_in_text(keyword, text_lower):
                 if keyword not in keyword_matches:
                     keyword_matches[keyword] = []
                 keyword_matches[keyword].append(block.block_id)
@@ -184,7 +212,7 @@ def _rank_by_signal_density(chunks: list[RetrievedChunk]) -> list[RetrievedChunk
     def count_signals(chunk: RetrievedChunk) -> int:
         """Count signal keywords in chunk."""
         text_lower = chunk.text.lower()
-        return sum(1 for keyword in SIGNAL_KEYWORDS if keyword in text_lower)
+        return sum(1 for keyword in SIGNAL_KEYWORDS if _keyword_in_text(keyword, text_lower))
 
     # Create list with signal counts
     scored_chunks = [(chunk, count_signals(chunk)) for chunk in chunks]

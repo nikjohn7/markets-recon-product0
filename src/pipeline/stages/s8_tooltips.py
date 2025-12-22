@@ -136,28 +136,28 @@ async def stage_tooltips(
             )
             raise ValidationError(msg)
 
-        # Step 4: Build lookup map by sub_asset_class
-        tooltip_map = {item.sub_asset_class: item.tooltip_text for item in llm_response.tooltips}
-
-        # Step 5: Update each call's tooltip_text
-        updated_count = 0
-        for call in call_extraction.allocation_calls:
-            if call.sub_asset_class in tooltip_map:
-                tooltip_text = tooltip_map[call.sub_asset_class]
-
-                # Validate tooltip quality
-                _validate_tooltip_quality(tooltip_text, call.sub_asset_class)
-
-                # Update call (mutate in place)
-                call.tooltip_text = tooltip_text
-                updated_count += 1
-            else:
-                msg = f"Missing tooltip for sub_asset_class: {call.sub_asset_class}"
+        # Step 4: Update each call's tooltip_text using index-based matching
+        # (prompt guarantees tooltips are returned in same order as input calls)
+        for i, (call, tooltip_item) in enumerate(
+            zip(call_extraction.allocation_calls, llm_response.tooltips, strict=True)
+        ):
+            # Validate sub_asset_class matches (sanity check)
+            if tooltip_item.sub_asset_class != call.sub_asset_class:
+                msg = (
+                    f"Tooltip {i} sub_asset_class mismatch: "
+                    f"expected {call.sub_asset_class}, got {tooltip_item.sub_asset_class}"
+                )
                 raise ValidationError(msg)
+
+            # Validate tooltip quality
+            _validate_tooltip_quality(tooltip_item.tooltip_text, call.sub_asset_class)
+
+            # Update call (mutate in place)
+            call.tooltip_text = tooltip_item.tooltip_text
 
         logger.info(
             f"[Stage 8] Tooltip generation completed: "
-            f"{updated_count}/{len(call_extraction.allocation_calls)} calls updated"
+            f"{len(call_extraction.allocation_calls)} calls updated"
         )
         return call_extraction
 

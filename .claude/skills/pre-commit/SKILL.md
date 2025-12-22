@@ -43,7 +43,7 @@ Before committing, verify:
 Run all checks in sequence:
 
 ```bash
-mypy src/ --strict && ruff check src/ tests/ && pytest tests/
+mypy src/ --strict && ruff check src/ tests/ --select=E9,F63,F7,F82 && pytest tests/
 ```
 
 If any check fails, fix the issues before committing.

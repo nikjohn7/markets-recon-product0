@@ -75,7 +75,7 @@ def _parse_citation(citation_dict: dict[str, str | int]) -> Citation:
         return Citation(
             chunk_id=str(citation_dict["chunk_id"]),
             page=int(citation_dict["page"]),
-            text_span=str(citation_dict.get("text_span", "")) if "text_span" in citation_dict else None,
+            text_span=str(citation_dict["text_span"]) if citation_dict.get("text_span") else None,
         )
     except (KeyError, ValueError, PydanticValidationError) as exc:
         raise ValidationError(f"Invalid citation format: {citation_dict}") from exc

@@ -18,7 +18,7 @@ def get_venv_activation_command():
         # If venv doesn't exist, return empty string (no modification)
         return ""
 
-    return f"source {venv_path} && "
+    return f'source "{venv_path}" && '
 
 def should_skip_activation(command: str) -> bool:
     """Check if command should skip venv activation."""

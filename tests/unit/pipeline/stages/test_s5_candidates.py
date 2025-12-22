@@ -375,8 +375,12 @@ async def test_stage_candidates_success(
 async def test_stage_candidates_no_keywords(
     mock_index: DocumentIndex,
 ) -> None:
-    """Test candidate retrieval when very few keywords found."""
-    # Document with minimal signal keywords
+    """Test candidate retrieval when no keywords found.
+
+    When no signal keywords are found, the implementation returns early
+    without calling the LLM for expansion.
+    """
+    # Document with no signal keywords
     cleaned_doc = CleanedDocument(
         document_id="doc_123",
         blocks=[
@@ -401,13 +405,16 @@ async def test_stage_candidates_no_keywords(
     )
 
     mock_llm = AsyncMock()
+    mock_llm.complete_json = AsyncMock()  # Configure but expect not to be called
 
     result = await stage_candidates(cleaned_doc, mock_index, mock_llm)
 
-    # Should return all chunks when few keywords found
+    # Should return all chunks when no keywords found
     assert len(result.candidates) > 0
-    # May have some incidental keyword matches from short acronyms, but should be minimal
-    assert len(result.keyword_matches) < 5
+    # No keyword matches expected
+    assert len(result.keyword_matches) == 0
+    # LLM should NOT be called when no keywords found (early return path)
+    mock_llm.complete_json.assert_not_called()
 
 
 @pytest.mark.asyncio

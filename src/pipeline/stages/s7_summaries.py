@@ -14,7 +14,6 @@ from pydantic import ValidationError as PydanticValidationError
 
 from src.exceptions import ExtractionError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
-from src.llm.contracts import validate_citations
 from src.llm.prompts.summaries import build_summary_generation_prompt
 from src.models.core import Citation
 from src.models.summaries import DocumentSummaries, KeyTakeaway
@@ -227,14 +226,7 @@ async def stage_summaries(
         )
         logger.info("LLM summary generation completed")
 
-        # Step 4: Validate LLM output (citations only - no taxonomy/hallucination checks for summaries)
-        # Note: We only validate citations since summaries don't contain AllocationCall objects
-        validate_citations(
-            output=llm_response,
-            allowed_chunk_ids={c.chunk_id for c in key_passages},
-        )
-
-        # Step 5: Validate word counts
+        # Step 4: Validate word counts
         _validate_word_count(
             text=llm_response.executive_summary,
             min_words=120,
@@ -248,9 +240,15 @@ async def stage_summaries(
             field_name="search_descriptor",
         )
 
-        # Step 6: Parse citations and takeaways
+        # Step 5: Parse citations and takeaways
         all_citations = [_parse_citation(c) for c in llm_response.citations]
         key_takeaways = [_parse_key_takeaway(t) for t in llm_response.key_takeaways]
+
+        # Step 6: Validate citation chunk_ids against allowed chunks
+        allowed_chunk_ids = {c.chunk_id for c in key_passages}
+        for citation in all_citations:
+            if citation.chunk_id not in allowed_chunk_ids:
+                raise ValidationError(f"Invalid citation chunk_id: {citation.chunk_id}")
 
         # Step 7: Build DocumentSummaries
         summaries = DocumentSummaries(

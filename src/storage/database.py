@@ -11,6 +11,8 @@ SQLite adaptations:
 - Enum types → TEXT with CHECK constraints
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path

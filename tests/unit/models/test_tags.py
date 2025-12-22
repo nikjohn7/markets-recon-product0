@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from models.enums import TagType
-from models.tags import Tag, TagSet
+from src.models.enums import TagType
+from src.models.tags import Tag, TagSet
 
 
 class TestTag:

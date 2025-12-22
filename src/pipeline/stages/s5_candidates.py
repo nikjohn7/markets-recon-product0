@@ -95,7 +95,7 @@ SIGNAL_KEYWORDS = POSITIONING_KEYWORDS | ASSET_CLASS_KEYWORDS
 
 # Short keywords that require word boundary matching to avoid false positives
 # These are abbreviations common in financial documents
-WORD_BOUNDARY_KEYWORDS = {"n", "ow", "uw", "add"}
+WORD_BOUNDARY_KEYWORDS = {"n", "ow", "uw", "add", "it"}
 
 # Retrieval expansion settings
 MAX_KEYWORD_CHUNKS = 20

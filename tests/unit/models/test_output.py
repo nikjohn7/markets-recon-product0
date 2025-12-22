@@ -2,19 +2,19 @@
 
 from datetime import date, datetime
 
-from models.calls import AllocationCall
-from models.confidence import ConfidenceResult
-from models.core import Citation
-from models.enums import (
+from src.models.calls import AllocationCall
+from src.models.confidence import ConfidenceResult
+from src.models.core import Citation
+from src.models.enums import (
     CallDirection,
     ConfidenceBand,
     DocumentType,
     Sentiment,
 )
-from models.output import ProcessedDocument
-from models.profile import DocumentProfile
-from models.summaries import DocumentSummaries, KeyTakeaway
-from models.tags import TagSet
+from src.models.output import ProcessedDocument
+from src.models.profile import DocumentProfile
+from src.models.summaries import DocumentSummaries, KeyTakeaway
+from src.models.tags import TagSet
 
 
 def make_processed_document() -> ProcessedDocument:

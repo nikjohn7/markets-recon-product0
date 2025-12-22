@@ -244,11 +244,22 @@ async def stage_summaries(
         all_citations = [_parse_citation(c) for c in llm_response.citations]
         key_takeaways = [_parse_key_takeaway(t) for t in llm_response.key_takeaways]
 
-        # Step 6: Validate citation chunk_ids against allowed chunks
+        # Step 6: Validate ALL citation chunk_ids against allowed chunks
+        # This includes both top-level citations and those nested in key_takeaways
         allowed_chunk_ids = {c.chunk_id for c in key_passages}
+
+        # Validate top-level citations
         for citation in all_citations:
             if citation.chunk_id not in allowed_chunk_ids:
                 raise ValidationError(f"Invalid citation chunk_id: {citation.chunk_id}")
+
+        # Validate citations nested in key_takeaways
+        for takeaway in key_takeaways:
+            for citation in takeaway.citations:
+                if citation.chunk_id not in allowed_chunk_ids:
+                    raise ValidationError(
+                        f"Invalid citation chunk_id in takeaway: {citation.chunk_id}"
+                    )
 
         # Step 7: Build DocumentSummaries
         summaries = DocumentSummaries(

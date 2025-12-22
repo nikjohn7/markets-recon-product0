@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from models.confidence import ConfidenceResult, FieldConfidence, compute_confidence_band
-from models.enums import ConfidenceBand
+from src.models.confidence import ConfidenceResult, FieldConfidence, compute_confidence_band
+from src.models.enums import ConfidenceBand
 
 
 class TestComputeConfidenceBand:

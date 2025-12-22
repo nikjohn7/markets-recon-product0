@@ -55,10 +55,11 @@ If any check fails, fix the issues before committing.
 - Using `Any` when specific types are available
 - Incompatible types in function arguments
 
-### Lint Errors
-- Unused imports
-- Line too long (fix: break into multiple lines)
-- Missing docstrings (optional but recommended for public APIs)
+### Lint Errors (with --select=E9,F63,F7,F82)
+- Syntax errors preventing module import (E9)
+- Invalid print statements, e.g., `print >>` syntax (F63)
+- Syntax errors in type comments (F7)
+- Undefined names (F82)
 
 ### Test Failures
 - Check test output for specific failures

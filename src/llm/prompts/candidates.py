@@ -65,7 +65,7 @@ Return a JSON object with this structure:
 ```
 
 **IMPORTANT RULES:**
-1. ONLY return chunk IDs (the bracketed identifiers like [doc_123_chunk_5]) from the "Other Document Sections" above
+1. ONLY return chunk IDs from the "Other Document Sections" above (e.g., "doc_123_chunk_5" without brackets)
 2. Do NOT return chunk IDs already in the keyword-matched section
 3. Return EMPTY LIST if no additional passages contain positioning signals
 4. Maximum 10 additional chunks

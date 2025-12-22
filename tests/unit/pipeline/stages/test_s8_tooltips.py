@@ -183,7 +183,7 @@ async def test_stage_tooltips_missing_asset():
     llm_client = DummyLLMClient(llm_response)
 
     # Act & Assert
-    with pytest.raises(ValidationError, match="Missing tooltip for sub_asset_class: US_HY"):
+    with pytest.raises(ValidationError, match="sub_asset_class mismatch.*expected US_HY"):
         await stage_tooltips(call_extraction, llm_client=llm_client)
 
 

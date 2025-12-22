@@ -5,9 +5,9 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
-from models.core import Citation
-from models.enums import CallDirection, IndicatorDirection, Sentiment
+from src.models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
+from src.models.core import Citation
+from src.models.enums import CallDirection, IndicatorDirection, Sentiment
 
 
 class TestKeyIndicator:

@@ -168,7 +168,7 @@ class TestSynonymMapping:
 
     def test_all_synonyms_are_lowercase(self) -> None:
         """All synonym keys should be lowercase for consistency."""
-        for synonym in synonyms.SYNONYMS.keys():
+        for synonym in synonyms.SYNONYMS:
             assert synonym == synonym.lower(), f"Synonym '{synonym}' should be lowercase"
 
     def test_no_duplicate_synonyms(self) -> None:

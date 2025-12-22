@@ -7,6 +7,7 @@ from extracted calls and document content.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
@@ -15,12 +16,14 @@ from src.exceptions import ExtractionError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
 from src.llm.contracts import validate_citations
 from src.llm.prompts.summaries import build_summary_generation_prompt
-from src.models.calls import CallExtractionOutput
 from src.models.core import Citation
-from src.models.pipeline import RetrievedChunk
-from src.models.profile import DocumentProfile
 from src.models.summaries import DocumentSummaries, KeyTakeaway
-from src.retrieval.indexer import DocumentIndex
+
+if TYPE_CHECKING:
+    from src.models.calls import CallExtractionOutput
+    from src.models.pipeline import RetrievedChunk
+    from src.models.profile import DocumentProfile
+    from src.retrieval.indexer import DocumentIndex
 
 logger = logging.getLogger(__name__)
 

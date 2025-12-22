@@ -333,7 +333,7 @@ class TestPDFParser:
             confidence=0.9,
         )
 
-        def fake_extract_tables(page, page_num, page_width, page_height):
+        def fake_extract_tables(_page, _page_num, _page_width, _page_height):
             return [mock_table], [table_cell_block]
 
         monkeypatch.setattr(parser, "_extract_tables_from_page", fake_extract_tables)

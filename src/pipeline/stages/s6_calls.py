@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
@@ -19,8 +20,10 @@ from src.llm.prompts.calls import build_call_extraction_prompt
 from src.models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
 from src.models.core import Citation
 from src.models.enums import CallDirection, Conviction, IndicatorDirection, Sentiment
-from src.models.pipeline import CandidateSet
-from src.models.profile import DocumentProfile
+
+if TYPE_CHECKING:
+    from src.models.pipeline import CandidateSet
+    from src.models.profile import DocumentProfile
 
 logger = logging.getLogger(__name__)
 

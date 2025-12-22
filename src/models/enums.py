@@ -57,8 +57,8 @@ class BlockType(str, Enum):
 class ConfidenceBand(str, Enum):
     """Confidence band for routing decisions.
 
-    HIGH: ≥0.80 - Auto-publish
-    MEDIUM: 0.60–0.79 - Spot-check queue
+    HIGH: >=0.80 - Auto-publish
+    MEDIUM: 0.60-0.79 - Spot-check queue
     LOW: <0.60 - Must-review
     """
 

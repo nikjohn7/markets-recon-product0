@@ -7,19 +7,21 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Sequence
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from pydantic import BaseModel
 
 from src.exceptions import ValidationError
 from src.models.calls import AllocationCall
 from src.models.core import Citation
-from src.models.pipeline import Chunk, RetrievedChunk
 from src.taxonomy.hierarchy import (
     get_category_for_sub_asset,
     is_valid_category,
     is_valid_sub_asset,
 )
+
+if TYPE_CHECKING:
+    from src.models.pipeline import Chunk, RetrievedChunk
 
 T = TypeVar("T", bound=BaseModel)
 

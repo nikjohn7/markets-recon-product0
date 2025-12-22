@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,11 +15,13 @@ from src.exceptions import ExtractionError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
 from src.llm.contracts import validate_llm_output
 from src.llm.prompts.metadata import build_metadata_extraction_prompt
-from src.models.core import Citation
-from src.models.enums import DocumentType
 from src.models.pipeline import CleanedDocument, RetrievedChunk
 from src.models.profile import DocumentProfile
-from src.retrieval.indexer import DocumentIndex
+
+if TYPE_CHECKING:
+    from src.models.core import Citation
+    from src.models.enums import DocumentType
+    from src.retrieval.indexer import DocumentIndex
 
 logger = logging.getLogger(__name__)
 

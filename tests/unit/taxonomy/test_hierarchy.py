@@ -51,7 +51,7 @@ class TestCategoryPresence:
 
     def test_all_categories_have_display_names(self) -> None:
         """Every category should have a display name."""
-        for category_code in hierarchy.CATEGORIES.keys():
+        for category_code in hierarchy.CATEGORIES:
             assert category_code in hierarchy.CATEGORY_DISPLAY_NAMES
             assert len(hierarchy.CATEGORY_DISPLAY_NAMES[category_code]) > 0
 

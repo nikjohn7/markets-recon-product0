@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 import traceback
-from collections.abc import Mapping
+from collections.abc import Mapping  # noqa: TC003 - used at runtime
 from datetime import UTC, datetime
 from typing import Any
 

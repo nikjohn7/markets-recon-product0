@@ -71,8 +71,8 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `6.3` Implement Stage 6 - Call Extraction (Core)
 - [ ] `6.4` Implement Stage 6 - Verification Pass (v1+ deferred)
 - [x] `6.5` Implement Stage 7 - Summary Generation
-- [ ] `6.6` Implement Stage 8 - Tooltip Generation
-- [ ] `6.7` Implement Stage 9 - Tag Generation
+- [x] `6.6` Implement Stage 8 - Tooltip Generation
+- [x] `6.7` Implement Stage 9 - Tag Generation
 
 ### Phase 7: Confidence & Validation (Stage 10)
 - [ ] `7.1` Implement Extraction Quality Scoring
@@ -461,3 +461,50 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - 10 test cases covering: complete output generation, word count validation, citation parsing, multiple takeaways, chunk retrieval, no-calls handling, prompt building, error handling
   - Tests validate: DocumentSummaries structure, citation parsing (with/without text_span), takeaway validation, LLM failure handling
 - Verified: all 10 Stage 7 tests pass, all 84 pipeline stage tests pass, `mypy --strict` passes on all pipeline stages
+
+### Task 6.6 — Complete (2025-12-22)
+- Implemented **Stage 8: Tooltip Generation** in `src/pipeline/stages/s8_tooltips.py`
+  - **Tooltip generation**: Generates concise hover text (≤25 words, ≤150 chars) for each allocation call
+  - **Quality validation**: Enforces character limit (≤150 chars, hard requirement), word count (≤25 words, warning), generic pattern detection (warnings)
+  - **In-place mutation**: Updates `CallExtractionOutput.allocation_calls[].tooltip_text` field directly
+  - **Asset mapping**: Maps LLM-generated tooltips to calls via `sub_asset_class` identifier
+  - **Comprehensive validation**: Count mismatch detection, missing tooltip detection, quality checks
+- LLM models: `TooltipItem` (single tooltip schema), `TooltipGenerationLLM` (full output schema)
+- Uses `PipelineStage.TOOLTIPS` with DeepInfra provider (Qwen3-235B) for tooltip generation
+- Helper functions: `_validate_tooltip_quality()` for quality validation (word count, char count, generic pattern detection)
+- Quality checks: Character limit enforcement (raises ValidationError), word count warning (logs only), generic pattern detection (logs warning)
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s8_tooltips.py`
+  - 11 test cases covering: successful generation, empty calls handling, count mismatch, missing asset, quality validation (char/word limits), generic patterns, in-place mutation, prompt building, multiple calls
+  - Tests validate: TooltipGenerationLLM output parsing, validation logic, error handling, in-place mutation behavior
+- Verified: all 11 Stage 8 tests pass, all 95 pipeline stage tests pass, `mypy --strict` passes
+
+### Task 6.7 — Complete (2025-12-22)
+- Implemented **Stage 9: Tag Generation** in `src/pipeline/stages/s9_tags.py`
+  - **Hybrid tagging approach**: Combines deterministic rule-based tags with LLM-generated tags
+  - **Deterministic tagging** (`_extract_deterministic_tags()`):
+    - Asset class tags: Extracted from call categories (e.g., EQUITIES_DM, FIXED_INCOME_SOVEREIGNS_EUROPE)
+    - Region tags: Extracted from profile.regions, normalized to lowercase, filtered against allowed REGION_TAGS
+    - Instrument tags: Extracted from sub-asset codes (e.g., german_bunds, us_large_cap), normalized to lowercase
+  - **LLM tagging** (`_retrieve_passages_for_tagging()` + LLM call):
+    - Theme tags: Key themes (inflation, fed_policy, recession_risk, etc.) from THEME_TAGS vocabulary
+    - Risk tags: Key risks (duration_risk, credit_spreads, etc.) from RISK_TAGS vocabulary
+    - Macro regime tags: Economic regime view (soft_landing, stagflation, etc.) from MACRO_REGIME_TAGS vocabulary
+    - Retrieves top 20 chunks using multi-query strategy (macro outlook, risks, sentiment)
+  - **Tag validation & normalization** (`_validate_and_normalize_llm_tags()`):
+    - Validates all LLM tags against allowed vocabularies
+    - Normalizes to lowercase
+    - Filters out invalid tags with warnings
+    - Detects novel themes for vocabulary expansion
+  - **Tag object construction** (`_build_tag_objects()`):
+    - Creates Tag objects with type, value, confidence, source
+    - Rule-based tags: confidence=1.0, source="rule"
+    - LLM-based tags: confidence from LLM output, source="llm"
+  - **Acceptance validation**: Ensures ≥1 asset class tag (hard requirement), warns if <5 total tags
+- LLM model: `TagGenerationLLM` with theme_tags, risk_tags, macro_regime_tags, novel_themes fields
+- Uses `PipelineStage.TAGS` with DeepInfra provider (Qwen3-235B) for tag generation
+- Helper functions: `_extract_deterministic_tags()`, `_retrieve_passages_for_tagging()`, `_validate_and_normalize_llm_tags()`, `_build_tag_objects()`
+- Chunk retrieval strategy: Multi-query (macro outlook, risks, sentiment) + deduplication + top 20 chunks
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s9_tags.py`
+  - 12 test cases covering: deterministic extraction, deduplication, LLM validation, tag normalization, case-insensitive validation, tag object construction, full pipeline, empty calls handling, insufficient tags warning, novel themes logging, prompt building, invalid region filtering
+  - Tests validate: TagSet structure, deterministic tag extraction, LLM tag validation, vocabulary enforcement, novel theme detection, minimum tag requirements
+- Verified: all 12 Stage 9 tests pass, all 107 pipeline stage tests pass, `mypy --strict` passes

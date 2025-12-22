@@ -67,7 +67,7 @@ class TestStageExtractIntegration:
         self.create_test_pdf(pdf_path, test_content)
 
         # Read PDF bytes
-        with open(pdf_path, "rb") as f:
+        with pdf_path.open("rb") as f:
             pdf_bytes = f.read()
 
         # Store in blob storage
@@ -133,7 +133,7 @@ class TestStageExtractIntegration:
         doc.close()
 
         # Store in blob storage
-        with open(pdf_path, "rb") as f:
+        with pdf_path.open("rb") as f:
             pdf_bytes = f.read()
 
         storage = LocalBlobStorage(storage_dir=str(tmp_path / "pdfs"))
@@ -160,7 +160,7 @@ class TestStageExtractIntegration:
         doc.close()
 
         # Store in blob storage
-        with open(pdf_path, "rb") as f:
+        with pdf_path.open("rb") as f:
             pdf_bytes = f.read()
 
         storage = LocalBlobStorage(storage_dir=str(tmp_path / "pdfs"))
@@ -221,7 +221,7 @@ class TestStageExtractIntegration:
         doc.close()
 
         # Store and extract
-        with open(pdf_path, "rb") as f:
+        with pdf_path.open("rb") as f:
             pdf_bytes = f.read()
 
         storage = LocalBlobStorage(storage_dir=str(tmp_path / "pdfs"))
@@ -291,7 +291,7 @@ class TestDeterministicPDF:
         )
 
         # Store PDF
-        with open(pdf_path, "rb") as f:
+        with pdf_path.open("rb") as f:
             pdf_bytes = f.read()
 
         storage = LocalBlobStorage(storage_dir=str(tmp_path / "pdfs"))
@@ -323,7 +323,7 @@ class TestDeterministicPDF:
 
         # Should have detected some bullets on page 2 (at least one)
         # Note: Bullet detection may vary based on PyMuPDF text extraction
-        page2_bullets = [b for b in page2_blocks if b.block_type == BlockType.BULLET]
+        [b for b in page2_blocks if b.block_type == BlockType.BULLET]
         # Just verify that we have blocks, bullet detection is heuristic
         assert len(page2_blocks) > 0  # Should have extracted blocks from page 2
 

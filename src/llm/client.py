@@ -15,14 +15,16 @@ import json
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from openai import APIConnectionError, APIError, AsyncOpenAI, RateLimitError
-from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 
 from src.config.settings import get_settings
 from src.exceptions import LLMError
+
+if TYPE_CHECKING:
+    from openai.types.chat import ChatCompletionMessageParam
 
 logger = logging.getLogger(__name__)
 

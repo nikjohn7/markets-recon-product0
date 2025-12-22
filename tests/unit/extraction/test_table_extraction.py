@@ -139,7 +139,7 @@ class TestTableExtraction:
 
         # Check for expected data cells
         data_cells = [c for c in table.cells if c.row > 0]
-        assert len(data_cells) == 9  # 3 rows × 3 columns = 9 data cells
+        assert len(data_cells) == 9  # 3 rows x 3 columns = 9 data cells
 
     @patch("pdfplumber.open")
     def test_table_extraction_header_detection(self, mock_pdfplumber_open):
@@ -468,7 +468,7 @@ class TestTableExtraction:
 
         # Check for expected data cells
         data_cells = [c for c in table.cells if c.row > 0]
-        assert len(data_cells) == 9  # 3 rows × 3 columns = 9 data cells
+        assert len(data_cells) == 9  # 3 rows x 3 columns = 9 data cells
 
     def test_table_extraction_header_detection_integration(self):
         """Test that header rows are correctly identified (integration test)."""

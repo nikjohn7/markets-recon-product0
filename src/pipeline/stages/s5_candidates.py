@@ -7,6 +7,7 @@ and LLM-assisted retrieval expansion.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,8 +15,10 @@ from src.exceptions import ExtractionError
 from src.llm.client import LLMClient, PipelineStage
 from src.llm.prompts.candidates import build_candidate_expansion_prompt
 from src.models.pipeline import CandidateSet, CleanedDocument, RetrievedChunk
-from src.retrieval.indexer import DocumentIndex
 from src.taxonomy.synonyms import SYNONYMS
+
+if TYPE_CHECKING:
+    from src.retrieval.indexer import DocumentIndex
 
 logger = logging.getLogger(__name__)
 

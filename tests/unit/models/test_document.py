@@ -63,7 +63,7 @@ class TestExtractedTable:
             col_count=1,
         )
         # Invalid: cell row exceeds row_count
-        with pytest.raises(ValidationError, match="Cell at row=100.*exceeds table row_count=2"):
+        with pytest.raises(ValidationError, match=r"Cell at row=100.*exceeds table row_count=2"):
             ExtractedTable(
                 table_id="t1",
                 page=1,
@@ -83,7 +83,7 @@ class TestExtractedTable:
         )
         # Invalid: cell col exceeds col_count
         with pytest.raises(
-            ValidationError, match="Cell at row=0, col=50.*exceeds table col_count=3"
+            ValidationError, match=r"Cell at row=0, col=50.*exceeds table col_count=3"
         ):
             ExtractedTable(
                 table_id="t1",
@@ -95,7 +95,7 @@ class TestExtractedTable:
 
     def test_duplicate_cell_positions(self) -> None:
         # Invalid: duplicate cell at same (row, col)
-        with pytest.raises(ValidationError, match="Duplicate cell at position.*row=0, col=0"):
+        with pytest.raises(ValidationError, match=r"Duplicate cell at position.*row=0, col=0"):
             ExtractedTable(
                 table_id="t1",
                 page=1,

@@ -14,7 +14,7 @@ SQLite adaptations:
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -33,9 +33,11 @@ from sqlalchemy import (
     event,
     text,
 )
-from sqlalchemy.engine import Engine
 
 from src.exceptions import StorageError
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Engine
 
 
 class Database:
@@ -248,7 +250,9 @@ class Database:
             raise StorageError(f"Failed to create database tables: {e}") from e
 
     @staticmethod
-    def _enable_foreign_keys(dbapi_connection: Any, connection_record: Any) -> None:
+    def _enable_foreign_keys(
+        dbapi_connection: Any, connection_record: Any  # noqa: ARG004
+    ) -> None:
         """Ensure SQLite foreign key constraints are enforced for each connection."""
 
         cursor = dbapi_connection.cursor()

@@ -49,10 +49,7 @@ def _normalize_text(text: str) -> str:
 
 def _is_disclaimer(text: str) -> bool:
     """Check if text matches disclaimer patterns."""
-    for pattern in DISCLAIMER_PATTERNS:
-        if re.search(pattern, text):
-            return True
-    return False
+    return any(re.search(pattern, text) for pattern in DISCLAIMER_PATTERNS)
 
 
 def _detect_boilerplate(blocks: list[DocumentBlock]) -> set[int]:
@@ -75,7 +72,7 @@ def _detect_boilerplate(blocks: list[DocumentBlock]) -> set[int]:
 
         # Compare first block of each page (header)
         if blocks_by_page[page1] and blocks_by_page[page2] and blocks_by_page[page3]:
-            idx1, block1 = blocks_by_page[page1][0]
+            _idx1, block1 = blocks_by_page[page1][0]
             idx2, block2 = blocks_by_page[page2][0]
             idx3, block3 = blocks_by_page[page3][0]
 
@@ -89,7 +86,7 @@ def _detect_boilerplate(blocks: list[DocumentBlock]) -> set[int]:
 
         # Compare last block of each page (footer)
         if blocks_by_page[page1] and blocks_by_page[page2] and blocks_by_page[page3]:
-            idx1, block1 = blocks_by_page[page1][-1]
+            _idx1, block1 = blocks_by_page[page1][-1]
             idx2, block2 = blocks_by_page[page2][-1]
             idx3, block3 = blocks_by_page[page3][-1]
 

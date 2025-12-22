@@ -20,7 +20,7 @@ class DummyIndex:
         self._query_results = query_results
         self.last_query: str | None = None
 
-    async def query(self, query: str, top_k: int = 10):
+    async def query(self, query: str, top_k: int = 10):  # noqa: ARG002
         self.last_query = query
         return self._query_results
 
@@ -33,7 +33,9 @@ class DummyLLMClient:
         self.expected_chunk_id = expected_chunk_id
         self.last_prompt: str | None = None
 
-    async def complete_json(self, prompt: str, response_model, stage):
+    async def complete_json(
+        self, prompt: str, response_model, stage  # noqa: ARG002
+    ):
         self.last_prompt = prompt
         if self.expected_chunk_id is not None:
             assert self.expected_chunk_id in prompt

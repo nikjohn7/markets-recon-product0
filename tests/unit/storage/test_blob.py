@@ -261,7 +261,7 @@ class TestBlobStoragePathTraversal:
 
         for invalid_id in invalid_ids:
             with pytest.raises(
-                StorageError, match="Invalid blob_id format|blob_id cannot be empty"
+                StorageError, match=r"Invalid blob_id format|blob_id cannot be empty"
             ):
                 storage.retrieve(invalid_id)
 

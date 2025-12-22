@@ -452,7 +452,9 @@ class TestErrorHandling:
 
         # Create a mock storage that fails
         class FailingStorage:
-            def store(self, content: bytes, metadata: dict[str, Any]) -> str:
+            def store(
+                self, content: bytes, metadata: dict[str, Any]  # noqa: ARG002
+            ) -> str:
                 raise StorageError("Storage operation failed")
 
         monkeypatch.setattr(
@@ -488,7 +490,7 @@ class TestErrorHandling:
     async def test_unexpected_errors_wrapped_in_storage_error(
         self,
         storage: LocalBlobStorage,
-        database: Database,
+        database: Database,  # noqa: ARG002
         valid_pdf_bytes: bytes,
         sample_source_metadata: dict[str, Any],
         monkeypatch: pytest.MonkeyPatch,
@@ -499,7 +501,7 @@ class TestErrorHandling:
         class ErrorDatabase:
             def get_connection(self):
                 class MockConn:
-                    def execute(self, *args, **kwargs):
+                    def execute(self, *_args, **_kwargs):
                         raise ValueError("Unexpected error")
 
                     def __enter__(self):

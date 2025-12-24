@@ -75,10 +75,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `6.7` Implement Stage 9 - Tag Generation
 
 ### Phase 7: Confidence & Validation (Stage 10)
-- [ ] `7.1` Implement Extraction Quality Scoring
-- [ ] `7.2` Implement Evidence Strength Scoring
-- [ ] `7.3` Implement Document-Level Confidence
-- [ ] `7.4` Implement Review Routing
+- [x] `7.1` Implement Extraction Quality Scoring
+- [x] `7.2` Implement Evidence Strength Scoring
+- [x] `7.3` Implement Document-Level Confidence
+- [x] `7.4` Implement Review Routing
 
 ### Phase 8: Pipeline Orchestration
 - [ ] `8.1` Create Pipeline Orchestrator
@@ -508,3 +508,43 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - 12 test cases covering: deterministic extraction, deduplication, LLM validation, tag normalization, case-insensitive validation, tag object construction, full pipeline, empty calls handling, insufficient tags warning, novel themes logging, prompt building, invalid region filtering
   - Tests validate: TagSet structure, deterministic tag extraction, LLM tag validation, vocabulary enforcement, novel theme detection, minimum tag requirements
 - Verified: all 12 Stage 9 tests pass, all 107 pipeline stage tests pass, `mypy --strict` passes
+
+### Task 7.1 — Complete (2025-12-25)
+- Implemented `src/pipeline/stages/s10_confidence.py` with extraction quality scoring functions
+- **Text coverage scoring** (`score_text_coverage`): Uses `extraction_coverage` directly (40% weight)
+- **OCR quality scoring** (`score_ocr_quality`): Detects garbled characters in OCR pages, returns 1.0 if no OCR needed (20% weight)
+- **Table extraction success** (`score_table_success`): Ratio of tables with content vs total tables (20% weight)
+- **Block structure quality** (`score_structure_quality`): Measures heading/paragraph/bullet detection and block type variety (20% weight)
+- **Aggregate scoring** (`score_extraction_quality`): Weighted combination per CONFIDENCE.md
+- **Explicit call language detection** (`has_explicit_call_language`): Pattern matching for OW/UW/N language
+- **Confidence band computation** (`compute_confidence_band`): HIGH ≥0.80, MEDIUM 0.60-0.79, LOW <0.60
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s10_confidence.py` with 27 tests
+- Verified: all tests pass (27/27), `mypy --strict` passes
+
+### Task 7.2 — Complete (2025-12-25)
+- Added evidence strength scoring to `src/pipeline/stages/s10_confidence.py`
+- **Explicit mention detection** (`has_explicit_mention`): Direct substring match (1.0) or multi-word presence (0.8)
+- **Semantic similarity** (`compute_word_overlap`): Word overlap ratio as proxy for similarity (30% weight)
+- **Entailment heuristic** (`compute_entailment_heuristic`): Pattern matching for supporting context (20% weight)
+- **Evidence strength scoring** (`score_evidence_strength`): Weighted combination (50%/30%/20%), returns best score across citations
+- **Call evidence scoring** (`score_call_evidence`): Combines evidence strength (50%) with explicit call language (50%)
+- Added 23 new tests covering all evidence scoring functions
+- Verified: all 50 tests pass, `mypy --strict` passes
+
+### Task 7.3 — Complete (2025-12-25)
+- Added document-level confidence computation to `src/pipeline/stages/s10_confidence.py`
+- **Weighted aggregation** per CONFIDENCE.md: extraction (15%), profile (15%), calls (50%), summary (20%)
+- **Attention flagging** (`_compute_attention_reasons`): low coverage, uncertain manager/date, calls needing review, no calls, many low-confidence calls
+- **Field confidences**: Populates FieldConfidence for extraction, profile, calls, summary
+- **Stage function** (`stage_confidence`): Async wrapper for pipeline integration
+- Added 10 new tests covering document confidence and attention reasons
+- Verified: all 60 tests pass, `mypy --strict` passes
+
+### Task 7.4 — Complete (2025-12-25)
+- Added review routing to `src/pipeline/stages/s10_confidence.py`
+- **DocumentRouting enum**: AUTO_PUBLISH, SPOT_CHECK, MUST_REVIEW
+- **can_auto_publish**: Checks HIGH band + coverage ≥0.70 + no attention flags + no uncertain fields
+- **should_spot_check**: 20% sampling of MEDIUM confidence docs
+- **determine_routing**: Routes based on band and criteria (HIGH→auto/review, MEDIUM→auto/spot, LOW→review)
+- Added 13 new tests covering all routing scenarios with mocked randomness
+- Verified: all 73 tests pass, `mypy --strict` passes

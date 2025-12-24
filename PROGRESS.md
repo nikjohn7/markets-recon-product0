@@ -76,7 +76,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 7: Confidence & Validation (Stage 10)
 - [x] `7.1` Implement Extraction Quality Scoring
-- [ ] `7.2` Implement Evidence Strength Scoring
+- [x] `7.2` Implement Evidence Strength Scoring
 - [ ] `7.3` Implement Document-Level Confidence
 - [ ] `7.4` Implement Review Routing
 
@@ -520,3 +520,13 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - **Confidence band computation** (`compute_confidence_band`): HIGH ≥0.80, MEDIUM 0.60-0.79, LOW <0.60
 - Created comprehensive test suite in `tests/unit/pipeline/stages/test_s10_confidence.py` with 27 tests
 - Verified: all tests pass (27/27), `mypy --strict` passes
+
+### Task 7.2 — Complete (2025-12-25)
+- Added evidence strength scoring to `src/pipeline/stages/s10_confidence.py`
+- **Explicit mention detection** (`has_explicit_mention`): Direct substring match (1.0) or multi-word presence (0.8)
+- **Semantic similarity** (`compute_word_overlap`): Word overlap ratio as proxy for similarity (30% weight)
+- **Entailment heuristic** (`compute_entailment_heuristic`): Pattern matching for supporting context (20% weight)
+- **Evidence strength scoring** (`score_evidence_strength`): Weighted combination (50%/30%/20%), returns best score across citations
+- **Call evidence scoring** (`score_call_evidence`): Combines evidence strength (50%) with explicit call language (50%)
+- Added 23 new tests covering all evidence scoring functions
+- Verified: all 50 tests pass, `mypy --strict` passes

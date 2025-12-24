@@ -4,8 +4,12 @@ Computes extraction quality, evidence strength, and document-level confidence.
 """
 
 import re
+from typing import Any
+
+from src.models.core import Citation
 from src.models.document import DocumentJSON
 from src.models.enums import BlockType, ConfidenceBand, CallDirection
+from src.models.pipeline import RetrievedChunk
 
 
 # Explicit call language patterns per CONFIDENCE.md
@@ -153,3 +157,158 @@ def compute_confidence_band(confidence: float) -> ConfidenceBand:
     elif confidence >= 0.60:
         return ConfidenceBand.MEDIUM
     return ConfidenceBand.LOW
+
+
+# --- Evidence Strength Scoring (Task 7.2) ---
+
+
+def _get_chunk_by_id(
+    chunk_id: str, chunks: list[RetrievedChunk]
+) -> RetrievedChunk | None:
+    """Find chunk by ID."""
+    for chunk in chunks:
+        if chunk.chunk_id == chunk_id:
+            return chunk
+    return None
+
+
+def has_explicit_mention(field_value: Any, text: str) -> float:
+    """Check if field value is explicitly mentioned in text.
+    
+    Returns 1.0 if found, 0.0 otherwise.
+    """
+    if field_value is None:
+        return 0.0
+    
+    value_str = str(field_value).lower()
+    text_lower = text.lower()
+    
+    # Direct substring match
+    if value_str in text_lower:
+        return 1.0
+    
+    # For multi-word values, check if all significant words present
+    words = [w for w in value_str.split() if len(w) > 2]
+    if words and all(w in text_lower for w in words):
+        return 0.8
+    
+    return 0.0
+
+
+def compute_word_overlap(value: str, text: str) -> float:
+    """Compute word overlap as proxy for semantic similarity.
+    
+    Returns score 0-1 based on shared words.
+    """
+    value_words = set(w.lower() for w in re.findall(r'\b\w+\b', value) if len(w) > 2)
+    text_words = set(w.lower() for w in re.findall(r'\b\w+\b', text) if len(w) > 2)
+    
+    if not value_words:
+        return 0.0
+    
+    overlap = len(value_words & text_words)
+    return min(1.0, overlap / len(value_words))
+
+
+def compute_entailment_heuristic(value: str, text: str) -> float:
+    """Heuristic entailment score based on contextual indicators.
+    
+    Checks for supporting language patterns around the value.
+    """
+    text_lower = text.lower()
+    value_lower = value.lower()
+    
+    # Check if value appears with supporting context
+    support_patterns = [
+        rf"(we|our|the)\s+\w*\s*{re.escape(value_lower[:20])}",
+        rf"{re.escape(value_lower[:20])}\s+(is|are|will|should)",
+        rf"(expect|believe|view|see)\s+.*{re.escape(value_lower[:20])}",
+    ]
+    
+    for pattern in support_patterns:
+        if re.search(pattern, text_lower):
+            return 1.0
+    
+    # Partial credit if value words appear in assertive sentences
+    if any(w in text_lower for w in value_lower.split()[:3]):
+        return 0.5
+    
+    return 0.0
+
+
+def score_evidence_strength(
+    field_value: Any,
+    citations: list[Citation],
+    source_chunks: list[RetrievedChunk],
+) -> float:
+    """Score how well evidence supports a claim.
+    
+    Weights per CONFIDENCE.md:
+    - Explicit mention: 50%
+    - Semantic similarity: 30%
+    - Entailment: 20%
+    
+    Returns best score across all citations.
+    """
+    if not citations:
+        return 0.0
+    
+    best_score = 0.0
+    value_str = str(field_value) if field_value is not None else ""
+    
+    for citation in citations:
+        chunk = _get_chunk_by_id(citation.chunk_id, source_chunks)
+        if not chunk:
+            continue
+        
+        text = chunk.text
+        
+        # Explicit mention (50% weight)
+        explicit = has_explicit_mention(field_value, text) * 0.5
+        
+        # Semantic similarity via word overlap (30% weight)
+        similarity = compute_word_overlap(value_str, text) * 0.3
+        
+        # Entailment heuristic (20% weight)
+        entailment = compute_entailment_heuristic(value_str, text) * 0.2
+        
+        score = explicit + similarity + entailment
+        best_score = max(best_score, score)
+    
+    return best_score
+
+
+def score_call_evidence(
+    call_direction: CallDirection,
+    citations: list[Citation],
+    source_chunks: list[RetrievedChunk],
+) -> float:
+    """Score evidence strength for an allocation call.
+    
+    Combines explicit call language detection with general evidence scoring.
+    
+    Weights:
+    - Evidence strength: 50%
+    - Explicit call language: 50%
+    """
+    if not citations:
+        return 0.0
+    
+    # Gather evidence text from citations
+    evidence_text = ""
+    for citation in citations:
+        chunk = _get_chunk_by_id(citation.chunk_id, source_chunks)
+        if chunk:
+            evidence_text += chunk.text + " "
+        if citation.text_span:
+            evidence_text += citation.text_span + " "
+    
+    # Explicit call language score
+    explicit_score = has_explicit_call_language(call_direction, evidence_text)
+    
+    # General evidence strength
+    evidence_score = score_evidence_strength(
+        call_direction.value, citations, source_chunks
+    )
+    
+    return (evidence_score * 0.5) + (explicit_score * 0.5)

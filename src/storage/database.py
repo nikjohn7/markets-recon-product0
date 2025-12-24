@@ -177,7 +177,7 @@ class Database:
             Column("search_descriptor", Text),
             Column("key_takeaways", Text),  # JSON array
             Column("overall_sentiment", Text),
-            CheckConstraint("overall_sentiment IN ('BULLISH', 'NEUTRAL', 'BEARISH', 'MIXED')"),
+            CheckConstraint("overall_sentiment IN ('NET_POSITIVE', 'NEUTRAL', 'NET_NEGATIVE')"),
             Column("sentiment_rationale", Text),  # JSON array
             Column("sentiment_citations", Text),  # JSON array
             Column(

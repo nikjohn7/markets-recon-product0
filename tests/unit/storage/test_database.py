@@ -303,7 +303,7 @@ class TestSummariesTable:
                     document_id=doc_id,
                     executive_summary="Test summary",
                     key_takeaways=takeaways,
-                    overall_sentiment="BULLISH",
+                    overall_sentiment="NET_POSITIVE",
                 )
             )
             conn.commit()
@@ -313,7 +313,7 @@ class TestSummariesTable:
 
         assert row is not None
         assert row.executive_summary == "Test summary"
-        assert row.overall_sentiment == "BULLISH"
+        assert row.overall_sentiment == "NET_POSITIVE"
 
     def test_summary_document_unique(self, db: Database) -> None:
         """Each document can have only one summary."""

@@ -1,18 +1,22 @@
-"""Pipeline orchestrator.
+"""Pipeline orchestrator and CLI.
 
 Executes stages 0-10 in sequence, handles failures gracefully, and persists results.
 """
 
 from __future__ import annotations
 
+import argparse
+import asyncio
 import json
 import logging
+import sys
 import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from src.config.logging import configure_logging
 from src.exceptions import ExtractionError, LLMError, PipelineError, StorageError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
 from src.models.output import ProcessedDocument
@@ -284,3 +288,83 @@ def _persist_results(
                 confidence=tag.confidence,
             )
         )
+
+
+# =============================================================================
+# CLI Interface
+# =============================================================================
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    """Build CLI argument parser."""
+    parser = argparse.ArgumentParser(
+        prog="python -m pipeline.run",
+        description="Markets Recon Pipeline - Process fund manager outlook PDFs",
+    )
+    parser.add_argument(
+        "--pdf",
+        type=Path,
+        required=True,
+        help="Path to PDF file to process",
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=Path,
+        help="Output JSON file path (default: stdout)",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {PIPELINE_VERSION}",
+    )
+    return parser
+
+
+def main() -> None:
+    """CLI entrypoint for pipeline."""
+    parser = _build_parser()
+    args = parser.parse_args()
+
+    # Validate PDF exists first (before loading settings)
+    if not args.pdf.exists():
+        print(f"Error: PDF not found: {args.pdf}", file=sys.stderr)
+        sys.exit(1)
+
+    # Configure logging
+    import os
+    if args.verbose:
+        os.environ["LOG_LEVEL"] = "DEBUG"
+    try:
+        configure_logging()
+    except Exception:
+        # Fall back to basic logging if settings fail
+        logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
+
+    # Run pipeline
+    try:
+        result = asyncio.run(process_pdf(args.pdf))
+    except PipelineError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Unexpected error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Output result
+    output_json = result.model_dump_json(indent=2)
+    if args.output:
+        args.output.write_text(output_json)
+        print(f"Output written to {args.output}")
+    else:
+        print(output_json)
+
+
+if __name__ == "__main__":
+    main()

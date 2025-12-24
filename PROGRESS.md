@@ -82,7 +82,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 8: Pipeline Orchestration
 - [x] `8.1` Create Pipeline Orchestrator
-- [ ] `8.2` Create CLI Interface
+- [x] `8.2` Create CLI Interface
 - [ ] `8.3` Create Output Validator
 
 ### Phase 9: Testing
@@ -558,3 +558,11 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - **ProcessedDocument output**: Returns complete output with all extracted data and metadata
 - Created comprehensive test suite in `tests/unit/pipeline/test_orchestrator.py` with 5 tests
 - Verified: all tests pass (5/5), `mypy --strict` passes on run.py
+
+### Task 8.2 — Complete (2025-12-25)
+- Added CLI interface to `src/pipeline/run.py` using argparse
+- Commands: `python -m pipeline.run --pdf <path>` runs full pipeline
+- Options: `--output/-o` for JSON file output, `--verbose/-v` for debug logging, `--version`
+- Graceful error handling: file not found, pipeline errors, unexpected errors
+- Added 4 CLI tests to `tests/unit/pipeline/test_orchestrator.py`
+- Verified: all tests pass (9/9), `mypy --strict` passes

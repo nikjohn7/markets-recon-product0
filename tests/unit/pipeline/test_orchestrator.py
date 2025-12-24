@@ -333,3 +333,63 @@ async def test_process_pdf_with_source_metadata(mock_pdf_file: Path) -> None:
         # Verify ingest was called with custom metadata
         call_args = mock_ingest.call_args
         assert call_args[0][1] == custom_metadata
+
+
+# =============================================================================
+# CLI Tests
+# =============================================================================
+
+
+def test_cli_help(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test CLI --help output."""
+    import sys
+    from src.pipeline.run import _build_parser
+
+    parser = _build_parser()
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args(["--help"])
+    assert exc_info.value.code == 0
+
+    captured = capsys.readouterr()
+    assert "--pdf" in captured.out
+    assert "--output" in captured.out
+    assert "--verbose" in captured.out
+
+
+def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test CLI --version output."""
+    from src.pipeline.run import _build_parser, PIPELINE_VERSION
+
+    parser = _build_parser()
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args(["--version"])
+    assert exc_info.value.code == 0
+
+    captured = capsys.readouterr()
+    assert PIPELINE_VERSION in captured.out
+
+
+def test_cli_missing_pdf_arg() -> None:
+    """Test CLI requires --pdf argument."""
+    from src.pipeline.run import _build_parser
+
+    parser = _build_parser()
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args([])
+    assert exc_info.value.code != 0
+
+
+def test_cli_parses_args(tmp_path: Path) -> None:
+    """Test CLI parses arguments correctly."""
+    from src.pipeline.run import _build_parser
+
+    pdf_path = tmp_path / "test.pdf"
+    pdf_path.touch()
+    output_path = tmp_path / "output.json"
+
+    parser = _build_parser()
+    args = parser.parse_args(["--pdf", str(pdf_path), "-o", str(output_path), "-v"])
+
+    assert args.pdf == pdf_path
+    assert args.output == output_path
+    assert args.verbose is True

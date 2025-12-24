@@ -528,3 +528,117 @@ class TestAttentionReasons:
         
         reasons = _compute_attention_reasons(doc, profile, calls, [0.85])
         assert len(reasons) == 0
+
+
+
+# --- Review Routing Tests (Task 7.4) ---
+
+from unittest.mock import patch
+from src.pipeline.stages.s10_confidence import (
+    DocumentRouting,
+    can_auto_publish,
+    should_spot_check,
+    determine_routing,
+    SPOT_CHECK_SAMPLE_RATE,
+)
+
+
+def _make_confidence_result(
+    overall: float = 0.85,
+    coverage: float = 0.9,
+    attention_required: bool = False,
+    attention_reasons: list[str] | None = None,
+) -> ConfidenceResult:
+    from src.models.confidence import compute_confidence_band
+    return ConfidenceResult(
+        document_id="doc_1",
+        extraction_coverage=coverage,
+        overall_confidence=overall,
+        confidence_band=compute_confidence_band(overall),
+        field_confidences=[],
+        analyst_attention_required=attention_required,
+        attention_reasons=attention_reasons or [],
+        verification_agreement=None,
+        disagreed_fields=[],
+    )
+
+
+class TestCanAutoPublish:
+    def test_high_confidence_meets_criteria(self):
+        result = _make_confidence_result(overall=0.85, coverage=0.9)
+        profile = _make_profile()
+        assert can_auto_publish(result, profile) is True
+
+    def test_low_confidence_fails(self):
+        result = _make_confidence_result(overall=0.5, coverage=0.9)
+        profile = _make_profile()
+        assert can_auto_publish(result, profile) is False
+
+    def test_low_coverage_fails(self):
+        result = _make_confidence_result(overall=0.85, coverage=0.5)
+        profile = _make_profile()
+        assert can_auto_publish(result, profile) is False
+
+    def test_attention_required_fails(self):
+        result = _make_confidence_result(overall=0.85, attention_required=True)
+        profile = _make_profile()
+        assert can_auto_publish(result, profile) is False
+
+    def test_uncertain_manager_fails(self):
+        result = _make_confidence_result(overall=0.85)
+        profile = _make_profile(manager_uncertain=True)
+        assert can_auto_publish(result, profile) is False
+
+    def test_uncertain_date_fails(self):
+        result = _make_confidence_result(overall=0.85)
+        profile = _make_profile(date_uncertain=True)
+        assert can_auto_publish(result, profile) is False
+
+
+class TestShouldSpotCheck:
+    def test_non_medium_returns_false(self):
+        high_result = _make_confidence_result(overall=0.85)
+        low_result = _make_confidence_result(overall=0.5)
+        assert should_spot_check(high_result) is False
+        assert should_spot_check(low_result) is False
+
+    @patch("src.pipeline.stages.s10_confidence.random.random")
+    def test_medium_sampled_at_20_percent(self, mock_random):
+        result = _make_confidence_result(overall=0.7)  # MEDIUM band
+        
+        mock_random.return_value = 0.1  # Below 0.20 threshold
+        assert should_spot_check(result) is True
+        
+        mock_random.return_value = 0.3  # Above 0.20 threshold
+        assert should_spot_check(result) is False
+
+
+class TestDetermineRouting:
+    def test_high_auto_publish(self):
+        result = _make_confidence_result(overall=0.85, coverage=0.9)
+        profile = _make_profile()
+        assert determine_routing(result, profile) == DocumentRouting.AUTO_PUBLISH
+
+    def test_high_with_issues_must_review(self):
+        result = _make_confidence_result(overall=0.85, attention_required=True)
+        profile = _make_profile()
+        assert determine_routing(result, profile) == DocumentRouting.MUST_REVIEW
+
+    def test_low_must_review(self):
+        result = _make_confidence_result(overall=0.5)
+        profile = _make_profile()
+        assert determine_routing(result, profile) == DocumentRouting.MUST_REVIEW
+
+    @patch("src.pipeline.stages.s10_confidence.random.random")
+    def test_medium_spot_check(self, mock_random):
+        mock_random.return_value = 0.1  # Below threshold
+        result = _make_confidence_result(overall=0.7)
+        profile = _make_profile()
+        assert determine_routing(result, profile) == DocumentRouting.SPOT_CHECK
+
+    @patch("src.pipeline.stages.s10_confidence.random.random")
+    def test_medium_auto_publish(self, mock_random):
+        mock_random.return_value = 0.5  # Above threshold
+        result = _make_confidence_result(overall=0.7)
+        profile = _make_profile()
+        assert determine_routing(result, profile) == DocumentRouting.AUTO_PUBLISH

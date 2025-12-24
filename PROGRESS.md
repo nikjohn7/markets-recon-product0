@@ -78,7 +78,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `7.1` Implement Extraction Quality Scoring
 - [x] `7.2` Implement Evidence Strength Scoring
 - [x] `7.3` Implement Document-Level Confidence
-- [ ] `7.4` Implement Review Routing
+- [x] `7.4` Implement Review Routing
 
 ### Phase 8: Pipeline Orchestration
 - [ ] `8.1` Create Pipeline Orchestrator
@@ -539,3 +539,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - **Stage function** (`stage_confidence`): Async wrapper for pipeline integration
 - Added 10 new tests covering document confidence and attention reasons
 - Verified: all 60 tests pass, `mypy --strict` passes
+
+### Task 7.4 — Complete (2025-12-25)
+- Added review routing to `src/pipeline/stages/s10_confidence.py`
+- **DocumentRouting enum**: AUTO_PUBLISH, SPOT_CHECK, MUST_REVIEW
+- **can_auto_publish**: Checks HIGH band + coverage ≥0.70 + no attention flags + no uncertain fields
+- **should_spot_check**: 20% sampling of MEDIUM confidence docs
+- **determine_routing**: Routes based on band and criteria (HIGH→auto/review, MEDIUM→auto/spot, LOW→review)
+- Added 13 new tests covering all routing scenarios with mocked randomness
+- Verified: all 73 tests pass, `mypy --strict` passes

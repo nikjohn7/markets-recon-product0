@@ -3,8 +3,10 @@
 Computes extraction quality, evidence strength, and document-level confidence.
 """
 
+import random
 import re
 import statistics
+from enum import Enum
 from typing import Any
 
 from src.models.calls import AllocationCall
@@ -15,6 +17,16 @@ from src.models.enums import BlockType, ConfidenceBand, CallDirection
 from src.models.pipeline import RetrievedChunk
 from src.models.profile import DocumentProfile
 from src.models.summaries import DocumentSummaries
+
+
+class DocumentRouting(str, Enum):
+    """Routing decision for a processed document."""
+    AUTO_PUBLISH = "auto_publish"
+    SPOT_CHECK = "spot_check"
+    MUST_REVIEW = "must_review"
+
+
+SPOT_CHECK_SAMPLE_RATE = 0.20  # 20% of MEDIUM confidence docs
 
 
 # Explicit call language patterns per CONFIDENCE.md
@@ -462,3 +474,60 @@ async def stage_confidence(
 ) -> ConfidenceResult:
     """Stage 10: Compute confidence scores and determine review routing."""
     return compute_document_confidence(doc, profile, calls, summaries, source_chunks)
+
+
+
+# --- Review Routing (Task 7.4) ---
+
+
+def can_auto_publish(result: ConfidenceResult, profile: DocumentProfile) -> bool:
+    """Check if document meets auto-publish criteria.
+    
+    All must be true:
+    - overall_confidence >= 0.80
+    - extraction_coverage >= 0.70
+    - No analyst attention required
+    - manager_name_uncertain = false
+    - publication_date_uncertain = false
+    """
+    return (
+        result.overall_confidence >= 0.80
+        and result.extraction_coverage >= 0.70
+        and not result.analyst_attention_required
+        and not profile.manager_name_uncertain
+        and not profile.publication_date_uncertain
+    )
+
+
+def should_spot_check(result: ConfidenceResult) -> bool:
+    """Determine if MEDIUM confidence doc should be spot-checked.
+    
+    Samples 20% of MEDIUM confidence documents.
+    """
+    if result.confidence_band != ConfidenceBand.MEDIUM:
+        return False
+    return random.random() < SPOT_CHECK_SAMPLE_RATE
+
+
+def determine_routing(
+    result: ConfidenceResult,
+    profile: DocumentProfile,
+) -> DocumentRouting:
+    """Determine routing for a processed document.
+    
+    Routing rules:
+    - HIGH + meets criteria → AUTO_PUBLISH
+    - MEDIUM → AUTO_PUBLISH (80%) or SPOT_CHECK (20%)
+    - LOW → MUST_REVIEW
+    """
+    if result.confidence_band == ConfidenceBand.HIGH:
+        if can_auto_publish(result, profile):
+            return DocumentRouting.AUTO_PUBLISH
+        return DocumentRouting.MUST_REVIEW
+    
+    if result.confidence_band == ConfidenceBand.MEDIUM:
+        if should_spot_check(result):
+            return DocumentRouting.SPOT_CHECK
+        return DocumentRouting.AUTO_PUBLISH
+    
+    return DocumentRouting.MUST_REVIEW

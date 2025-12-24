@@ -83,7 +83,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 8: Pipeline Orchestration
 - [x] `8.1` Create Pipeline Orchestrator
 - [x] `8.2` Create CLI Interface
-- [ ] `8.3` Create Output Validator
+- [x] `8.3` Create Output Validator
 
 ### Phase 9: Testing
 - [ ] `9.1` Create Test Fixtures
@@ -566,3 +566,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Graceful error handling: file not found, pipeline errors, unexpected errors
 - Added 4 CLI tests to `tests/unit/pipeline/test_orchestrator.py`
 - Verified: all tests pass (9/9), `mypy --strict` passes
+
+### Task 8.3 — Complete (2025-12-25)
+- Created `src/pipeline/validate.py` with output validation utility
+- Validates: schema compliance, taxonomy codes, tag vocabularies, citation structure
+- CLI: `python -m pipeline.validate --output <json>`
+- Created 11 tests in `tests/unit/pipeline/test_validate.py`
+- Verified: all tests pass (11/11), `mypy --strict` passes

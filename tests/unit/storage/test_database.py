@@ -130,7 +130,7 @@ class TestDocumentsTable:
                     file_hash="sha256hash",
                     title="Test Document",
                     publication_date=date(2025, 1, 15),
-                    document_type="outlook",
+                    document_type="QUARTERLY_OUTLOOK",
                     status="pending",
                 )
             )
@@ -141,7 +141,7 @@ class TestDocumentsTable:
 
         assert row is not None
         assert row.title == "Test Document"
-        assert row.document_type == "outlook"
+        assert row.document_type == "QUARTERLY_OUTLOOK"
         assert row.status == "pending"
 
     def test_document_file_hash_unique(self, db: Database) -> None:

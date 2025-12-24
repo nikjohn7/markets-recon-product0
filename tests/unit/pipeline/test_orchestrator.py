@@ -252,8 +252,11 @@ async def test_process_pdf_stage_failure(mock_pdf_file: Path) -> None:
 async def test_process_pdf_persists_results(mock_pdf_file: Path) -> None:
     """Test that results are persisted to database."""
     mock_db = MagicMock()
-    execute_calls: list[Any] = []
-    mock_db.execute = MagicMock(side_effect=lambda x: execute_calls.append(x))
+    mock_conn = MagicMock()
+    mock_db.get_connection = MagicMock(return_value=mock_conn)
+    mock_conn.__enter__ = MagicMock(return_value=mock_conn)
+    mock_conn.__exit__ = MagicMock(return_value=False)
+    mock_db.execute = MagicMock()
     mock_llm = MagicMock()
     mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="ohmygpt"))
     mock_llm.get_config = MagicMock(return_value=MagicMock(model_name="test-model"))
@@ -287,8 +290,9 @@ async def test_process_pdf_persists_results(mock_pdf_file: Path) -> None:
 
         await process_pdf(mock_pdf_file, db=mock_db, llm_client=mock_llm)
 
-        # Should have multiple database calls (run start, run complete, document update, calls, summary, tags)
-        assert mock_db.execute.call_count >= 5
+        # Verify connection was used for persistence and commit was called
+        mock_db.get_connection.assert_called()
+        mock_conn.commit.assert_called()
 
 
 @pytest.mark.asyncio

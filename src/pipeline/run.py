@@ -217,77 +217,80 @@ def _persist_results(
     stages: list[str],
     elapsed: float,
 ) -> None:
-    """Persist pipeline results to database."""
-    # Update pipeline run
-    db.execute(
-        db.pipeline_runs.update()
-        .where(db.pipeline_runs.c.id == run_id)
-        .values(
-            completed_at=datetime.now(UTC).isoformat(),
-            total_runtime_seconds=elapsed,
-            status="completed",
-            stages_completed=json.dumps(stages),
-        )
-    )
-
-    # Update document record
-    db.execute(
-        db.documents.update()
-        .where(db.documents.c.id == result.document_id)
-        .values(
-            title=result.profile.title,
-            publication_date=result.profile.publication_date,
-            as_of_date=result.profile.as_of_date,
-            document_type=result.profile.document_type.value,
-            overall_confidence=result.confidence.overall_confidence,
-            analyst_attention_required=result.confidence.analyst_attention_required,
-            status="completed",
-        )
-    )
-
-    # Insert allocation calls
-    for call in result.allocation_calls:
-        db.execute(
-            db.allocation_calls.insert().values(
-                document_id=result.document_id,
-                asset_class_category=call.asset_class_category,
-                sub_asset_class=call.sub_asset_class,
-                call=call.call.value,
-                conviction=call.conviction.value if call.conviction else None,
-                time_horizon=call.time_horizon,
-                rationale_bullets=json.dumps(call.rationale_bullets),
-                key_indicators=json.dumps([i.model_dump() for i in call.key_indicators]),
-                key_risks=json.dumps(call.key_risks),
-                tooltip_text=call.tooltip_text,
-                citations=json.dumps([c.model_dump() for c in call.citations]),
-                confidence=call.confidence,
-                needs_analyst_review=call.needs_analyst_review,
+    """Persist pipeline results to database atomically."""
+    with db.get_connection() as conn:
+        # Update pipeline run
+        conn.execute(
+            db.pipeline_runs.update()
+            .where(db.pipeline_runs.c.id == run_id)
+            .values(
+                completed_at=datetime.now(UTC).isoformat(),
+                total_runtime_seconds=elapsed,
+                status="completed",
+                stages_completed=json.dumps(stages),
             )
         )
 
-    # Insert summary
-    db.execute(
-        db.summaries.insert().values(
-            document_id=result.document_id,
-            executive_summary=result.summaries.executive_summary,
-            search_descriptor=result.summaries.search_descriptor,
-            key_takeaways=json.dumps([t.model_dump() for t in result.summaries.key_takeaways]),
-            overall_sentiment=result.overall_sentiment.value,
-            sentiment_rationale=json.dumps(result.sentiment_rationale),
-            sentiment_citations=json.dumps([c.model_dump() for c in result.sentiment_citations]),
-        )
-    )
-
-    # Insert tags
-    for tag in result.tags.all_tags:
-        db.execute(
-            db.document_tags.insert().values(
-                document_id=result.document_id,
-                tag_type=tag.tag_type.value,
-                tag_value=tag.value,
-                confidence=tag.confidence,
+        # Update document record
+        conn.execute(
+            db.documents.update()
+            .where(db.documents.c.id == result.document_id)
+            .values(
+                title=result.profile.title,
+                publication_date=result.profile.publication_date,
+                as_of_date=result.profile.as_of_date,
+                document_type=result.profile.document_type.value,
+                overall_confidence=result.confidence.overall_confidence,
+                analyst_attention_required=result.confidence.analyst_attention_required,
+                status="completed",
             )
         )
+
+        # Insert allocation calls
+        for call in result.allocation_calls:
+            conn.execute(
+                db.allocation_calls.insert().values(
+                    document_id=result.document_id,
+                    asset_class_category=call.asset_class_category,
+                    sub_asset_class=call.sub_asset_class,
+                    call=call.call.value,
+                    conviction=call.conviction.value if call.conviction else None,
+                    time_horizon=call.time_horizon,
+                    rationale_bullets=json.dumps(call.rationale_bullets),
+                    key_indicators=json.dumps([i.model_dump() for i in call.key_indicators]),
+                    key_risks=json.dumps(call.key_risks),
+                    tooltip_text=call.tooltip_text,
+                    citations=json.dumps([c.model_dump() for c in call.citations]),
+                    confidence=call.confidence,
+                    needs_analyst_review=call.needs_analyst_review,
+                )
+            )
+
+        # Insert summary
+        conn.execute(
+            db.summaries.insert().values(
+                document_id=result.document_id,
+                executive_summary=result.summaries.executive_summary,
+                search_descriptor=result.summaries.search_descriptor,
+                key_takeaways=json.dumps([t.model_dump() for t in result.summaries.key_takeaways]),
+                overall_sentiment=result.overall_sentiment.value,
+                sentiment_rationale=json.dumps(result.sentiment_rationale),
+                sentiment_citations=json.dumps([c.model_dump() for c in result.sentiment_citations]),
+            )
+        )
+
+        # Insert tags
+        for tag in result.tags.all_tags:
+            conn.execute(
+                db.document_tags.insert().values(
+                    document_id=result.document_id,
+                    tag_type=tag.tag_type.value,
+                    tag_value=tag.value,
+                    confidence=tag.confidence,
+                )
+            )
+
+        conn.commit()
 
 
 # =============================================================================

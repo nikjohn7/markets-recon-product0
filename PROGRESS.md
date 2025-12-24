@@ -75,7 +75,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `6.7` Implement Stage 9 - Tag Generation
 
 ### Phase 7: Confidence & Validation (Stage 10)
-- [ ] `7.1` Implement Extraction Quality Scoring
+- [x] `7.1` Implement Extraction Quality Scoring
 - [ ] `7.2` Implement Evidence Strength Scoring
 - [ ] `7.3` Implement Document-Level Confidence
 - [ ] `7.4` Implement Review Routing
@@ -508,3 +508,15 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - 12 test cases covering: deterministic extraction, deduplication, LLM validation, tag normalization, case-insensitive validation, tag object construction, full pipeline, empty calls handling, insufficient tags warning, novel themes logging, prompt building, invalid region filtering
   - Tests validate: TagSet structure, deterministic tag extraction, LLM tag validation, vocabulary enforcement, novel theme detection, minimum tag requirements
 - Verified: all 12 Stage 9 tests pass, all 107 pipeline stage tests pass, `mypy --strict` passes
+
+### Task 7.1 — Complete (2025-12-25)
+- Implemented `src/pipeline/stages/s10_confidence.py` with extraction quality scoring functions
+- **Text coverage scoring** (`score_text_coverage`): Uses `extraction_coverage` directly (40% weight)
+- **OCR quality scoring** (`score_ocr_quality`): Detects garbled characters in OCR pages, returns 1.0 if no OCR needed (20% weight)
+- **Table extraction success** (`score_table_success`): Ratio of tables with content vs total tables (20% weight)
+- **Block structure quality** (`score_structure_quality`): Measures heading/paragraph/bullet detection and block type variety (20% weight)
+- **Aggregate scoring** (`score_extraction_quality`): Weighted combination per CONFIDENCE.md
+- **Explicit call language detection** (`has_explicit_call_language`): Pattern matching for OW/UW/N language
+- **Confidence band computation** (`compute_confidence_band`): HIGH ≥0.80, MEDIUM 0.60-0.79, LOW <0.60
+- Created comprehensive test suite in `tests/unit/pipeline/stages/test_s10_confidence.py` with 27 tests
+- Verified: all tests pass (27/27), `mypy --strict` passes

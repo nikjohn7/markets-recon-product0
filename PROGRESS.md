@@ -81,7 +81,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `7.4` Implement Review Routing
 
 ### Phase 8: Pipeline Orchestration
-- [ ] `8.1` Create Pipeline Orchestrator
+- [x] `8.1` Create Pipeline Orchestrator
 - [ ] `8.2` Create CLI Interface
 - [ ] `8.3` Create Output Validator
 
@@ -548,3 +548,13 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - **determine_routing**: Routes based on band and criteria (HIGH→auto/review, MEDIUM→auto/spot, LOW→review)
 - Added 13 new tests covering all routing scenarios with mocked randomness
 - Verified: all 73 tests pass, `mypy --strict` passes
+
+### Task 8.1 — Complete (2025-12-25)
+- Implemented `src/pipeline/run.py` with `process_pdf()` async function
+- **Stage execution**: Runs stages 0-10 in sequence with proper error handling
+- **Graceful failure handling**: Catches ExtractionError, ValidationError, LLMError, StorageError and wraps in PipelineError
+- **Database persistence**: Records pipeline run start/completion, updates document record, inserts allocation calls, summaries, and tags
+- **Run tracking**: Creates pipeline_runs record with LLM model/provider, runtime, status, stages completed
+- **ProcessedDocument output**: Returns complete output with all extracted data and metadata
+- Created comprehensive test suite in `tests/unit/pipeline/test_orchestrator.py` with 5 tests
+- Verified: all tests pass (5/5), `mypy --strict` passes on run.py

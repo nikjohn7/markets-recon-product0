@@ -77,7 +77,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 7: Confidence & Validation (Stage 10)
 - [x] `7.1` Implement Extraction Quality Scoring
 - [x] `7.2` Implement Evidence Strength Scoring
-- [ ] `7.3` Implement Document-Level Confidence
+- [x] `7.3` Implement Document-Level Confidence
 - [ ] `7.4` Implement Review Routing
 
 ### Phase 8: Pipeline Orchestration
@@ -530,3 +530,12 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - **Call evidence scoring** (`score_call_evidence`): Combines evidence strength (50%) with explicit call language (50%)
 - Added 23 new tests covering all evidence scoring functions
 - Verified: all 50 tests pass, `mypy --strict` passes
+
+### Task 7.3 — Complete (2025-12-25)
+- Added document-level confidence computation to `src/pipeline/stages/s10_confidence.py`
+- **Weighted aggregation** per CONFIDENCE.md: extraction (15%), profile (15%), calls (50%), summary (20%)
+- **Attention flagging** (`_compute_attention_reasons`): low coverage, uncertain manager/date, calls needing review, no calls, many low-confidence calls
+- **Field confidences**: Populates FieldConfidence for extraction, profile, calls, summary
+- **Stage function** (`stage_confidence`): Async wrapper for pipeline integration
+- Added 10 new tests covering document confidence and attention reasons
+- Verified: all 60 tests pass, `mypy --strict` passes

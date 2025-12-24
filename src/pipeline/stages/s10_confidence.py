@@ -4,12 +4,17 @@ Computes extraction quality, evidence strength, and document-level confidence.
 """
 
 import re
+import statistics
 from typing import Any
 
+from src.models.calls import AllocationCall
+from src.models.confidence import ConfidenceResult, FieldConfidence
 from src.models.core import Citation
 from src.models.document import DocumentJSON
 from src.models.enums import BlockType, ConfidenceBand, CallDirection
 from src.models.pipeline import RetrievedChunk
+from src.models.profile import DocumentProfile
+from src.models.summaries import DocumentSummaries
 
 
 # Explicit call language patterns per CONFIDENCE.md
@@ -312,3 +317,148 @@ def score_call_evidence(
     )
     
     return (evidence_score * 0.5) + (explicit_score * 0.5)
+
+
+
+# --- Document-Level Confidence (Task 7.3) ---
+
+# Weights per CONFIDENCE.md
+CONFIDENCE_WEIGHTS = {
+    "extraction": 0.15,
+    "profile": 0.15,
+    "calls": 0.50,
+    "summary": 0.20,
+}
+
+
+def _compute_attention_reasons(
+    doc: DocumentJSON,
+    profile: DocumentProfile,
+    calls: list[AllocationCall],
+    call_scores: list[float],
+) -> list[str]:
+    """Determine reasons for analyst attention."""
+    reasons: list[str] = []
+    
+    if doc.extraction_coverage < 0.50:
+        reasons.append("low_extraction_coverage")
+    
+    if profile.manager_name_uncertain:
+        reasons.append("manager_name_unclear")
+    
+    if profile.publication_date_uncertain:
+        reasons.append("publication_date_unclear")
+    
+    if any(c.needs_analyst_review for c in calls):
+        reasons.append("call_needs_review")
+    
+    if any(s < 0.50 for s in call_scores):
+        reasons.append("low_confidence_call")
+    
+    if not calls:
+        reasons.append("no_calls_extracted")
+    
+    # Check if >30% of calls have low confidence
+    if calls and len([s for s in call_scores if s < 0.60]) > len(calls) * 0.3:
+        reasons.append("many_low_confidence_calls")
+    
+    return reasons
+
+
+def compute_document_confidence(
+    doc: DocumentJSON,
+    profile: DocumentProfile,
+    calls: list[AllocationCall],
+    summaries: DocumentSummaries,
+    source_chunks: list[RetrievedChunk],
+) -> ConfidenceResult:
+    """Compute document-level confidence with weighted aggregation.
+    
+    Weights per CONFIDENCE.md:
+    - Extraction: 15%
+    - Profile: 15%
+    - Calls: 50%
+    - Summary: 20%
+    """
+    # Component scores
+    extraction_score = score_extraction_quality(doc)
+    
+    profile_score = score_evidence_strength(
+        profile.manager_name, profile.citations, source_chunks
+    )
+    
+    call_scores = [c.confidence for c in calls]
+    avg_call_score = statistics.mean(call_scores) if call_scores else 0.5
+    
+    summary_score = score_evidence_strength(
+        summaries.executive_summary, summaries.citations, source_chunks
+    )
+    
+    # Weighted aggregate
+    overall = (
+        extraction_score * CONFIDENCE_WEIGHTS["extraction"]
+        + profile_score * CONFIDENCE_WEIGHTS["profile"]
+        + avg_call_score * CONFIDENCE_WEIGHTS["calls"]
+        + summary_score * CONFIDENCE_WEIGHTS["summary"]
+    )
+    
+    band = compute_confidence_band(overall)
+    
+    # Attention reasons
+    attention_reasons = _compute_attention_reasons(doc, profile, calls, call_scores)
+    attention_required = bool(attention_reasons) or band == ConfidenceBand.LOW
+    
+    # Build field confidences
+    field_confidences = [
+        FieldConfidence(
+            field_name="extraction_quality",
+            confidence=extraction_score,
+            reasons=["text_coverage", "structure_quality"],
+            has_explicit_evidence=True,
+            evidence_strength=extraction_score,
+        ),
+        FieldConfidence(
+            field_name="profile",
+            confidence=profile_score,
+            reasons=["manager_name_evidence"],
+            has_explicit_evidence=profile_score > 0.5,
+            evidence_strength=profile_score,
+        ),
+        FieldConfidence(
+            field_name="calls",
+            confidence=avg_call_score,
+            reasons=[f"{len(calls)} calls extracted"],
+            has_explicit_evidence=avg_call_score > 0.5,
+            evidence_strength=avg_call_score,
+        ),
+        FieldConfidence(
+            field_name="summary",
+            confidence=summary_score,
+            reasons=["summary_evidence"],
+            has_explicit_evidence=summary_score > 0.5,
+            evidence_strength=summary_score,
+        ),
+    ]
+    
+    return ConfidenceResult(
+        document_id=doc.document_id,
+        extraction_coverage=doc.extraction_coverage,
+        overall_confidence=overall,
+        confidence_band=band,
+        field_confidences=field_confidences,
+        analyst_attention_required=attention_required,
+        attention_reasons=attention_reasons,
+        verification_agreement=None,
+        disagreed_fields=[],
+    )
+
+
+async def stage_confidence(
+    doc: DocumentJSON,
+    profile: DocumentProfile,
+    calls: list[AllocationCall],
+    summaries: DocumentSummaries,
+    source_chunks: list[RetrievedChunk],
+) -> ConfidenceResult:
+    """Stage 10: Compute confidence scores and determine review routing."""
+    return compute_document_confidence(doc, profile, calls, summaries, source_chunks)

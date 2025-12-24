@@ -334,3 +334,197 @@ class TestCallEvidence:
         citations = [_make_citation("c1", text_span="overweight equities")]
         score = score_call_evidence(CallDirection.OVERWEIGHT, citations, chunks)
         assert score >= 0.5
+
+
+
+# --- Document-Level Confidence Tests (Task 7.3) ---
+
+from datetime import datetime, date
+from src.models.calls import AllocationCall
+from src.models.confidence import ConfidenceResult
+from src.models.enums import DocumentType, Sentiment, Conviction
+from src.models.profile import DocumentProfile
+from src.models.summaries import DocumentSummaries, KeyTakeaway
+from src.pipeline.stages.s10_confidence import (
+    compute_document_confidence,
+    _compute_attention_reasons,
+    CONFIDENCE_WEIGHTS,
+)
+
+
+def _make_profile(
+    doc_id: str = "doc_1",
+    manager_uncertain: bool = False,
+    date_uncertain: bool = False,
+) -> DocumentProfile:
+    return DocumentProfile(
+        document_id=doc_id,
+        manager_name="BlackRock",
+        title="2024 Outlook",
+        publication_date=date(2024, 1, 15),
+        document_type=DocumentType.ANNUAL_OUTLOOK,
+        asset_classes_covered=["EQUITIES_DM"],
+        citations=[_make_citation("c1")],
+        manager_name_uncertain=manager_uncertain,
+        publication_date_uncertain=date_uncertain,
+    )
+
+
+def _make_call(
+    confidence: float = 0.8,
+    needs_review: bool = False,
+) -> AllocationCall:
+    return AllocationCall(
+        asset_class_category="EQUITIES_DM",
+        sub_asset_class="US_LARGE_CAP",
+        call=CallDirection.OVERWEIGHT,
+        conviction=Conviction.HIGH,
+        rationale_bullets=["Strong earnings growth"],
+        citations=[_make_citation("c1")],
+        confidence=confidence,
+        needs_analyst_review=needs_review,
+    )
+
+
+def _make_summaries(doc_id: str = "doc_1") -> DocumentSummaries:
+    return DocumentSummaries(
+        document_id=doc_id,
+        executive_summary="This is an executive summary that meets the minimum length requirement for validation purposes. It discusses market outlook and key themes.",
+        search_descriptor="Annual outlook covering equities and fixed income with bullish stance on US markets.",
+        key_takeaways=[
+            KeyTakeaway(text="Overweight US equities", citations=[_make_citation("c1")]),
+            KeyTakeaway(text="Underweight bonds", citations=[_make_citation("c1")]),
+            KeyTakeaway(text="Neutral on commodities", citations=[_make_citation("c1")]),
+        ],
+        citations=[_make_citation("c1")],
+        confidence=0.85,
+    )
+
+
+class TestDocumentConfidence:
+    def test_high_confidence_document(self):
+        blocks = [
+            _make_block("1_0", 1, BlockType.HEADING),
+            _make_block("1_1", 1, BlockType.PARAGRAPH, "BlackRock expects strong returns"),
+            _make_block("1_2", 1, BlockType.BULLET),
+        ]
+        doc = _make_doc(blocks=blocks, extraction_coverage=1.0)
+        # Chunk text must match profile manager_name and summary content for high evidence scores
+        chunks = [_make_chunk("c1", "BlackRock executive summary market outlook equities fixed income bullish US markets")]
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.95)]  # High call confidence
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        # With good extraction (1.0), high call confidence (0.95), and matching evidence
+        assert result.overall_confidence >= 0.60  # At least MEDIUM
+        assert len(result.field_confidences) == 4
+
+    def test_low_confidence_triggers_attention(self):
+        doc = _make_doc(blocks=[], extraction_coverage=0.3)
+        chunks: list[RetrievedChunk] = []
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.4)]
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        assert result.confidence_band == ConfidenceBand.LOW
+        assert result.analyst_attention_required
+        assert "low_extraction_coverage" in result.attention_reasons
+
+    def test_uncertain_manager_triggers_attention(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=0.8)
+        chunks = [_make_chunk("c1", "Market outlook report")]
+        profile = _make_profile(manager_uncertain=True)
+        calls = [_make_call(confidence=0.8)]
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        assert result.analyst_attention_required
+        assert "manager_name_unclear" in result.attention_reasons
+
+    def test_call_needing_review_triggers_attention(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=0.9)
+        chunks = [_make_chunk("c1", "BlackRock overweight equities")]
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.8, needs_review=True)]
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        assert result.analyst_attention_required
+        assert "call_needs_review" in result.attention_reasons
+
+    def test_no_calls_triggers_attention(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=0.9)
+        chunks = [_make_chunk("c1", "BlackRock market commentary")]
+        profile = _make_profile()
+        calls: list[AllocationCall] = []
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        assert "no_calls_extracted" in result.attention_reasons
+
+    def test_weighted_aggregation(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=1.0)
+        chunks: list[RetrievedChunk] = []
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.7)]
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        # Calls have 50% weight, so 0.7 * 0.5 = 0.35 from calls alone
+        assert result.overall_confidence > 0.0
+        assert len(result.field_confidences) == 4
+
+    def test_field_confidences_populated(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=0.9)
+        chunks = [_make_chunk("c1", "BlackRock")]
+        profile = _make_profile()
+        calls = [_make_call()]
+        summaries = _make_summaries()
+        
+        result = compute_document_confidence(doc, profile, calls, summaries, chunks)
+        
+        field_names = [f.field_name for f in result.field_confidences]
+        assert "extraction_quality" in field_names
+        assert "profile" in field_names
+        assert "calls" in field_names
+        assert "summary" in field_names
+
+
+class TestAttentionReasons:
+    def test_low_extraction_coverage(self):
+        doc = _make_doc(extraction_coverage=0.4)
+        profile = _make_profile()
+        calls = [_make_call()]
+        
+        reasons = _compute_attention_reasons(doc, profile, calls, [0.8])
+        assert "low_extraction_coverage" in reasons
+
+    def test_many_low_confidence_calls(self):
+        doc = _make_doc(extraction_coverage=0.9)
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.5), _make_call(confidence=0.5), _make_call(confidence=0.9)]
+        
+        reasons = _compute_attention_reasons(doc, profile, calls, [0.5, 0.5, 0.9])
+        assert "many_low_confidence_calls" in reasons
+
+    def test_no_reasons_for_good_document(self):
+        blocks = [_make_block("1_0", 1, BlockType.PARAGRAPH)]
+        doc = _make_doc(blocks=blocks, extraction_coverage=0.9)
+        profile = _make_profile()
+        calls = [_make_call(confidence=0.85)]
+        
+        reasons = _compute_attention_reasons(doc, profile, calls, [0.85])
+        assert len(reasons) == 0

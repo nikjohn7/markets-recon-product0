@@ -87,7 +87,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 9: Testing
 - [x] `9.1` Create Test Fixtures
-- [ ] `9.2` Write Model Unit Tests
+- [x] `9.2` Write Model Unit Tests
 - [ ] `9.3` Write Taxonomy Unit Tests
 - [ ] `9.4` Write Stage Integration Tests
 - [ ] `9.5` Write E2E Pipeline Tests
@@ -579,3 +579,6 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - Added `tests/fixtures/llm_responses.py` with stage-specific mock payloads
 - Created fixture package init and placeholder directories for PDF/expected output fixtures
 - Added `tests/unit/fixtures/test_llm_fixtures.py` to validate fixture schemas
+
+### Task 9.2 — Complete (2025-12-26)
+- Added `tests/unit/models/test_enums.py` to validate enum values and invalid inputs

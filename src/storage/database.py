@@ -125,7 +125,7 @@ class Database:
             Column("as_of_date", Date),
             Column("document_type", Text),
             CheckConstraint(
-                "document_type IN ('outlook', 'quarterly_review', 'special_report', 'whitepaper')"
+                "document_type IN ('ANNUAL_OUTLOOK', 'MID_YEAR_OUTLOOK', 'QUARTERLY_OUTLOOK', 'THEMATIC_NOTE', 'ASSET_CLASS_UPDATE', 'OTHER')"
             ),
             Column("time_snapshot", Text),
             Column("extraction_coverage", Float),
@@ -177,7 +177,7 @@ class Database:
             Column("search_descriptor", Text),
             Column("key_takeaways", Text),  # JSON array
             Column("overall_sentiment", Text),
-            CheckConstraint("overall_sentiment IN ('BULLISH', 'NEUTRAL', 'BEARISH', 'MIXED')"),
+            CheckConstraint("overall_sentiment IN ('NET_POSITIVE', 'NEUTRAL', 'NET_NEGATIVE')"),
             Column("sentiment_rationale", Text),  # JSON array
             Column("sentiment_citations", Text),  # JSON array
             Column(

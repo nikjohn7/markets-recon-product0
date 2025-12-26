@@ -355,6 +355,9 @@ def _compute_attention_reasons(
     if doc.extraction_coverage < 0.50:
         reasons.append("low_extraction_coverage")
     
+    if score_ocr_quality(doc) < 0.70:
+        reasons.append("poor_ocr_quality")
+    
     if profile.manager_name_uncertain:
         reasons.append("manager_name_unclear")
     

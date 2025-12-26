@@ -91,7 +91,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `9.3` Write Taxonomy Unit Tests
 - [x] `9.4` Write Stage Integration Tests
 - [x] `9.5` Write E2E Pipeline Tests
-- [ ] `9.6` Write Confidence Scoring Tests
+- [x] `9.6` Write Confidence Scoring Tests
 
 ### Phase 10: Polish & Documentation
 - [ ] `10.1` Add Type Annotations Check
@@ -593,3 +593,6 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 9.5 — Complete (2025-12-27)
 - Added deterministic end-to-end pipeline coverage with golden output checks and edge-case assertions in `tests/e2e/test_full_pipeline.py`
 - Added golden output fixture `tests/fixtures/expected_outputs/full_pipeline.json`
+
+### Task 9.6 — Complete (2025-12-26)
+- Added confidence calibration tests covering boundary bands and weighted extraction scoring in `tests/unit/test_confidence.py`

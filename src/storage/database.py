@@ -193,7 +193,8 @@ class Database:
             Column("document_id", Text, ForeignKey("documents.id"), nullable=False),
             Column("tag_type", Text, nullable=False),
             CheckConstraint(
-                "tag_type IN ('ASSET_CLASS', 'REGION', 'THEME', 'RISK', 'MACRO_REGIME', 'INDICATOR', 'MANAGER_VIEW')"
+                "tag_type IN ('ASSET_CLASS', 'REGION', 'THEME', 'RISK', 'MACRO_REGIME', "
+                "'INDICATOR', 'MANAGER_VIEW', 'INSTRUMENT', 'STYLE')"
             ),
             Column("tag_value", Text, nullable=False),
             Column("confidence", Float),

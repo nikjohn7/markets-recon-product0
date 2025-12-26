@@ -90,7 +90,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `9.2` Write Model Unit Tests
 - [x] `9.3` Write Taxonomy Unit Tests
 - [x] `9.4` Write Stage Integration Tests
-- [ ] `9.5` Write E2E Pipeline Tests
+- [x] `9.5` Write E2E Pipeline Tests
 - [ ] `9.6` Write Confidence Scoring Tests
 
 ### Phase 10: Polish & Documentation
@@ -589,3 +589,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 9.4 — Complete (2025-12-26)
 - Added integration tests for stages 0, 2, and 4–10 in `tests/integration/test_stage_s0_ingest.py`, `tests/integration/test_stage_s2_clean.py`, `tests/integration/test_stage_s4_metadata.py`, `tests/integration/test_stage_s5_candidates.py`, `tests/integration/test_stage_s6_calls.py`, `tests/integration/test_stage_s7_summaries.py`, `tests/integration/test_stage_s8_tooltips.py`, `tests/integration/test_stage_s9_tags.py`, `tests/integration/test_stage_s10_confidence.py`
 - Renamed integration tests for Stage 1 and 3 to `tests/integration/test_stage_s1_extract.py` and `tests/integration/test_stage_s3_index.py`
+
+### Task 9.5 — Complete (2025-12-27)
+- Added deterministic end-to-end pipeline coverage with golden output checks and edge-case assertions in `tests/e2e/test_full_pipeline.py`
+- Added golden output fixture `tests/fixtures/expected_outputs/full_pipeline.json`

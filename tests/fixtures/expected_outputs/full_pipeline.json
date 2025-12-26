@@ -1,0 +1,323 @@
+{
+  "document_id": "<document_id>",
+  "profile": {
+    "document_id": "<document_id>",
+    "manager_name": "BlackRock",
+    "title": "Mid-Year Investment Outlook 2025",
+    "publication_date": "2025-07-15",
+    "as_of_date": "2025-06-30",
+    "document_type": "MID_YEAR_OUTLOOK",
+    "asset_classes_covered": [
+      "EQUITIES",
+      "FIXED_INCOME"
+    ],
+    "regions": [
+      "US",
+      "EUROPE"
+    ],
+    "time_horizon": "6-12 months",
+    "intended_audience": "Institutional investors",
+    "citations": [
+      {
+        "chunk_id": "chunk_1",
+        "block_ids": [],
+        "page": 1,
+        "text_span": null
+      }
+    ],
+    "manager_name_uncertain": false,
+    "publication_date_uncertain": false
+  },
+  "allocation_calls": [
+    {
+      "asset_class_category": "FI_SOV_EUROPE",
+      "sub_asset_class": "GERMAN_BUNDS",
+      "call": "OVERWEIGHT",
+      "conviction": "MEDIUM",
+      "time_horizon": "6-12 months",
+      "rationale_bullets": [
+        "ECB easing cycle supports duration demand.",
+        "Bunds provide defensive carry in a soft landing."
+      ],
+      "key_indicators": [
+        {
+          "name": "ECB policy rate",
+          "direction": "FALLING",
+          "why_it_matters": "Lower rates improve Bund total returns."
+        }
+      ],
+      "key_risks": [
+        "Inflation reacceleration"
+      ],
+      "actionable_takeaways": [],
+      "tooltip_text": "Overweight Bunds for defensive carry as ECB easing supports duration.",
+      "citations": [
+        {
+          "chunk_id": "chunk_4",
+          "block_ids": [],
+          "page": 4,
+          "text_span": null
+        }
+      ],
+      "confidence": 0.84,
+      "needs_analyst_review": false,
+      "review_reason": null
+    },
+    {
+      "asset_class_category": "EQ_DM",
+      "sub_asset_class": "EQ_US",
+      "call": "NEUTRAL",
+      "conviction": "LOW",
+      "time_horizon": null,
+      "rationale_bullets": [
+        "Valuations look full relative to earnings momentum.",
+        "Policy easing may cushion downside risks."
+      ],
+      "key_indicators": [
+        {
+          "name": "Earnings revisions",
+          "direction": "STABLE",
+          "why_it_matters": "Stable revisions limit upside surprises."
+        }
+      ],
+      "key_risks": [
+        "Valuation risk"
+      ],
+      "actionable_takeaways": [],
+      "tooltip_text": "Neutral US equities given full valuations despite stable earnings trends.",
+      "citations": [
+        {
+          "chunk_id": "chunk_6",
+          "block_ids": [],
+          "page": 6,
+          "text_span": null
+        }
+      ],
+      "confidence": 0.62,
+      "needs_analyst_review": false,
+      "review_reason": null
+    }
+  ],
+  "overall_sentiment": "NEUTRAL",
+  "sentiment_rationale": [
+    "Balanced outlook with selective opportunities."
+  ],
+  "sentiment_citations": [
+    {
+      "chunk_id": "chunk_2",
+      "block_ids": [],
+      "page": 2,
+      "text_span": null
+    }
+  ],
+  "summaries": {
+    "document_id": "<document_id>",
+    "executive_summary": "The mid-year outlook highlights a soft landing base case as inflation cools and central banks pivot toward easing. The manager expects policy rates to drift lower over the next two quarters, keeping duration demand firm while maintaining a measured stance on risk assets. Within fixed income, sovereign duration in Europe is favored for defensive carry and diversification benefits. US equities are held at neutral due to full valuations despite resilient earnings. The outlook flags inflation reacceleration and renewed volatility as key risks, while positioning stays balanced across regions. Overall, the strategy emphasizes selective risk-taking, consistent income, and readiness to add exposure if growth proves more durable.",
+    "search_descriptor": "Mid-year outlook on a soft landing with selective fixed income duration exposure and neutral US equities amid easing policy and valuation discipline.",
+    "key_takeaways": [
+      {
+        "text": "European sovereign duration is overweight for carry and defensiveness.",
+        "citations": [
+          {
+            "chunk_id": "chunk_4",
+            "block_ids": [],
+            "page": 4,
+            "text_span": null
+          }
+        ]
+      },
+      {
+        "text": "US equities stay neutral as valuations limit upside despite earnings stability.",
+        "citations": [
+          {
+            "chunk_id": "chunk_6",
+            "block_ids": [],
+            "page": 6,
+            "text_span": null
+          }
+        ]
+      },
+      {
+        "text": "Macro risks include inflation surprises and renewed volatility.",
+        "citations": [
+          {
+            "chunk_id": "chunk_3",
+            "block_ids": [],
+            "page": 3,
+            "text_span": null
+          }
+        ]
+      }
+    ],
+    "citations": [
+      {
+        "chunk_id": "chunk_1",
+        "block_ids": [],
+        "page": 1,
+        "text_span": null
+      },
+      {
+        "chunk_id": "chunk_2",
+        "block_ids": [],
+        "page": 2,
+        "text_span": null
+      }
+    ],
+    "confidence": 0.81
+  },
+  "tags": {
+    "document_id": "<document_id>",
+    "asset_class_tags": [
+      "EQ_DM",
+      "FI_SOV_EUROPE"
+    ],
+    "region_tags": [
+      "us",
+      "europe"
+    ],
+    "theme_tags": [
+      "inflation",
+      "fed_policy",
+      "rate_cuts"
+    ],
+    "risk_tags": [
+      "duration_risk",
+      "valuation_risk"
+    ],
+    "instrument_tags": [
+      "eq_us",
+      "german_bunds"
+    ],
+    "style_tags": [],
+    "macro_regime_tags": [
+      "soft_landing"
+    ],
+    "all_tags": [
+      {
+        "tag_type": "ASSET_CLASS",
+        "value": "EQ_DM",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "ASSET_CLASS",
+        "value": "FI_SOV_EUROPE",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "REGION",
+        "value": "us",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "REGION",
+        "value": "europe",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "INSTRUMENT",
+        "value": "eq_us",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "INSTRUMENT",
+        "value": "german_bunds",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "THEME",
+        "value": "inflation",
+        "confidence": 0.77,
+        "source": "llm"
+      },
+      {
+        "tag_type": "THEME",
+        "value": "fed_policy",
+        "confidence": 0.77,
+        "source": "llm"
+      },
+      {
+        "tag_type": "THEME",
+        "value": "rate_cuts",
+        "confidence": 0.77,
+        "source": "llm"
+      },
+      {
+        "tag_type": "RISK",
+        "value": "duration_risk",
+        "confidence": 0.77,
+        "source": "llm"
+      },
+      {
+        "tag_type": "RISK",
+        "value": "valuation_risk",
+        "confidence": 0.77,
+        "source": "llm"
+      },
+      {
+        "tag_type": "MACRO_REGIME",
+        "value": "soft_landing",
+        "confidence": 0.77,
+        "source": "llm"
+      }
+    ],
+    "confidence": 0.77
+  },
+  "confidence": {
+    "document_id": "<document_id>",
+    "extraction_coverage": 1.0,
+    "overall_confidence": 0.724,
+    "confidence_band": "MEDIUM",
+    "field_confidences": [
+      {
+        "field_name": "extraction_quality",
+        "confidence": 0.86,
+        "reasons": [
+          "text_coverage",
+          "structure_quality"
+        ],
+        "has_explicit_evidence": true,
+        "evidence_strength": 0.86
+      },
+      {
+        "field_name": "profile",
+        "confidence": 1.0,
+        "reasons": [
+          "manager_name_evidence"
+        ],
+        "has_explicit_evidence": true,
+        "evidence_strength": 1.0
+      },
+      {
+        "field_name": "calls",
+        "confidence": 0.73,
+        "reasons": [
+          "2 calls extracted"
+        ],
+        "has_explicit_evidence": true,
+        "evidence_strength": 0.73
+      },
+      {
+        "field_name": "summary",
+        "confidence": 0.4,
+        "reasons": [
+          "summary_evidence"
+        ],
+        "has_explicit_evidence": false,
+        "evidence_strength": 0.4
+      }
+    ],
+    "analyst_attention_required": false,
+    "attention_reasons": [],
+    "verification_agreement": null,
+    "disagreed_fields": []
+  },
+  "processing_timestamp": "<timestamp>",
+  "pipeline_version": "0.1.0",
+  "total_processing_time_seconds": 0.0
+}

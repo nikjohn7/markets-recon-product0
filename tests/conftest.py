@@ -33,10 +33,13 @@ def pdf_bytes_factory() -> Callable[[Iterable[str]], bytes]:
 
     def _factory(pages: Iterable[str]) -> bytes:
         doc = fitz.open()
-        for page_text in pages:
-            page = doc.new_page()
-            page.insert_text((72, 72), page_text)
-        return doc.write()
+        try:
+            for page_text in pages:
+                page = doc.new_page()
+                page.insert_text((72, 72), page_text)
+            return doc.write()
+        finally:
+            doc.close()
 
     return _factory
 

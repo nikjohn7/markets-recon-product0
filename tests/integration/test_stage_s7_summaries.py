@@ -167,7 +167,7 @@ async def test_stage_summaries_rejects_unknown_citations(mock_llm_client):
 
     with pytest.raises(ExtractionError, match="Summary generation failed"):
         await stage_summaries(
-            document_id="doc_summary",
+            document_id=document_id,
             index=index,
             call_extraction=call_extraction,
             profile=profile,

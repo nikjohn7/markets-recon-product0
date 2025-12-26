@@ -60,7 +60,7 @@ async def test_stage_metadata_with_mock_llm(mock_llm_client):
         Chunk(
             chunk_id="chunk_2",
             block_ids=["1_0"],
-            page=2,
+            page=1,
             text="Institutional investors focus on equities and fixed income.",
             section="Overview",
         ),
@@ -70,7 +70,7 @@ async def test_stage_metadata_with_mock_llm(mock_llm_client):
             RetrievedChunk(
                 chunk_id="chunk_2",
                 block_ids=["1_0"],
-                page=2,
+                page=1,
                 text="Institutional investors focus on equities and fixed income.",
                 score=0.9,
                 section="Overview",

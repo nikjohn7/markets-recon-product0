@@ -32,7 +32,7 @@ async def test_stage_clean_removes_boilerplate_and_flags_disclaimer():
         DocumentBlock(
             block_id="1_2",
             page=1,
-            text="We expect inves-\nment growth to cool.",
+            text="We expect invest-\nment growth to cool.",
             block_type=BlockType.PARAGRAPH,
             bbox=None,
             confidence=1.0,
@@ -115,7 +115,7 @@ async def test_stage_clean_removes_boilerplate_and_flags_disclaimer():
     assert "3_0" not in {block.block_id for block in cleaned.blocks}
 
     normalized_text = next(block.text for block in cleaned.blocks if block.block_id == "1_2")
-    assert "invesment" in normalized_text
+    assert "investment" in normalized_text
 
     disclaimer_block = next(block for block in cleaned.blocks if block.block_id == "1_3")
     assert disclaimer_block.block_type == BlockType.DISCLAIMER

@@ -290,9 +290,12 @@ async def test_process_pdf_persists_results(mock_pdf_file: Path) -> None:
 
         await process_pdf(mock_pdf_file, db=mock_db, llm_client=mock_llm)
 
-        # Verify connection was used for persistence and commit was called
+        # Verify connection was used for persistence with actual execute calls
         mock_db.get_connection.assert_called()
         mock_conn.commit.assert_called()
+        # Should have execute calls for: pipeline_run update, document update,
+        # allocation_calls insert(s), summary insert, tag insert(s)
+        assert mock_conn.execute.call_count >= 5
 
 
 @pytest.mark.asyncio

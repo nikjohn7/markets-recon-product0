@@ -94,7 +94,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `9.6` Write Confidence Scoring Tests
 
 ### Phase 10: Polish & Documentation
-- [ ] `10.1` Add Type Annotations Check
+- [x] `10.1` Add Type Annotations Check
 - [ ] `10.2` Add Linting and Formatting
 - [ ] `10.3` Create Sample Run Script
 - [ ] `10.4` Final Integration Test
@@ -596,3 +596,13 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Task 9.6 — Complete (2025-12-26)
 - Added confidence calibration tests covering boundary bands and weighted extraction scoring in `tests/unit/test_confidence.py`
+
+### Task 10.1 — Complete (2025-12-26)
+- Verified `mypy src/ --strict` passes with zero errors (53 source files)
+- All type annotations are comprehensive with strict mode enabled
+- Only 3 justified `type: ignore` comments:
+  - `src/config/settings.py`: Pydantic Settings() auto-loading from environment
+  - `src/retrieval/indexer.py` (2 instances): ChromaDB incomplete type stubs requiring casts
+- `Any` types used only where necessary (flexible metadata dicts, validation functions, stream handlers)
+- Mypy configuration includes: strict=true, warn_return_any, disallow_untyped_defs, extra_checks enabled
+- Task acceptance criteria met: zero mypy errors with --strict flag

@@ -24,7 +24,7 @@ from src.models.enums import (
     TagType,
 )
 from src.models.output import ProcessedDocument
-from src.models.pipeline import CandidateSet, CleanedDocument, IngestResult, RetrievedChunk, Section
+from src.models.pipeline import CandidateSet, Chunk, CleanedDocument, IngestResult, RetrievedChunk, Section
 from src.models.profile import DocumentProfile
 from src.models.summaries import DocumentSummaries, KeyTakeaway
 from src.models.tags import Tag, TagSet
@@ -187,7 +187,17 @@ async def test_process_pdf_full_pipeline(mock_pdf_file: Path) -> None:
         mock_ingest.return_value = _make_ingest_result()
         mock_extract.return_value = MagicMock(extraction_coverage=0.9)
         mock_clean.return_value = MagicMock(document_id="doc-123")
-        mock_index.return_value = MagicMock()
+        mock_index.return_value = MagicMock(
+            chunks=[
+                Chunk(
+                    chunk_id="c1",
+                    block_ids=["b1"],
+                    page=1,
+                    text="test",
+                    section=None,
+                )
+            ]
+        )
         mock_metadata.return_value = _make_profile()
         mock_candidates.return_value = CandidateSet(
             document_id="doc-123",
@@ -224,6 +234,7 @@ async def test_process_pdf_full_pipeline(mock_pdf_file: Path) -> None:
         mock_tooltips.assert_called_once()
         mock_tags.assert_called_once()
         mock_confidence.assert_called_once()
+        assert mock_confidence.call_args.args[4] == mock_index.return_value.chunks
 
 
 @pytest.mark.asyncio

@@ -15,8 +15,8 @@ from src.exceptions import ExtractionError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
 from src.llm.contracts import validate_llm_output
 from src.llm.prompts.metadata import build_metadata_extraction_prompt
-from src.models.core import Citation
-from src.models.enums import DocumentType
+from src.models.core import Citation  # noqa: TC001
+from src.models.enums import DocumentType  # noqa: TC001
 from src.models.pipeline import CleanedDocument, RetrievedChunk
 from src.models.profile import DocumentProfile
 

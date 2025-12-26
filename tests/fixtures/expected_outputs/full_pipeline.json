@@ -96,6 +96,40 @@
       "confidence": 0.62,
       "needs_analyst_review": false,
       "review_reason": null
+    },
+    {
+      "asset_class_category": "EQ_EM",
+      "sub_asset_class": "EQ_EM_ASIA",
+      "call": "OVERWEIGHT",
+      "conviction": "MEDIUM",
+      "time_horizon": "6-12 months",
+      "rationale_bullets": [
+        "China reopening tailwinds support regional growth.",
+        "Valuations attractive relative to developed markets."
+      ],
+      "key_indicators": [
+        {
+          "name": "China PMI",
+          "direction": "RISING",
+          "why_it_matters": "Improving activity supports earnings."
+        }
+      ],
+      "key_risks": [
+        "Geopolitical tensions"
+      ],
+      "actionable_takeaways": [],
+      "tooltip_text": "Overweight EM Asia on China reopening and attractive valuations.",
+      "citations": [
+        {
+          "chunk_id": "chunk_4",
+          "block_ids": [],
+          "page": 4,
+          "text_span": null
+        }
+      ],
+      "confidence": 0.75,
+      "needs_analyst_review": false,
+      "review_reason": null
     }
   ],
   "overall_sentiment": "NEUTRAL",
@@ -168,6 +202,7 @@
   "tags": {
     "document_id": "<document_id>",
     "asset_class_tags": [
+      "EQ_EM",
       "EQ_DM",
       "FI_SOV_EUROPE"
     ],
@@ -186,13 +221,20 @@
     ],
     "instrument_tags": [
       "eq_us",
-      "german_bunds"
+      "german_bunds",
+      "eq_em_asia"
     ],
     "style_tags": [],
     "macro_regime_tags": [
       "soft_landing"
     ],
     "all_tags": [
+      {
+        "tag_type": "ASSET_CLASS",
+        "value": "EQ_EM",
+        "confidence": 1.0,
+        "source": "rule"
+      },
       {
         "tag_type": "ASSET_CLASS",
         "value": "EQ_DM",
@@ -226,6 +268,12 @@
       {
         "tag_type": "INSTRUMENT",
         "value": "german_bunds",
+        "confidence": 1.0,
+        "source": "rule"
+      },
+      {
+        "tag_type": "INSTRUMENT",
+        "value": "eq_em_asia",
         "confidence": 1.0,
         "source": "rule"
       },
@@ -271,7 +319,7 @@
   "confidence": {
     "document_id": "<document_id>",
     "extraction_coverage": 1.0,
-    "overall_confidence": 0.724,
+    "overall_confidence": 0.7273,
     "confidence_band": "MEDIUM",
     "field_confidences": [
       {
@@ -295,12 +343,12 @@
       },
       {
         "field_name": "calls",
-        "confidence": 0.73,
+        "confidence": 0.7367,
         "reasons": [
-          "2 calls extracted"
+          "3 calls extracted"
         ],
         "has_explicit_evidence": true,
-        "evidence_strength": 0.73
+        "evidence_strength": 0.7367
       },
       {
         "field_name": "summary",

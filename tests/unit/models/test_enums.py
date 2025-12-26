@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Type
+from typing import TYPE_CHECKING
 
 import pytest
-
 from src.models import enums
+
+if TYPE_CHECKING:
+    from enum import Enum
 
 
 @pytest.mark.parametrize(
@@ -62,7 +63,7 @@ from src.models import enums
         (enums.IndicatorDirection, ["RISING", "FALLING", "STABLE", "VOLATILE"]),
     ],
 )
-def test_enum_values(enum_cls: Type[Enum], expected_values: list[str]) -> None:
+def test_enum_values(enum_cls: type[Enum], expected_values: list[str]) -> None:
     assert [member.value for member in enum_cls] == expected_values
     for member in enum_cls:
         assert isinstance(member, str)
@@ -83,6 +84,6 @@ def test_enum_values(enum_cls: Type[Enum], expected_values: list[str]) -> None:
         enums.IndicatorDirection,
     ],
 )
-def test_invalid_enum_value_rejected(enum_cls: Type[Enum]) -> None:
+def test_invalid_enum_value_rejected(enum_cls: type[Enum]) -> None:
     with pytest.raises(ValueError):
         enum_cls("NOT_A_VALUE")

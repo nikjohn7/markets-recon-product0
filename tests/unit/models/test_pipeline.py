@@ -2,7 +2,6 @@
 
 import pytest
 from pydantic import ValidationError
-
 from src.models.document import DocumentBlock
 from src.models.enums import BlockType
 from src.models.pipeline import (

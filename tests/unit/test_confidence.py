@@ -1,12 +1,13 @@
 """Unit tests for confidence scoring calibration."""
 
 import pytest
-
 from src.models.confidence import compute_confidence_band as compute_model_band
 from src.models.document import DocumentBlock, DocumentJSON, ExtractedTable, TableCell
 from src.models.enums import BlockType, ConfidenceBand
 from src.pipeline.stages.s10_confidence import (
     compute_confidence_band as compute_stage_band,
+)
+from src.pipeline.stages.s10_confidence import (
     score_extraction_quality,
 )
 

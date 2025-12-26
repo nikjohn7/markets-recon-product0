@@ -6,7 +6,6 @@ from datetime import date
 from unittest.mock import Mock
 
 import pytest
-
 from src.exceptions import ExtractionError
 from src.llm.client import LLMProvider, ProviderConfig
 from src.models.core import Citation
@@ -91,7 +90,7 @@ async def test_stage_calls_with_mock_llm(mock_llm_client):
 
     assert output.document_id == profile.document_id
     assert output.model_version == "test-model"
-    assert len(output.allocation_calls) == 2
+    assert len(output.allocation_calls) == 3
     assert output.sentiment_confidence == pytest.approx(0.73)
 
 

@@ -1,28 +1,42 @@
 """Tests for Stage 10: Extraction Quality Scoring."""
 
-import pytest
+from datetime import date
+from unittest.mock import patch
 
+import pytest
+from src.models.calls import AllocationCall
+from src.models.confidence import ConfidenceResult
 from src.models.core import Citation
 from src.models.document import DocumentBlock, DocumentJSON, ExtractedTable, TableCell
-from src.models.enums import BlockType, CallDirection, ConfidenceBand
+from src.models.enums import BlockType, CallDirection, ConfidenceBand, Conviction, DocumentType
 from src.models.pipeline import RetrievedChunk
+from src.models.profile import DocumentProfile
+from src.models.summaries import DocumentSummaries, KeyTakeaway
 from src.pipeline.stages.s10_confidence import (
-    score_text_coverage,
-    score_ocr_quality,
-    score_table_success,
-    score_structure_quality,
-    score_extraction_quality,
-    has_explicit_call_language,
+    DocumentRouting,
+    _compute_attention_reasons,
+    can_auto_publish,
     compute_confidence_band,
-    has_explicit_mention,
-    compute_word_overlap,
+    compute_document_confidence,
     compute_entailment_heuristic,
-    score_evidence_strength,
+    compute_word_overlap,
+    determine_routing,
+    has_explicit_call_language,
+    has_explicit_mention,
     score_call_evidence,
+    score_evidence_strength,
+    score_extraction_quality,
+    score_ocr_quality,
+    score_structure_quality,
+    score_table_success,
+    score_text_coverage,
+    should_spot_check,
 )
 
 
-def _make_block(block_id: str, page: int, block_type: BlockType, text: str = "Test") -> DocumentBlock:
+def _make_block(
+    block_id: str, page: int, block_type: BlockType, text: str = "Test"
+) -> DocumentBlock:
     return DocumentBlock(
         block_id=block_id,
         page=page,
@@ -174,7 +188,10 @@ class TestExtractionQualityScoring:
 
 class TestExplicitCallLanguage:
     def test_overweight_explicit(self):
-        assert has_explicit_call_language(CallDirection.OVERWEIGHT, "We are overweight equities") == 1.0
+        assert (
+            has_explicit_call_language(CallDirection.OVERWEIGHT, "We are overweight equities")
+            == 1.0
+        )
 
     def test_overweight_prefer(self):
         assert has_explicit_call_language(CallDirection.OVERWEIGHT, "We prefer US stocks") == 1.0
@@ -237,7 +254,9 @@ class TestExplicitMention:
         assert has_explicit_mention("BLACKROCK", "report by blackrock") == 1.0
 
     def test_multi_word_all_present(self):
-        score = has_explicit_mention("US Large Cap", "We favor US equities, especially large cap stocks")
+        score = has_explicit_mention(
+            "US Large Cap", "We favor US equities, especially large cap stocks"
+        )
         assert score == 0.8
 
     def test_no_match(self):
@@ -336,20 +355,7 @@ class TestCallEvidence:
         assert score >= 0.5
 
 
-
 # --- Document-Level Confidence Tests (Task 7.3) ---
-
-from datetime import datetime, date
-from src.models.calls import AllocationCall
-from src.models.confidence import ConfidenceResult
-from src.models.enums import DocumentType, Sentiment, Conviction
-from src.models.profile import DocumentProfile
-from src.models.summaries import DocumentSummaries, KeyTakeaway
-from src.pipeline.stages.s10_confidence import (
-    compute_document_confidence,
-    _compute_attention_reasons,
-    CONFIDENCE_WEIGHTS,
-)
 
 
 def _make_profile(
@@ -410,13 +416,18 @@ class TestDocumentConfidence:
         ]
         doc = _make_doc(blocks=blocks, extraction_coverage=1.0)
         # Chunk text must match profile manager_name and summary content for high evidence scores
-        chunks = [_make_chunk("c1", "BlackRock executive summary market outlook equities fixed income bullish US markets")]
+        chunks = [
+            _make_chunk(
+                "c1",
+                "BlackRock executive summary market outlook equities fixed income bullish US markets",
+            )
+        ]
         profile = _make_profile()
         calls = [_make_call(confidence=0.95)]  # High call confidence
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         # With good extraction (1.0), high call confidence (0.95), and matching evidence
         assert result.overall_confidence >= 0.60  # At least MEDIUM
         assert len(result.field_confidences) == 4
@@ -427,9 +438,9 @@ class TestDocumentConfidence:
         profile = _make_profile()
         calls = [_make_call(confidence=0.4)]
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         assert result.confidence_band == ConfidenceBand.LOW
         assert result.analyst_attention_required
         assert "low_extraction_coverage" in result.attention_reasons
@@ -441,9 +452,9 @@ class TestDocumentConfidence:
         profile = _make_profile(manager_uncertain=True)
         calls = [_make_call(confidence=0.8)]
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         assert result.analyst_attention_required
         assert "manager_name_unclear" in result.attention_reasons
 
@@ -454,9 +465,9 @@ class TestDocumentConfidence:
         profile = _make_profile()
         calls = [_make_call(confidence=0.8, needs_review=True)]
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         assert result.analyst_attention_required
         assert "call_needs_review" in result.attention_reasons
 
@@ -467,9 +478,9 @@ class TestDocumentConfidence:
         profile = _make_profile()
         calls: list[AllocationCall] = []
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         assert "no_calls_extracted" in result.attention_reasons
 
     def test_weighted_aggregation(self):
@@ -479,9 +490,9 @@ class TestDocumentConfidence:
         profile = _make_profile()
         calls = [_make_call(confidence=0.7)]
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         # Calls have 50% weight, so 0.7 * 0.5 = 0.35 from calls alone
         assert result.overall_confidence > 0.0
         assert len(result.field_confidences) == 4
@@ -493,9 +504,9 @@ class TestDocumentConfidence:
         profile = _make_profile()
         calls = [_make_call()]
         summaries = _make_summaries()
-        
+
         result = compute_document_confidence(doc, profile, calls, summaries, chunks)
-        
+
         field_names = [f.field_name for f in result.field_confidences]
         assert "extraction_quality" in field_names
         assert "profile" in field_names
@@ -508,7 +519,7 @@ class TestAttentionReasons:
         doc = _make_doc(extraction_coverage=0.4)
         profile = _make_profile()
         calls = [_make_call()]
-        
+
         reasons = _compute_attention_reasons(doc, profile, calls, [0.8])
         assert "low_extraction_coverage" in reasons
 
@@ -516,7 +527,7 @@ class TestAttentionReasons:
         doc = _make_doc(extraction_coverage=0.9)
         profile = _make_profile()
         calls = [_make_call(confidence=0.5), _make_call(confidence=0.5), _make_call(confidence=0.9)]
-        
+
         reasons = _compute_attention_reasons(doc, profile, calls, [0.5, 0.5, 0.9])
         assert "many_low_confidence_calls" in reasons
 
@@ -525,22 +536,12 @@ class TestAttentionReasons:
         doc = _make_doc(blocks=blocks, extraction_coverage=0.9)
         profile = _make_profile()
         calls = [_make_call(confidence=0.85)]
-        
+
         reasons = _compute_attention_reasons(doc, profile, calls, [0.85])
         assert len(reasons) == 0
 
 
-
 # --- Review Routing Tests (Task 7.4) ---
-
-from unittest.mock import patch
-from src.pipeline.stages.s10_confidence import (
-    DocumentRouting,
-    can_auto_publish,
-    should_spot_check,
-    determine_routing,
-    SPOT_CHECK_SAMPLE_RATE,
-)
 
 
 def _make_confidence_result(
@@ -550,6 +551,7 @@ def _make_confidence_result(
     attention_reasons: list[str] | None = None,
 ) -> ConfidenceResult:
     from src.models.confidence import compute_confidence_band
+
     return ConfidenceResult(
         document_id="doc_1",
         extraction_coverage=coverage,
@@ -605,10 +607,10 @@ class TestShouldSpotCheck:
     @patch("src.pipeline.stages.s10_confidence.random.random")
     def test_medium_sampled_at_20_percent(self, mock_random):
         result = _make_confidence_result(overall=0.7)  # MEDIUM band
-        
+
         mock_random.return_value = 0.1  # Below 0.20 threshold
         assert should_spot_check(result) is True
-        
+
         mock_random.return_value = 0.3  # Above 0.20 threshold
         assert should_spot_check(result) is False
 

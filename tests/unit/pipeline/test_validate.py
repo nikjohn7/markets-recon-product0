@@ -2,12 +2,8 @@
 
 from __future__ import annotations
 
-import json
-from datetime import UTC, date, datetime
-from pathlib import Path
+from datetime import UTC, datetime
 from typing import Any
-
-import pytest
 
 from src.pipeline.validate import (
     validate_citations,

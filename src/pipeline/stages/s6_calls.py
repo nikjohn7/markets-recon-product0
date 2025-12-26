@@ -176,7 +176,9 @@ def _build_call_extraction_output(
         ValidationError: If output construction fails
     """
     # Parse all allocation calls
-    allocation_calls = [_parse_allocation_call(call_llm) for call_llm in llm_output.allocation_calls]
+    allocation_calls = [
+        _parse_allocation_call(call_llm) for call_llm in llm_output.allocation_calls
+    ]
 
     # Check for duplicate calls
     _check_duplicate_calls(allocation_calls)

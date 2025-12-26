@@ -4,7 +4,6 @@ from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
-
 from src.models.calls import AllocationCall, CallExtractionOutput, KeyIndicator
 from src.models.core import Citation
 from src.models.enums import CallDirection, IndicatorDirection, Sentiment

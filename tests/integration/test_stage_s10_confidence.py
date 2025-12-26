@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import date
 
 import pytest
-
 from src.models.calls import AllocationCall
 from src.models.confidence import ConfidenceResult
 from src.models.core import Citation
@@ -145,7 +144,11 @@ async def test_stage_confidence_returns_result():
 
     assert isinstance(result, ConfidenceResult)
     assert result.document_id == "doc_conf"
-    assert result.confidence_band in {ConfidenceBand.HIGH, ConfidenceBand.MEDIUM, ConfidenceBand.LOW}
+    assert result.confidence_band in {
+        ConfidenceBand.HIGH,
+        ConfidenceBand.MEDIUM,
+        ConfidenceBand.LOW,
+    }
     assert result.field_confidences
 
 

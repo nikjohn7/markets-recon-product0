@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-import tempfile
 from datetime import UTC, date, datetime
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from src.exceptions import PipelineError
 from src.models.calls import AllocationCall, CallExtractionOutput
 from src.models.confidence import ConfidenceResult, FieldConfidence
 from src.models.core import Citation
 from src.models.enums import (
-    BlockType,
     CallDirection,
     ConfidenceBand,
     Conviction,
@@ -24,11 +20,19 @@ from src.models.enums import (
     TagType,
 )
 from src.models.output import ProcessedDocument
-from src.models.pipeline import CandidateSet, Chunk, CleanedDocument, IngestResult, RetrievedChunk, Section
+from src.models.pipeline import (
+    CandidateSet,
+    Chunk,
+    IngestResult,
+    RetrievedChunk,
+)
 from src.models.profile import DocumentProfile
 from src.models.summaries import DocumentSummaries, KeyTakeaway
 from src.models.tags import Tag, TagSet
 from src.pipeline.run import PIPELINE_VERSION, process_pdf
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _make_ingest_result() -> IngestResult:
@@ -118,10 +122,34 @@ def _make_confidence() -> ConfidenceResult:
         confidence_band=ConfidenceBand.HIGH,
         extraction_coverage=0.9,
         field_confidences=[
-            FieldConfidence(field_name="extraction", confidence=0.9, reasons=[], has_explicit_evidence=True, evidence_strength=0.9),
-            FieldConfidence(field_name="profile", confidence=0.85, reasons=[], has_explicit_evidence=True, evidence_strength=0.85),
-            FieldConfidence(field_name="calls", confidence=0.85, reasons=[], has_explicit_evidence=True, evidence_strength=0.85),
-            FieldConfidence(field_name="summary", confidence=0.8, reasons=[], has_explicit_evidence=True, evidence_strength=0.8),
+            FieldConfidence(
+                field_name="extraction",
+                confidence=0.9,
+                reasons=[],
+                has_explicit_evidence=True,
+                evidence_strength=0.9,
+            ),
+            FieldConfidence(
+                field_name="profile",
+                confidence=0.85,
+                reasons=[],
+                has_explicit_evidence=True,
+                evidence_strength=0.85,
+            ),
+            FieldConfidence(
+                field_name="calls",
+                confidence=0.85,
+                reasons=[],
+                has_explicit_evidence=True,
+                evidence_strength=0.85,
+            ),
+            FieldConfidence(
+                field_name="summary",
+                confidence=0.8,
+                reasons=[],
+                has_explicit_evidence=True,
+                evidence_strength=0.8,
+            ),
         ],
         analyst_attention_required=False,
         attention_reasons=[],
@@ -142,11 +170,11 @@ BT /F1 12 Tf 100 700 Td (Test content) Tj ET
 endstream endobj
 xref
 0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000214 00000 n 
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000214 00000 n
 trailer << /Size 5 /Root 1 0 R >>
 startxref
 306
@@ -201,7 +229,9 @@ async def test_process_pdf_full_pipeline(mock_pdf_file: Path) -> None:
         mock_metadata.return_value = _make_profile()
         mock_candidates.return_value = CandidateSet(
             document_id="doc-123",
-            candidates=[RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)],
+            candidates=[
+                RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)
+            ],
             keyword_matches={},
             total_chunks_reviewed=10,
         )
@@ -289,7 +319,9 @@ async def test_process_pdf_persists_results(mock_pdf_file: Path) -> None:
         mock_metadata.return_value = _make_profile()
         mock_candidates.return_value = CandidateSet(
             document_id="doc-123",
-            candidates=[RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)],
+            candidates=[
+                RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)
+            ],
             keyword_matches={},
             total_chunks_reviewed=10,
         )
@@ -335,7 +367,9 @@ async def test_process_pdf_with_source_metadata(mock_pdf_file: Path) -> None:
         mock_metadata.return_value = _make_profile()
         mock_candidates.return_value = CandidateSet(
             document_id="doc-123",
-            candidates=[RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)],
+            candidates=[
+                RetrievedChunk(chunk_id="c1", block_ids=["b1"], page=1, text="test", score=0.9)
+            ],
             keyword_matches={},
             total_chunks_reviewed=10,
         )
@@ -346,7 +380,9 @@ async def test_process_pdf_with_source_metadata(mock_pdf_file: Path) -> None:
         mock_confidence.return_value = _make_confidence()
 
         custom_metadata = {"source": "email", "sender": "analyst@example.com"}
-        await process_pdf(mock_pdf_file, source_metadata=custom_metadata, db=mock_db, llm_client=mock_llm)
+        await process_pdf(
+            mock_pdf_file, source_metadata=custom_metadata, db=mock_db, llm_client=mock_llm
+        )
 
         # Verify ingest was called with custom metadata
         call_args = mock_ingest.call_args
@@ -360,7 +396,6 @@ async def test_process_pdf_with_source_metadata(mock_pdf_file: Path) -> None:
 
 def test_cli_help(capsys: pytest.CaptureFixture[str]) -> None:
     """Test CLI --help output."""
-    import sys
     from src.pipeline.run import _build_parser
 
     parser = _build_parser()
@@ -376,7 +411,7 @@ def test_cli_help(capsys: pytest.CaptureFixture[str]) -> None:
 
 def test_cli_version(capsys: pytest.CaptureFixture[str]) -> None:
     """Test CLI --version output."""
-    from src.pipeline.run import _build_parser, PIPELINE_VERSION
+    from src.pipeline.run import PIPELINE_VERSION, _build_parser
 
     parser = _build_parser()
     with pytest.raises(SystemExit) as exc_info:

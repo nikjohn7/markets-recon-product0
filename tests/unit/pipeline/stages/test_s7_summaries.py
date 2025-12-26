@@ -196,7 +196,9 @@ async def test_stage_summaries_generates_complete_output():
         key_takeaways=[
             KeyTakeawayLLM(
                 text="Overweight US equities on strong earnings growth and favorable valuations",
-                citations=[{"chunk_id": "doc_sum_1_0", "page": 1, "text_span": "overweight US equities"}],
+                citations=[
+                    {"chunk_id": "doc_sum_1_0", "page": 1, "text_span": "overweight US equities"}
+                ],
             ),
             KeyTakeawayLLM(
                 text="Neutral on investment grade credit as spreads have compressed to tight levels",
@@ -204,7 +206,9 @@ async def test_stage_summaries_generates_complete_output():
             ),
             KeyTakeawayLLM(
                 text="Constructive outlook on risk assets supported by macroeconomic tailwinds",
-                citations=[{"chunk_id": "doc_sum_1_2", "page": 3, "text_span": "constructive outlook"}],
+                citations=[
+                    {"chunk_id": "doc_sum_1_2", "page": 3, "text_span": "constructive outlook"}
+                ],
             ),
         ],
         citations=[
@@ -333,9 +337,7 @@ async def test_stage_summaries_parses_citations_with_text_span():
                 citations=[{"chunk_id": "doc_sum_3_0", "page": 1}],
             ),
         ],
-        citations=[
-            {"chunk_id": "doc_sum_3_0", "page": 1, "text_span": "Bullish on equities"}
-        ],
+        citations=[{"chunk_id": "doc_sum_3_0", "page": 1, "text_span": "Bullish on equities"}],
         confidence=0.85,
     )
 

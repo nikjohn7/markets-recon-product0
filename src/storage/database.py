@@ -254,7 +254,8 @@ class Database:
 
     @staticmethod
     def _enable_foreign_keys(
-        dbapi_connection: Any, connection_record: Any  # noqa: ARG004
+        dbapi_connection: Any,
+        connection_record: Any,  # noqa: ARG004
     ) -> None:
         """Ensure SQLite foreign key constraints are enforced for each connection."""
 

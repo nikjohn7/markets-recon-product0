@@ -453,7 +453,9 @@ class TestErrorHandling:
         # Create a mock storage that fails
         class FailingStorage:
             def store(
-                self, content: bytes, metadata: dict[str, Any]  # noqa: ARG002
+                self,
+                content: bytes,  # noqa: ARG002
+                metadata: dict[str, Any],  # noqa: ARG002
             ) -> str:
                 raise StorageError("Storage operation failed")
 

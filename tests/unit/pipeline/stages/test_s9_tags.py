@@ -165,9 +165,7 @@ def test_extract_deterministic_tags_deduplicates():
     call_extraction = _make_call_extraction("doc_456", calls)
 
     # Act
-    asset_class_tags, _, instrument_tags = _extract_deterministic_tags(
-        profile, call_extraction
-    )
+    asset_class_tags, _, instrument_tags = _extract_deterministic_tags(profile, call_extraction)
 
     # Assert - only 1 asset class tag despite 2 calls
     assert len(asset_class_tags) == 1

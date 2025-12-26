@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from src.exceptions import ValidationError
 from src.pipeline.stages.s0_ingest import stage_ingest
 from src.storage.blob import LocalBlobStorage

@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable, Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import fitz
 import pytest
-from pydantic import BaseModel
 
-from src.llm.client import LLMProvider, PipelineStage
 from tests.fixtures.llm_responses import MOCK_LLM_RESPONSES, MockLLMResponse, get_mock_llm_response
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from pydantic import BaseModel
+    from src.llm.client import LLMProvider, PipelineStage
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "src"
@@ -76,13 +80,13 @@ def mock_llm_client() -> AsyncMock:
 
     async def _complete_json(
         *,
-        prompt: str,
+        prompt: str,  # noqa: ARG001
         response_model: type[BaseModel],
         stage: PipelineStage | None = None,
-        provider: LLMProvider | None = None,
-        max_tokens: int | None = None,
-        temperature: float | None = None,
-        system_prompt: str | None = None,
+        provider: LLMProvider | None = None,  # noqa: ARG001
+        max_tokens: int | None = None,  # noqa: ARG001
+        temperature: float | None = None,  # noqa: ARG001
+        system_prompt: str | None = None,  # noqa: ARG001
     ) -> BaseModel:
         if stage is None:
             raise ValueError("stage must be provided for mock LLM responses")

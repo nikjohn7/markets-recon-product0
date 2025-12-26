@@ -178,7 +178,6 @@ def inspect_confidence(result: dict[str, Any]) -> None:
 
     print(f"Overall Confidence:   {confidence['overall_confidence']:.2f}")
     print(f"Confidence Band:      {confidence['confidence_band']}")
-    print(f"Routing:              {confidence['routing']}")
     print(f"Attention Required:   {confidence['analyst_attention_required']}")
 
     if confidence.get("attention_reasons"):
@@ -188,8 +187,9 @@ def inspect_confidence(result: dict[str, Any]) -> None:
 
     print_subsection("Field Confidences")
     fields = confidence["field_confidences"]
-    for field_name, field_data in fields.items():
-        score = field_data["score"]
+    for field_data in fields:
+        field_name = field_data["field_name"]
+        score = field_data["confidence"]
         reasons = field_data.get("reasons", [])
         reasons_str = f" ({', '.join(reasons)})" if reasons else ""
         print(f"  {field_name}: {score:.2f}{reasons_str}")

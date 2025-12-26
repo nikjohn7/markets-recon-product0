@@ -1,6 +1,7 @@
 """Unit tests for retrieval indexer."""
 
 from unittest.mock import AsyncMock, Mock, patch
+from uuid import uuid4
 
 import pytest
 from src.exceptions import ExtractionError
@@ -483,7 +484,7 @@ class TestDocumentIndex:
     @pytest.mark.asyncio
     async def test_document_index_query_empty_index(self):
         """Test querying empty index."""
-        index = DocumentIndex(document_id="doc_empty")
+        index = DocumentIndex(document_id=f"doc_empty_{uuid4().hex}")
 
         results = await index.query("test query")
 

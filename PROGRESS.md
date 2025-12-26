@@ -89,7 +89,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `9.1` Create Test Fixtures
 - [x] `9.2` Write Model Unit Tests
 - [x] `9.3` Write Taxonomy Unit Tests
-- [ ] `9.4` Write Stage Integration Tests
+- [x] `9.4` Write Stage Integration Tests
 - [ ] `9.5` Write E2E Pipeline Tests
 - [ ] `9.6` Write Confidence Scoring Tests
 
@@ -585,3 +585,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Task 9.3 — Complete (2025-12-26)
 - Added full synonym resolution coverage in `tests/unit/taxonomy/test_synonyms.py`
+
+### Task 9.4 — Complete (2025-12-26)
+- Added integration tests for stages 0, 2, and 4–10 in `tests/integration/test_stage_s0_ingest.py`, `tests/integration/test_stage_s2_clean.py`, `tests/integration/test_stage_s4_metadata.py`, `tests/integration/test_stage_s5_candidates.py`, `tests/integration/test_stage_s6_calls.py`, `tests/integration/test_stage_s7_summaries.py`, `tests/integration/test_stage_s8_tooltips.py`, `tests/integration/test_stage_s9_tags.py`, `tests/integration/test_stage_s10_confidence.py`
+- Renamed integration tests for Stage 1 and 3 to `tests/integration/test_stage_s1_extract.py` and `tests/integration/test_stage_s3_index.py`

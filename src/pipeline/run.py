@@ -301,7 +301,7 @@ def _persist_results(
 def _build_parser() -> argparse.ArgumentParser:
     """Build CLI argument parser."""
     parser = argparse.ArgumentParser(
-        prog="python -m pipeline.run",
+        prog="marketsrecon",
         description="Markets Recon Pipeline - Process fund manager outlook PDFs",
     )
     parser.add_argument(

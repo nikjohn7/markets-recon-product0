@@ -35,7 +35,7 @@ git clone <repository-url>
 cd marketsrecon
 
 # Create virtual environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install with development dependencies
@@ -51,13 +51,13 @@ cp .env.example .env
 **Basic Usage:**
 ```bash
 # Process a single PDF
-python -m src.pipeline.run --pdf /path/to/document.pdf
+marketsrecon --pdf /path/to/document.pdf
 
 # Output to JSON file
-python -m src.pipeline.run --pdf /path/to/document.pdf -o results.json
+marketsrecon --pdf /path/to/document.pdf -o results.json
 
 # Verbose mode (DEBUG logging)
-python -m src.pipeline.run --pdf /path/to/document.pdf -v
+marketsrecon --pdf /path/to/document.pdf -v
 ```
 
 **Sample Script (with result inspection):**

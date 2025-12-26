@@ -44,10 +44,11 @@ dev = [
 ]
 
 [project.scripts]
-marketsrecon = "pipeline.run:main"
+marketsrecon = "src.pipeline.run:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["src", "src.*"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -6,15 +6,15 @@ Computes extraction quality, evidence strength, and document-level confidence.
 import random
 import re
 import statistics
+from collections.abc import Sequence
 from enum import Enum
-from typing import Any
+from typing import Any, Protocol
 
 from src.models.calls import AllocationCall
 from src.models.confidence import ConfidenceResult, FieldConfidence
 from src.models.core import Citation
 from src.models.document import DocumentJSON
 from src.models.enums import BlockType, ConfidenceBand, CallDirection
-from src.models.pipeline import RetrievedChunk
 from src.models.profile import DocumentProfile
 from src.models.summaries import DocumentSummaries
 
@@ -178,10 +178,14 @@ def compute_confidence_band(confidence: float) -> ConfidenceBand:
 
 # --- Evidence Strength Scoring (Task 7.2) ---
 
+class EvidenceChunk(Protocol):
+    chunk_id: str
+    text: str
+
 
 def _get_chunk_by_id(
-    chunk_id: str, chunks: list[RetrievedChunk]
-) -> RetrievedChunk | None:
+    chunk_id: str, chunks: Sequence[EvidenceChunk]
+) -> EvidenceChunk | None:
     """Find chunk by ID."""
     for chunk in chunks:
         if chunk.chunk_id == chunk_id:
@@ -256,7 +260,7 @@ def compute_entailment_heuristic(value: str, text: str) -> float:
 def score_evidence_strength(
     field_value: Any,
     citations: list[Citation],
-    source_chunks: list[RetrievedChunk],
+    source_chunks: Sequence[EvidenceChunk],
 ) -> float:
     """Score how well evidence supports a claim.
     
@@ -298,7 +302,7 @@ def score_evidence_strength(
 def score_call_evidence(
     call_direction: CallDirection,
     citations: list[Citation],
-    source_chunks: list[RetrievedChunk],
+    source_chunks: Sequence[EvidenceChunk],
 ) -> float:
     """Score evidence strength for an allocation call.
     
@@ -385,7 +389,7 @@ def compute_document_confidence(
     profile: DocumentProfile,
     calls: list[AllocationCall],
     summaries: DocumentSummaries,
-    source_chunks: list[RetrievedChunk],
+    source_chunks: Sequence[EvidenceChunk],
 ) -> ConfidenceResult:
     """Compute document-level confidence with weighted aggregation.
     
@@ -473,7 +477,7 @@ async def stage_confidence(
     profile: DocumentProfile,
     calls: list[AllocationCall],
     summaries: DocumentSummaries,
-    source_chunks: list[RetrievedChunk],
+    source_chunks: Sequence[EvidenceChunk],
 ) -> ConfidenceResult:
     """Stage 10: Compute confidence scores and determine review routing."""
     return compute_document_confidence(doc, profile, calls, summaries, source_chunks)

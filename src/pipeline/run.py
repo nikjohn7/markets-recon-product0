@@ -137,7 +137,7 @@ async def process_pdf(
         # Stage 10: Confidence
         logger.info("[Stage 10] Computing confidence")
         confidence = await stage_confidence(
-            doc_json, profile, call_output.allocation_calls, summaries, candidate_set.candidates
+            doc_json, profile, call_output.allocation_calls, summaries, index.chunks
         )
         stages_completed.append("s10_confidence")
 

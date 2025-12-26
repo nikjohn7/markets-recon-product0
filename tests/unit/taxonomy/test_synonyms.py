@@ -157,6 +157,15 @@ class TestIsValidSynonym:
 class TestSynonymMapping:
     """Test the SYNONYMS dict structure."""
 
+    def test_all_synonyms_resolve(self) -> None:
+        """All synonyms should resolve to their mapped sub-asset codes."""
+        from src.taxonomy.hierarchy import get_category_for_sub_asset
+
+        for synonym, sub_asset_code in synonyms.SYNONYMS.items():
+            expected_category = get_category_for_sub_asset(sub_asset_code)
+            assert expected_category is not None
+            assert synonyms.resolve_asset(synonym) == (expected_category, sub_asset_code)
+
     def test_all_synonyms_map_to_valid_sub_assets(self) -> None:
         """Every synonym should map to a valid sub-asset in the hierarchy."""
         from src.taxonomy.hierarchy import is_valid_sub_asset

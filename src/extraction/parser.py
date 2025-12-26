@@ -40,11 +40,14 @@ class PDFParser:
         Returns:
             Normalized BoundingBox
         """
+        def clamp(value: float) -> float:
+            return max(0.0, min(1.0, value))
+
         return BoundingBox(
-            x0=bbox.x0 / page_width,
-            y0=bbox.y0 / page_height,
-            x1=bbox.x1 / page_width,
-            y1=bbox.y1 / page_height,
+            x0=clamp(bbox.x0 / page_width),
+            y0=clamp(bbox.y0 / page_height),
+            x1=clamp(bbox.x1 / page_width),
+            y1=clamp(bbox.y1 / page_height),
         )
 
     def _detect_block_type(

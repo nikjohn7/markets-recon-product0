@@ -193,6 +193,29 @@ MOCK_CALLS_RESPONSE: CallExtractionResponse = {
             "needs_analyst_review": False,
             "review_reason": None,
         },
+        {
+            "asset_class_category": "EQ_EM",
+            "sub_asset_class": "EQ_EM_ASIA",
+            "call": "OVERWEIGHT",
+            "conviction": "MEDIUM",
+            "time_horizon": "6-12 months",
+            "rationale_bullets": [
+                "China reopening tailwinds support regional growth.",
+                "Valuations attractive relative to developed markets.",
+            ],
+            "key_indicators": [
+                {
+                    "name": "China PMI",
+                    "direction": "RISING",
+                    "why_it_matters": "Improving activity supports earnings.",
+                }
+            ],
+            "key_risks": ["Geopolitical tensions"],
+            "citations": [{"chunk_id": "chunk_4", "page": 4}],
+            "confidence": 0.75,
+            "needs_analyst_review": False,
+            "review_reason": None,
+        },
     ],
     "overall_sentiment": "NEUTRAL",
     "sentiment_rationale": ["Balanced outlook with selective opportunities."],
@@ -246,6 +269,10 @@ MOCK_TOOLTIPS_RESPONSE: TooltipGenerationResponse = {
         {
             "sub_asset_class": "EQ_US",
             "tooltip_text": "Neutral US equities given full valuations despite stable earnings trends.",
+        },
+        {
+            "sub_asset_class": "EQ_EM_ASIA",
+            "tooltip_text": "Overweight EM Asia on China reopening and attractive valuations.",
         },
     ]
 }

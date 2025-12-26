@@ -46,6 +46,22 @@ def _build_call_extraction() -> CallExtractionOutput:
             needs_analyst_review=False,
             review_reason=None,
         ),
+        AllocationCall(
+            asset_class_category="EQ_EM",
+            sub_asset_class="EQ_EM_ASIA",
+            call=CallDirection.OVERWEIGHT,
+            conviction=Conviction.MEDIUM,
+            time_horizon="6-12 months",
+            rationale_bullets=["China reopening tailwinds support regional growth."],
+            key_indicators=[],
+            key_risks=["Geopolitical tensions"],
+            actionable_takeaways=[],
+            tooltip_text=None,
+            citations=[Citation(chunk_id="chunk_4", page=4)],
+            confidence=0.75,
+            needs_analyst_review=False,
+            review_reason=None,
+        ),
     ]
 
     return CallExtractionOutput(
@@ -57,7 +73,7 @@ def _build_call_extraction() -> CallExtractionOutput:
         sentiment_confidence=0.73,
         extraction_timestamp=datetime.now(UTC),
         model_version="test-model",
-        total_candidates_reviewed=2,
+        total_candidates_reviewed=3,
     )
 
 

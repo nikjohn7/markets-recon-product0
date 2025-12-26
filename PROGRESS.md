@@ -88,7 +88,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 9: Testing
 - [x] `9.1` Create Test Fixtures
 - [x] `9.2` Write Model Unit Tests
-- [ ] `9.3` Write Taxonomy Unit Tests
+- [x] `9.3` Write Taxonomy Unit Tests
 - [ ] `9.4` Write Stage Integration Tests
 - [ ] `9.5` Write E2E Pipeline Tests
 - [ ] `9.6` Write Confidence Scoring Tests
@@ -582,3 +582,6 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Task 9.2 — Complete (2025-12-26)
 - Added `tests/unit/models/test_enums.py` to validate enum values and invalid inputs
+
+### Task 9.3 — Complete (2025-12-26)
+- Added full synonym resolution coverage in `tests/unit/taxonomy/test_synonyms.py`

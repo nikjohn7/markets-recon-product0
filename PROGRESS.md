@@ -86,7 +86,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `8.3` Create Output Validator
 
 ### Phase 9: Testing
-- [ ] `9.1` Create Test Fixtures
+- [x] `9.1` Create Test Fixtures
 - [ ] `9.2` Write Model Unit Tests
 - [ ] `9.3` Write Taxonomy Unit Tests
 - [ ] `9.4` Write Stage Integration Tests
@@ -573,3 +573,9 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - CLI: `python -m pipeline.validate --output <json>`
 - Created 11 tests in `tests/unit/pipeline/test_validate.py`
 - Verified: all tests pass (11/11), `mypy --strict` passes
+
+### Task 9.1 — Complete (2025-12-26)
+- Expanded `tests/conftest.py` with deterministic PDF helpers and mock LLM client fixtures
+- Added `tests/fixtures/llm_responses.py` with stage-specific mock payloads
+- Created fixture package init and placeholder directories for PDF/expected output fixtures
+- Added `tests/unit/fixtures/test_llm_fixtures.py` to validate fixture schemas

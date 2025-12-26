@@ -1,6 +1,5 @@
 """Unit tests for synonym resolution."""
 
-
 from src.taxonomy import synonyms
 
 

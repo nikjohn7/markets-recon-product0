@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from src.models.document import DocumentBlock, DocumentJSON
 from src.models.enums import BlockType
 from src.pipeline.stages.s2_clean import stage_clean

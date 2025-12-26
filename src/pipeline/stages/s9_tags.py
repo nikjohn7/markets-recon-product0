@@ -62,20 +62,20 @@ def _extract_deterministic_tags(
         Tuple of (asset_class_tags, region_tags, instrument_tags).
     """
     # Asset class tags from calls (category codes)
-    asset_class_tags = list({call.asset_class_category for call in call_extraction.allocation_calls})
+    asset_class_tags = list(
+        {call.asset_class_category for call in call_extraction.allocation_calls}
+    )
 
     # Region tags from profile
     region_tags_raw = profile.regions if profile.regions else []
     # Normalize to lowercase and filter against allowed REGION_TAGS
-    region_tags = [
-        r.lower() for r in region_tags_raw if r.lower() in REGION_TAGS
-    ]
+    region_tags = [r.lower() for r in region_tags_raw if r.lower() in REGION_TAGS]
 
     # Instrument tags from sub-asset codes
     # Extract unique sub-asset codes, normalized to lowercase
-    instrument_tags = list({
-        call.sub_asset_class.lower() for call in call_extraction.allocation_calls
-    })
+    instrument_tags = list(
+        {call.sub_asset_class.lower() for call in call_extraction.allocation_calls}
+    )
 
     logger.debug(
         f"Deterministic tags: {len(asset_class_tags)} asset classes, "

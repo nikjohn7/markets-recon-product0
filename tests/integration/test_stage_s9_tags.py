@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, date
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from src.exceptions import ValidationError
 from src.models.calls import AllocationCall, CallExtractionOutput
 from src.models.core import Citation
@@ -171,7 +170,7 @@ async def test_stage_tags_requires_asset_class_tags(mock_llm_client):
 
     with pytest.raises(ValidationError, match="No asset class tags generated"):
         await stage_tags(
-        document_id=document_id,
+            document_id=document_id,
             cleaned_document=cleaned_doc,
             call_extraction=call_extraction,
             profile=profile,

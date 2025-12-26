@@ -34,7 +34,10 @@ class DummyLLMClient:
         self.last_prompt: str | None = None
 
     async def complete_json(
-        self, prompt: str, response_model, stage  # noqa: ARG002
+        self,
+        prompt: str,
+        response_model,  # noqa: ARG002
+        stage,  # noqa: ARG002
     ):
         self.last_prompt = prompt
         if self.expected_chunk_id is not None:

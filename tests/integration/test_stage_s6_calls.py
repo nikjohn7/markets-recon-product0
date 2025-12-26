@@ -6,7 +6,6 @@ from datetime import date
 from unittest.mock import Mock
 
 import pytest
-
 from src.exceptions import ExtractionError
 from src.llm.client import LLMProvider, ProviderConfig
 from src.models.core import Citation

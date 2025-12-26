@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from src.llm.client import PipelineStage
 from src.pipeline.stages.s4_metadata import DocumentProfileLLM
 from src.pipeline.stages.s5_candidates import ExpansionOutput

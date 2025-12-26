@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
+import textwrap
 from copy import deepcopy
 from pathlib import Path
-import textwrap
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from src.exceptions import PipelineError
 from src.llm.client import PipelineStage
 from src.models.pipeline import Chunk, RetrievedChunk
@@ -18,7 +17,12 @@ from src.pipeline import run as pipeline_run
 from src.pipeline.run import process_pdf
 from src.storage.blob import LocalBlobStorage
 from src.storage.database import Database
-from tests.fixtures.llm_responses import MOCK_LLM_RESPONSES, MOCK_SUMMARIES_RESPONSE, get_mock_llm_response
+
+from tests.fixtures.llm_responses import (
+    MOCK_LLM_RESPONSES,
+    MOCK_SUMMARIES_RESPONSE,
+    get_mock_llm_response,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_OUTPUT = ROOT / "tests" / "fixtures" / "expected_outputs" / "full_pipeline.json"
@@ -52,22 +56,20 @@ def _build_standard_pages() -> list[str]:
     page5 = _pad_text(
         "Portfolio construction favors diversified income and steady macro resilience."
     )
-    page6 = _pad_text(
-        "US equities are neutral given full valuations despite resilient earnings."
-    )
+    page6 = _pad_text("US equities are neutral given full valuations despite resilient earnings.")
     return [page1, page2, page3, page4, page5, page6]
 
 
 def _build_mock_llm_client(responses: dict[PipelineStage, dict[str, Any]]) -> AsyncMock:
     async def _complete_json(
         *,
-        prompt: str,
+        prompt: str,  # noqa: ARG001
         response_model: type[Any],
         stage: PipelineStage | None = None,
-        provider: Any | None = None,
-        max_tokens: int | None = None,
-        temperature: float | None = None,
-        system_prompt: str | None = None,
+        provider: Any | None = None,  # noqa: ARG001
+        max_tokens: int | None = None,  # noqa: ARG001
+        temperature: float | None = None,  # noqa: ARG001
+        system_prompt: str | None = None,  # noqa: ARG001
     ) -> Any:
         if stage is None:
             raise ValueError("stage must be provided for mock LLM responses")
@@ -114,7 +116,7 @@ def _patch_fake_index(monkeypatch: pytest.MonkeyPatch) -> None:
 
     async def _fake_query(
         self: Any,
-        query: str,
+        query: str,  # noqa: ARG001
         top_k: int = 10,
         _filters: dict[str, Any] | None = None,
     ) -> list[RetrievedChunk]:

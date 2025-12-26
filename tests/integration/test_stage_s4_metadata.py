@@ -6,7 +6,6 @@ from datetime import date
 from unittest.mock import AsyncMock
 
 import pytest
-
 from src.exceptions import ExtractionError
 from src.models.document import DocumentBlock
 from src.models.enums import BlockType, DocumentType

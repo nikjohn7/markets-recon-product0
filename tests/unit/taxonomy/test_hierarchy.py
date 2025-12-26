@@ -1,6 +1,5 @@
 """Unit tests for taxonomy hierarchy."""
 
-
 from src.taxonomy import hierarchy
 
 

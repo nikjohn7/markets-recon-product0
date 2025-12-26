@@ -32,8 +32,10 @@ class DummyLLMClient:
 
     def get_config(self, provider):  # noqa: ARG002
         """Return dummy provider config."""
+
         class DummyConfig:
             model_name = "test-model-v1"
+
         return DummyConfig()
 
 
@@ -181,9 +183,7 @@ async def test_stage_calls_handles_uncertain_calls():
                 rationale_bullets=["Mixed signals from economic data"],
                 key_indicators=[],
                 key_risks=[],
-                citations=[
-                    {"chunk_id": "doc_calls_2_0", "page": 1, "text_span": "mixed views"}
-                ],
+                citations=[{"chunk_id": "doc_calls_2_0", "page": 1, "text_span": "mixed views"}],
                 confidence=0.4,
                 needs_analyst_review=True,
                 review_reason="Ambiguous positioning language",
@@ -191,9 +191,7 @@ async def test_stage_calls_handles_uncertain_calls():
         ],
         overall_sentiment=Sentiment.NEUTRAL,
         sentiment_rationale=["Balanced outlook"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_2_0", "page": 1, "text_span": "mixed views"}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_2_0", "page": 1, "text_span": "mixed views"}],
         sentiment_confidence=0.6,
     )
 
@@ -256,9 +254,7 @@ async def test_stage_calls_detects_duplicate_calls():
         ],
         overall_sentiment=Sentiment.NET_POSITIVE,
         sentiment_rationale=["Positive outlook"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_3_0", "page": 1, "text_span": "overweight"}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_3_0", "page": 1, "text_span": "overweight"}],
         sentiment_confidence=0.8,
     )
 
@@ -307,7 +303,11 @@ async def test_stage_calls_multiple_calls_different_assets():
                 key_indicators=[],
                 key_risks=[],
                 citations=[
-                    {"chunk_id": "doc_calls_4_0", "page": 1, "text_span": "underweight German Bunds"}
+                    {
+                        "chunk_id": "doc_calls_4_0",
+                        "page": 1,
+                        "text_span": "underweight German Bunds",
+                    }
                 ],
                 confidence=0.85,
                 needs_analyst_review=False,
@@ -344,13 +344,15 @@ async def test_stage_calls_raises_on_empty_candidates():
     )
 
     # LLM client won't be called, but create one anyway
-    llm_client = DummyLLMClient(response=CallExtractionLLM(
-        allocation_calls=[],
-        overall_sentiment=Sentiment.NEUTRAL,
-        sentiment_rationale=["No data"],
-        sentiment_citations=[{"chunk_id": "dummy", "page": 1}],  # Need at least one
-        sentiment_confidence=0.0,
-    ))
+    llm_client = DummyLLMClient(
+        response=CallExtractionLLM(
+            allocation_calls=[],
+            overall_sentiment=Sentiment.NEUTRAL,
+            sentiment_rationale=["No data"],
+            sentiment_citations=[{"chunk_id": "dummy", "page": 1}],  # Need at least one
+            sentiment_confidence=0.0,
+        )
+    )
 
     with pytest.raises(ExtractionError, match="No candidate chunks available"):
         await stage_calls(profile, candidate_set, llm_client=llm_client)
@@ -404,7 +406,9 @@ async def test_stage_calls_parses_citations_correctly():
     assert len(output.allocation_calls[0].citations) == 1
     assert output.allocation_calls[0].citations[0].chunk_id == "doc_calls_5_0"
     assert output.allocation_calls[0].citations[0].page == 1
-    assert output.allocation_calls[0].citations[0].text_span == "prefer gold due to inflation hedging"
+    assert (
+        output.allocation_calls[0].citations[0].text_span == "prefer gold due to inflation hedging"
+    )
 
 
 @pytest.mark.asyncio
@@ -439,9 +443,7 @@ async def test_stage_calls_handles_missing_text_span():
         ],
         overall_sentiment=Sentiment.NET_NEGATIVE,
         sentiment_rationale=["Cautious on credit"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_6_0", "page": 1}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_6_0", "page": 1}],
         sentiment_confidence=0.75,
     )
 
@@ -474,9 +476,7 @@ async def test_stage_calls_includes_model_version():
                 rationale_bullets=["Mixed signals"],
                 key_indicators=[],
                 key_risks=[],
-                citations=[
-                    {"chunk_id": "doc_calls_7_0", "page": 1}
-                ],
+                citations=[{"chunk_id": "doc_calls_7_0", "page": 1}],
                 confidence=0.7,
                 needs_analyst_review=False,
                 review_reason=None,
@@ -484,9 +484,7 @@ async def test_stage_calls_includes_model_version():
         ],
         overall_sentiment=Sentiment.NEUTRAL,
         sentiment_rationale=["Balanced view"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_7_0", "page": 1}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_7_0", "page": 1}],
         sentiment_confidence=0.65,
     )
 
@@ -518,9 +516,7 @@ async def test_stage_calls_preserves_key_risks():
                 rationale_bullets=["Innovation tailwinds"],
                 key_indicators=[],
                 key_risks=["Regulatory headwinds", "Valuation concerns"],
-                citations=[
-                    {"chunk_id": "doc_calls_8_0", "page": 1}
-                ],
+                citations=[{"chunk_id": "doc_calls_8_0", "page": 1}],
                 confidence=0.85,
                 needs_analyst_review=False,
                 review_reason=None,
@@ -528,9 +524,7 @@ async def test_stage_calls_preserves_key_risks():
         ],
         overall_sentiment=Sentiment.NET_POSITIVE,
         sentiment_rationale=["Tech-driven growth"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_8_0", "page": 1}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_8_0", "page": 1}],
         sentiment_confidence=0.8,
     )
 
@@ -557,9 +551,7 @@ async def test_stage_calls_builds_prompt_with_profile():
         allocation_calls=[],
         overall_sentiment=Sentiment.NEUTRAL,
         sentiment_rationale=["No strong views"],
-        sentiment_citations=[
-            {"chunk_id": "doc_calls_9_0", "page": 1}
-        ],
+        sentiment_citations=[{"chunk_id": "doc_calls_9_0", "page": 1}],
         sentiment_confidence=0.5,
     )
 

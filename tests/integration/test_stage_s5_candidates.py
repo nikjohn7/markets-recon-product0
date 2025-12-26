@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from src.exceptions import ExtractionError
 from src.models.document import DocumentBlock
 from src.models.enums import BlockType

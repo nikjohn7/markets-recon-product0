@@ -6,7 +6,6 @@ to canonical taxonomy codes. Enables fuzzy matching of common alternative names.
 Source: docs/TAXONOMY.md
 """
 
-
 from .hierarchy import get_category_for_sub_asset
 
 # =============================================================================

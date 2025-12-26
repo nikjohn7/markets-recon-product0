@@ -117,9 +117,7 @@ async def process_pdf(
 
         # Stage 7: Summaries
         logger.info("[Stage 7] Generating summaries")
-        summaries = await stage_summaries(
-            document_id, index, call_output, profile, llm_client
-        )
+        summaries = await stage_summaries(document_id, index, call_output, profile, llm_client)
         stages_completed.append("s7_summaries")
 
         # Stage 8: Tooltips
@@ -129,9 +127,7 @@ async def process_pdf(
 
         # Stage 9: Tags
         logger.info("[Stage 9] Generating tags")
-        tags = await stage_tags(
-            document_id, cleaned_doc, call_output, profile, index, llm_client
-        )
+        tags = await stage_tags(document_id, cleaned_doc, call_output, profile, index, llm_client)
         stages_completed.append("s9_tags")
 
         # Stage 10: Confidence
@@ -165,7 +161,9 @@ async def process_pdf(
     except (ExtractionError, ValidationError, LLMError, StorageError) as e:
         elapsed = time.monotonic() - start_time
         _record_run_failure(db, run_id, document_id, stages_completed, elapsed, str(e))
-        raise PipelineError(f"Pipeline failed at {stages_completed[-1] if stages_completed else 'start'}: {e}") from e
+        raise PipelineError(
+            f"Pipeline failed at {stages_completed[-1] if stages_completed else 'start'}: {e}"
+        ) from e
 
 
 def _record_run_start(db: Database, run_id: str, document_id: str, llm_client: LLMClient) -> None:
@@ -275,7 +273,9 @@ def _persist_results(
                 key_takeaways=json.dumps([t.model_dump() for t in result.summaries.key_takeaways]),
                 overall_sentiment=result.overall_sentiment.value,
                 sentiment_rationale=json.dumps(result.sentiment_rationale),
-                sentiment_citations=json.dumps([c.model_dump() for c in result.sentiment_citations]),
+                sentiment_citations=json.dumps(
+                    [c.model_dump() for c in result.sentiment_citations]
+                ),
             )
         )
 
@@ -342,6 +342,7 @@ def main() -> None:
 
     # Configure logging
     import os
+
     if args.verbose:
         os.environ["LOG_LEVEL"] = "DEBUG"
     try:

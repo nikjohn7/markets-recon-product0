@@ -95,8 +95,8 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 
 ### Phase 10: Polish & Documentation
 - [x] `10.1` Add Type Annotations Check
-- [ ] `10.2` Add Linting and Formatting
-- [ ] `10.3` Create Sample Run Script
+- [x] `10.2` Add Linting and Formatting
+- [x] `10.3` Create Sample Run Script
 - [ ] `10.4` Final Integration Test
 - [ ] `10.5` Add MVP Evaluation Script
 
@@ -606,3 +606,32 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - `Any` types used only where necessary (flexible metadata dicts, validation functions, stream handlers)
 - Mypy configuration includes: strict=true, warn_return_any, disallow_untyped_defs, extra_checks enabled
 - Task acceptance criteria met: zero mypy errors with --strict flag
+
+### Task 10.2 — Complete (2025-12-26)
+- Ruff configuration already present in `pyproject.toml` (no separate ruff.toml needed)
+- Fixed 176 linting issues identified by `ruff check src/ tests/`:
+  - 121 auto-fixed with `--fix` flag (import sorting, whitespace, unused imports)
+  - 37 auto-fixed with `--unsafe-fixes` (set comprehensions, import organization)
+  - 18 manually fixed (unused mock arguments with `noqa: ARG001/ARG002`, regex raw strings, module-level imports)
+- Fixed critical import issue in `src/pipeline/stages/s4_metadata.py`:
+  - Moved `Citation` and `DocumentType` out of `TYPE_CHECKING` block (needed at runtime for Pydantic model)
+  - Added `noqa: TC001` to suppress false positive from ruff's type-checking import rule
+- Ran `ruff format src/ tests/` - reformatted 19 files
+- All 585 tests pass after linting/formatting changes
+- Task acceptance criteria met: `ruff check` passes with zero errors, code is formatted
+
+### Task 10.3 — Complete (2025-12-26)
+- Created `scripts/run_sample.py` demonstrating full pipeline execution
+- **Features implemented**:
+  - Configurable logging (--verbose flag for DEBUG level)
+  - Full pipeline execution via `process_pdf()` async function
+  - Result inspection with formatted output sections: profile, calls, sentiment, summaries, tags, confidence, metadata
+  - Selective section display (--show flag with comma-separated sections)
+  - JSON output support (--output flag for file, --json-only for stdout)
+  - Allocator Pro format export (--show allocator)
+  - Search index format export (--show search)
+- **CLI options**: --pdf (required), --output, --verbose, --show, --json-only
+- **Help text**: Comprehensive with usage examples
+- Passes `ruff check` and `mypy --strict`
+- All 585 tests continue to pass
+- Task acceptance criteria met: Script runs with --help and demonstrates full pipeline

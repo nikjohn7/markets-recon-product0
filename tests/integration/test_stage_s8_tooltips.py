@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-
 from src.exceptions import ValidationError
 from src.models.calls import AllocationCall, CallExtractionOutput
 from src.models.core import Citation

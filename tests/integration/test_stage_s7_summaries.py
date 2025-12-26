@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, date
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-
 from src.exceptions import ExtractionError
 from src.models.calls import AllocationCall, CallExtractionOutput
 from src.models.core import Citation

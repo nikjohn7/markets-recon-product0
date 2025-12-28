@@ -75,6 +75,19 @@ python scripts/run_sample.py --pdf /path/to/document.pdf --show calls,confidence
 python scripts/run_sample.py --pdf /path/to/document.pdf --show allocator
 ```
 
+**Client Report Pack (HTML):**
+```bash
+# Build a shareable HTML report pack from JSON outputs
+python scripts/generate_report_pack.py --input ./outputs --output-dir ./reports
+
+# Include source PDFs in the report pack
+python scripts/generate_report_pack.py --input ./outputs --output-dir ./reports --pdf-dir ./pdfs --copy-pdfs
+
+# Optionally bundle raw JSON outputs
+python scripts/generate_report_pack.py --input ./outputs --output-dir ./reports --copy-json
+```
+Open `reports/index.html` in a browser to view the pack.
+
 **MVP Evaluation:**
 ```bash
 # Evaluate on generated test PDFs (no API calls)

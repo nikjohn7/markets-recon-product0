@@ -63,7 +63,6 @@ TRIAGE_SIGNAL_KEYWORDS: tuple[str, ...] = (
     "decrease",
     "reduce",
     "trim",
-    "add",
     "adding",
     "reducing",
     "increasing",
@@ -493,9 +492,19 @@ async def stage_clean(
                 )
 
         # Optional page triage: filter pages before downstream chunking/embedding.
+        # Only applies to large clean PDFs (no OCR/vision pages).
         active_triage_config = triage_config or PageTriageConfig()
+        is_clean_pdf = not doc_json.ocr_pages and not doc_json.vision_pages
+        if not is_clean_pdf and active_triage_config.enabled:
+            logger.debug(
+                "Stage 2 page triage skipped: document has OCR/vision pages "
+                "(ocr=%d, vision=%d)",
+                len(doc_json.ocr_pages),
+                len(doc_json.vision_pages),
+            )
         if (
             active_triage_config.enabled
+            and is_clean_pdf
             and doc_json.page_count >= active_triage_config.min_page_count
         ):
             page_scores = _score_pages(doc_json.page_count, cleaned_blocks)

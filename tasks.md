@@ -830,4 +830,4 @@ Phase 0 (Spec Alignment) → Phase 1 (Foundation) → Phase 2 (Taxonomy) → Pha
 | 8 | 8.1-8.3 | Pipeline orchestration, CLI |
 | 9 | 9.1-9.6 | Tests |
 | 10 | 10.1-10.5 | Type checking, linting, polish |
-| 11 | 11.1-11.5 | Page triage, cost controls |
+| 11 | 11.1-11.6 | Page triage, cost controls |

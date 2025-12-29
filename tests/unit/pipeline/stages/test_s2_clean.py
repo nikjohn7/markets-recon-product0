@@ -697,3 +697,69 @@ async def test_stage_clean_page_triage_can_be_disabled() -> None:
     kept_pages = {block.page for block in result.blocks}
 
     assert len(kept_pages) == 50
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_skipped_for_ocr_documents() -> None:
+    """Triage should be skipped for documents with OCR/vision pages (not clean PDFs)."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    # Document with OCR pages should NOT be triaged
+    doc_with_ocr = DocumentJSON(
+        document_id="ocr_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+        ocr_pages=[10, 20, 30],
+    )
+
+    result = await stage_clean(doc_with_ocr)
+    kept_pages = {block.page for block in result.blocks}
+
+    # All 50 pages should be kept (no triage applied)
+    assert len(kept_pages) == 50
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_skipped_for_vision_documents() -> None:
+    """Triage should be skipped for documents with vision pages."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    # Document with vision pages should NOT be triaged
+    doc_with_vision = DocumentJSON(
+        document_id="vision_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+        vision_pages=[5, 15],
+    )
+
+    result = await stage_clean(doc_with_vision)
+    kept_pages = {block.page for block in result.blocks}
+
+    # All 50 pages should be kept (no triage applied)
+    assert len(kept_pages) == 50

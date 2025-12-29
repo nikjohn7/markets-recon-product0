@@ -131,14 +131,21 @@ MEGALLM_API_KEY=...      # GPT-OSS-120b (Candidates)
 NEBIUS_API_KEY=...       # GLM-4.5-Air (Summaries)
 DEEPINFRA_API_KEY=...    # Qwen3-235B (Tooltips & Tags)
 
-# Embeddings
-OPENAI_API_KEY=...       # text-embedding-3-small
+# Embeddings (choose provider)
+EMBEDDINGS_PROVIDER=openai  # openai | deepinfra
 
-# Storage (defaults work for local development)
+# If EMBEDDINGS_PROVIDER=openai
+OPENAI_API_KEY=...          # text-embedding-3-small (default)
+
+# If EMBEDDINGS_PROVIDER=deepinfra
+DEEPINFRA_EMBEDDINGS_MODEL=Qwen/Qwen3-Embedding-4B
+DEEPINFRA_EMBEDDINGS_BASE_URL=https://api.deepinfra.com/v1/openai
+
+# Storage (optional; defaults shown)
 DATABASE_URL=sqlite:///./data/marketsrecon.db
 BLOB_STORAGE_PATH=./data/pdfs
 
-# Logging
+# Logging (optional)
 LOG_LEVEL=INFO
 ```
 

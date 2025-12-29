@@ -36,10 +36,15 @@ class EmbeddingProvider(Protocol):
 class OpenAIEmbeddingProvider:
     """OpenAI embedding provider with retry logic."""
 
-    def __init__(self, api_key: str, model: str = "text-embedding-3-small"):
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "text-embedding-3-small",
+        dimensions: int | None = 1536,
+    ):
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = model
-        self.dimensions = 1536
+        self.dimensions = dimensions
 
     async def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embeddings using OpenAI API with retry."""
@@ -49,11 +54,14 @@ class OpenAIEmbeddingProvider:
 
         for attempt in range(max_retries):
             try:
-                response = await self.client.embeddings.create(
-                    model=self.model,
-                    input=texts,
-                    dimensions=self.dimensions,
-                )
+                if self.dimensions is None:
+                    response = await self.client.embeddings.create(model=self.model, input=texts)
+                else:
+                    response = await self.client.embeddings.create(
+                        model=self.model,
+                        input=texts,
+                        dimensions=self.dimensions,
+                    )
                 return [embedding.embedding for embedding in response.data]
 
             except Exception as e:
@@ -70,6 +78,60 @@ class OpenAIEmbeddingProvider:
 
         # Only raise after all retries exhausted
         raise ExtractionError(f"Failed to generate embeddings: {last_error}") from last_error
+
+
+class DeepInfraEmbeddingProvider:
+    """DeepInfra embedding provider (OpenAI-compatible endpoint) with retry logic."""
+
+    def __init__(self, api_key: str, model: str, base_url: str):
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+
+    async def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
+        """Generate embeddings using DeepInfra OpenAI-compatible API with retry."""
+        max_retries = 3
+        retry_delay = 1.0
+        last_error: Exception | None = None
+
+        for attempt in range(max_retries):
+            try:
+                response = await self.client.embeddings.create(
+                    model=self.model,
+                    input=texts,
+                    encoding_format="float",
+                )
+                return [embedding.embedding for embedding in response.data]
+
+            except Exception as e:
+                last_error = e
+                if attempt == max_retries - 1:
+                    logger.error(f"Embedding generation failed after {max_retries} attempts: {e}")
+                    break
+
+                logger.warning(
+                    f"Embedding attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s..."
+                )
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2
+
+        raise ExtractionError(f"Failed to generate embeddings: {last_error}") from last_error
+
+
+def _get_embedding_provider() -> EmbeddingProvider:
+    settings = get_settings()
+    if settings.embeddings_provider == "deepinfra":
+        return DeepInfraEmbeddingProvider(
+            api_key=settings.deepinfra_api_key.get_secret_value(),
+            model=settings.deepinfra_embeddings_model,
+            base_url=settings.deepinfra_embeddings_base_url,
+        )
+
+    openai_key = settings.openai_api_key.get_secret_value() if settings.openai_api_key else ""
+    return OpenAIEmbeddingProvider(
+        api_key=openai_key,
+        model=settings.openai_embeddings_model,
+        dimensions=settings.openai_embeddings_dimensions,
+    )
 
 
 def _split_large_block(
@@ -301,19 +363,18 @@ def chunk_document(cleaned_doc: CleanedDocument) -> list[Chunk]:
 async def generate_embeddings(chunks: list[Chunk]) -> list[list[float]]:
     """Generate embeddings for chunks using OpenAI API.
 
-    Retry logic is handled by OpenAIEmbeddingProvider.generate_embeddings().
+    Retry logic is handled by the active embedding provider.
 
     Args:
         chunks: List of chunks to embed
 
     Returns:
-        List of embedding vectors (1536 dimensions each)
+        List of embedding vectors
     """
     if not chunks:
         return []
 
-    settings = get_settings()
-    provider = OpenAIEmbeddingProvider(api_key=settings.openai_api_key.get_secret_value())
+    provider = _get_embedding_provider()
 
     # Extract texts for embedding
     texts = [chunk.text for chunk in chunks]
@@ -409,8 +470,7 @@ class DocumentIndex:
             return []
 
         # Generate embedding for query
-        settings = get_settings()
-        provider = OpenAIEmbeddingProvider(api_key=settings.openai_api_key.get_secret_value())
+        provider = _get_embedding_provider()
 
         query_embeddings = await provider.generate_embeddings([query])
         query_embedding = query_embeddings[0]

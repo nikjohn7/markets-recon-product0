@@ -37,6 +37,53 @@ def test_settings_load_from_env_file(tmp_path: Path) -> None:
     assert settings.log_level == "DEBUG"
 
 
+def test_defaults_apply_for_storage_and_logging(tmp_path: Path) -> None:
+    env_file = build_env_file(
+        tmp_path,
+        OHMYGPT_API_KEY="ohmygpt-key",
+        MEGALLM_API_KEY="megallm-key",
+        NEBIUS_API_KEY="nebius-key",
+        DEEPINFRA_API_KEY="deepinfra-key",
+        OPENAI_API_KEY="open-key",
+    )
+
+    settings = Settings(_env_file=env_file)
+
+    assert settings.database_url == "sqlite:///./data/marketsrecon.db"
+    assert settings.blob_storage_path == Path("./data/pdfs")
+    assert settings.log_level == "INFO"
+
+
+def test_deepinfra_embeddings_provider_allows_missing_openai_key(tmp_path: Path) -> None:
+    env_file = build_env_file(
+        tmp_path,
+        OHMYGPT_API_KEY="ohmygpt-key",
+        MEGALLM_API_KEY="megallm-key",
+        NEBIUS_API_KEY="nebius-key",
+        DEEPINFRA_API_KEY="deepinfra-key",
+        EMBEDDINGS_PROVIDER="deepinfra",
+    )
+
+    settings = Settings(_env_file=env_file)
+
+    assert settings.embeddings_provider == "deepinfra"
+    assert settings.openai_api_key is None
+
+
+def test_openai_embeddings_provider_requires_openai_key(tmp_path: Path) -> None:
+    env_file = build_env_file(
+        tmp_path,
+        OHMYGPT_API_KEY="ohmygpt-key",
+        MEGALLM_API_KEY="megallm-key",
+        NEBIUS_API_KEY="nebius-key",
+        DEEPINFRA_API_KEY="deepinfra-key",
+        EMBEDDINGS_PROVIDER="openai",
+    )
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=env_file)
+
+
 def test_missing_required_field_raises_error(tmp_path: Path) -> None:
     env_file = build_env_file(
         tmp_path,

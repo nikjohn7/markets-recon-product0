@@ -16,6 +16,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from pydantic import ValidationError as PydanticValidationError
+
 from src.config.logging import configure_logging
 from src.exceptions import ExtractionError, LLMError, PipelineError, StorageError, ValidationError
 from src.llm.client import LLMClient, PipelineStage
@@ -356,6 +358,25 @@ def main() -> None:
         result = asyncio.run(process_pdf(args.pdf))
     except PipelineError as e:
         print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+    except PydanticValidationError as e:
+        missing_fields = sorted(
+            {str(err.get("loc", ["?"])[0]) for err in e.errors() if err.get("type") == "missing"}
+        )
+        if missing_fields:
+            missing_display = ", ".join(missing_fields)
+            print(
+                "Configuration error: missing required environment variables "
+                f"({missing_display}).",
+                file=sys.stderr,
+            )
+            print(
+                "Fix: copy `.env.example` to `.env` and fill in the missing values.",
+                file=sys.stderr,
+            )
+        else:
+            print(f"Configuration error: {e}", file=sys.stderr)
+            print("Fix: check your `.env` values and try again.", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Unexpected error: {e}", file=sys.stderr)

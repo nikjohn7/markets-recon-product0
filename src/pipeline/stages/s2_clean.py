@@ -128,7 +128,7 @@ def _count_keyword_hits(text_lower: str) -> tuple[int, int]:
             unique_hits += 1
             total_hits += count
 
-    for keyword, pattern in _TRIAGE_WORD_BOUNDARY_PATTERNS.items():
+    for _keyword, pattern in _TRIAGE_WORD_BOUNDARY_PATTERNS.items():
         matches = pattern.findall(text_lower)
         if matches:
             unique_hits += 1

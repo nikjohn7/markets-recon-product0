@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from pathlib import Path  # noqa: TC003 - used at runtime for Pydantic field type
+from pathlib import Path
+from typing import Literal
 
-from pydantic import Field, SecretStr, ValidationInfo, field_validator
+from pydantic import Field, SecretStr, ValidationInfo, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,10 +16,21 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Core settings
-    database_url: str = Field(..., alias="DATABASE_URL")
-    blob_storage_path: Path = Field(..., alias="BLOB_STORAGE_PATH")
-    log_level: str = Field(..., alias="LOG_LEVEL")
+    database_url: str = Field("sqlite:///./data/marketsrecon.db", alias="DATABASE_URL")
+    blob_storage_path: Path = Field(Path("./data/pdfs"), alias="BLOB_STORAGE_PATH")
+    log_level: str = Field("INFO", alias="LOG_LEVEL")
     log_json_format: bool = Field(False, alias="LOG_JSON_FORMAT")
+
+    # Embeddings
+    embeddings_provider: Literal["openai", "deepinfra"] = Field("openai", alias="EMBEDDINGS_PROVIDER")
+    openai_embeddings_model: str = Field("text-embedding-3-small", alias="OPENAI_EMBEDDINGS_MODEL")
+    openai_embeddings_dimensions: int | None = Field(1536, alias="OPENAI_EMBEDDINGS_DIMENSIONS")
+    deepinfra_embeddings_model: str = Field(
+        "Qwen/Qwen3-Embedding-4B", alias="DEEPINFRA_EMBEDDINGS_MODEL"
+    )
+    deepinfra_embeddings_base_url: str = Field(
+        "https://api.deepinfra.com/v1/openai", alias="DEEPINFRA_EMBEDDINGS_BASE_URL"
+    )
 
     # LLM Provider API Keys
     ohmygpt_api_key: SecretStr = Field(..., alias="OHMYGPT_API_KEY")  # Claude Haiku 4.5
@@ -27,7 +39,7 @@ class Settings(BaseSettings):
     deepinfra_api_key: SecretStr = Field(..., alias="DEEPINFRA_API_KEY")  # Qwen3-235B
 
     # Legacy keys (kept for embeddings - OpenAI text-embedding-3-small)
-    openai_api_key: SecretStr = Field(..., alias="OPENAI_API_KEY")
+    openai_api_key: SecretStr | None = Field(None, alias="OPENAI_API_KEY")
 
     @field_validator("database_url", "log_level", mode="before")
     @classmethod
@@ -63,6 +75,18 @@ class Settings(BaseSettings):
         if normalized not in allowed_levels:
             raise ValueError(f"LOG_LEVEL must be one of {sorted(allowed_levels)}")
         return normalized
+
+    @model_validator(mode="after")
+    def validate_embedding_provider_keys(self) -> Settings:
+        if self.embeddings_provider == "openai" and (
+            self.openai_api_key is None or not self.openai_api_key.get_secret_value().strip()
+        ):
+            raise ValueError("OPENAI_API_KEY is required when EMBEDDINGS_PROVIDER=openai")
+
+        if self.embeddings_provider == "deepinfra" and not self.deepinfra_api_key.get_secret_value().strip():
+            raise ValueError("DEEPINFRA_API_KEY is required when EMBEDDINGS_PROVIDER=deepinfra")
+
+        return self
 
 
 @lru_cache(maxsize=1)

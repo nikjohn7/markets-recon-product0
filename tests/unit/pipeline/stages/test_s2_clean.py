@@ -10,6 +10,7 @@ from src.pipeline.stages.s2_clean import (
     _detect_sections,
     _is_disclaimer,
     _normalize_text,
+    _score_pages,
     stage_clean,
 )
 
@@ -295,6 +296,87 @@ class TestSectionDetection:
         sections = _detect_sections("doc1", blocks)
         section_ids = [s.section_id for s in sections]
         assert len(section_ids) == len(set(section_ids))
+
+
+class TestPageScoring:
+    """Test Stage 2 page scoring utilities (triage)."""
+
+    def test_score_pages_prioritizes_headers_and_keywords(self) -> None:
+        blocks = [
+            DocumentBlock(
+                block_id="1_0",
+                page=1,
+                text="Executive Summary",
+                block_type=BlockType.HEADING,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="1_1",
+                page=1,
+                text="We are overweight equities and bullish on credit.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="5_0",
+                page=5,
+                text="We upgrade duration and reduce risk; tactical allocation changes.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="9_0",
+                page=9,
+                text="Appendix: definitions and methodology.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+        ]
+
+        scores = {s.page: s for s in _score_pages(page_count=10, blocks=blocks)}
+
+        assert "executive_summary" in scores[1].header_hits
+        assert scores[1].keyword_hits_unique >= 2
+        assert scores[5].keyword_hits_unique >= 3
+        assert scores[1].score > scores[9].score
+        assert scores[5].score > scores[9].score
+
+    def test_score_pages_detects_structure_and_boilerplate(self) -> None:
+        blocks = [
+            DocumentBlock(
+                block_id="2_0",
+                page=2,
+                text="Table of Contents",
+                block_type=BlockType.HEADING,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_0",
+                page=4,
+                text="• Overweight equities",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_1",
+                page=4,
+                text="• Underweight duration",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_2",
+                page=4,
+                text="• Tactical allocation shift",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+        ]
+
+        scores = {s.page: s for s in _score_pages(page_count=10, blocks=blocks)}
+
+        assert scores[2].boilerplate_penalty == 1.0
+        assert scores[4].bullet_block_count == 3
 
 
 @pytest.mark.asyncio

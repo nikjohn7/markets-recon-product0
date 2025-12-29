@@ -7,6 +7,7 @@ and identifies document sections.
 import logging
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 
 from src.exceptions import ExtractionError
 from src.models.document import DocumentBlock, DocumentJSON
@@ -34,6 +35,176 @@ SECTION_PATTERNS = {
     "risks": r"(?i)(risks?|risk factors|downside)",
     "appendix": r"(?i)(appendix|appendices|glossary|definitions)",
 }
+
+# =============================================================================
+# Page triage (cheap heuristics for large clean PDFs)
+# =============================================================================
+
+TRIAGE_HIGH_VALUE_HEADERS: dict[str, re.Pattern[str]] = {
+    "executive_summary": re.compile(r"(?i)\bexecutive summary\b"),
+    "asset_allocation": re.compile(r"(?i)\b(asset allocation|allocation)\b"),
+    "outlook": re.compile(r"(?i)\b(outlook|our views|house view)\b"),
+    "positioning": re.compile(r"(?i)\b(positioning|recommended positioning|portfolio positioning)\b"),
+    "recommendations": re.compile(r"(?i)\b(recommendations?|what we like|what we don'?t like)\b"),
+}
+
+TRIAGE_SIGNAL_KEYWORDS: tuple[str, ...] = (
+    "overweight",
+    "underweight",
+    "neutral weight",
+    "equal weight",
+    "market weight",
+    "bullish",
+    "bearish",
+    "upgrade",
+    "downgrade",
+    "increase",
+    "decrease",
+    "reduce",
+    "trim",
+    "add",
+    "adding",
+    "reducing",
+    "increasing",
+    "decreasing",
+    "allocation",
+    "exposure",
+    "tactical",
+    "strategic",
+)
+
+TRIAGE_WORD_BOUNDARY_KEYWORDS: tuple[str, ...] = ("ow", "uw", "n", "add")
+
+TRIAGE_BOILERPLATE_PAGE_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"(?i)\btable of contents\b"),
+    re.compile(r"(?i)\bcontents\b"),
+    re.compile(r"(?i)\bdisclaimer\b"),
+    re.compile(r"(?i)\bimportant (information|disclosure)\b"),
+)
+
+_TRIAGE_WORD_BOUNDARY_PATTERNS: dict[str, re.Pattern[str]] = {
+    keyword: re.compile(rf"\b{re.escape(keyword)}\b", re.IGNORECASE)
+    for keyword in TRIAGE_WORD_BOUNDARY_KEYWORDS
+}
+
+
+@dataclass(frozen=True)
+class PageScore:
+    """Cheap per-page scoring result used for triage selection."""
+
+    page: int
+    score: float
+    keyword_hits_total: int
+    keyword_hits_unique: int
+    header_hits: tuple[str, ...]
+    bullet_block_count: int
+    table_cell_block_count: int
+    position_prior: float
+    boilerplate_penalty: float
+
+
+def _count_keyword_hits(text_lower: str) -> tuple[int, int]:
+    """Return (total_hits, unique_hits) for triage signal keywords."""
+    total_hits = 0
+    unique_hits = 0
+
+    for keyword in TRIAGE_SIGNAL_KEYWORDS:
+        count = text_lower.count(keyword)
+        if count > 0:
+            unique_hits += 1
+            total_hits += count
+
+    for keyword, pattern in _TRIAGE_WORD_BOUNDARY_PATTERNS.items():
+        matches = pattern.findall(text_lower)
+        if matches:
+            unique_hits += 1
+            total_hits += len(matches)
+
+    return total_hits, unique_hits
+
+
+def _detect_header_hits(page_blocks: list[DocumentBlock]) -> tuple[str, ...]:
+    """Detect high-value header terms on a page.
+
+    Uses heading blocks first; falls back to the top few blocks.
+    """
+    heading_text = " ".join(
+        block.text for block in page_blocks if block.block_type == BlockType.HEADING
+    ).lower()
+    top_text = " ".join(block.text for block in page_blocks[:3]).lower()
+    candidate = f"{heading_text}\n{top_text}"
+
+    hits = [name for name, pattern in TRIAGE_HIGH_VALUE_HEADERS.items() if pattern.search(candidate)]
+    return tuple(sorted(hits))
+
+
+def _compute_position_prior(page: int, page_count: int) -> float:
+    """Light position prior: boost front and mid-document pages modestly."""
+    if page_count <= 1:
+        return 0.0
+
+    percentile = (page - 1) / (page_count - 1)
+    if percentile <= 0.20:
+        return 0.50
+    if 0.35 <= percentile <= 0.70:
+        return 0.30
+    return 0.0
+
+
+def _compute_boilerplate_penalty(page_text: str) -> float:
+    """Downweight pages that look like TOC/disclaimer boilerplate."""
+    text = page_text.strip()
+    if not text:
+        return 0.0
+
+    penalty = 0.0
+    for pattern in TRIAGE_BOILERPLATE_PAGE_PATTERNS:
+        if pattern.search(text):
+            penalty = max(penalty, 1.0)
+    return penalty
+
+
+def _score_pages(page_count: int, blocks: list[DocumentBlock]) -> list[PageScore]:
+    """Compute cheap triage scores for all pages in the document."""
+    blocks_by_page: dict[int, list[DocumentBlock]] = defaultdict(list)
+    for block in blocks:
+        blocks_by_page[block.page].append(block)
+
+    results: list[PageScore] = []
+    for page in range(1, page_count + 1):
+        page_blocks = blocks_by_page.get(page, [])
+        page_text = "\n".join(block.text for block in page_blocks).lower()
+
+        keyword_total, keyword_unique = _count_keyword_hits(page_text)
+        header_hits = _detect_header_hits(page_blocks)
+        bullet_blocks = sum(1 for block in page_blocks if block.block_type == BlockType.BULLET)
+        table_cells = sum(1 for block in page_blocks if block.block_type == BlockType.TABLE_CELL)
+        position_prior = _compute_position_prior(page, page_count)
+        boilerplate_penalty = _compute_boilerplate_penalty(page_text)
+
+        header_score = 2.0 if header_hits else 0.0
+        keyword_score = min(3.0, keyword_unique * 0.9 + min(2.0, keyword_total * 0.15))
+        structure_score = min(1.5, bullet_blocks * 0.10 + (1.0 if table_cells >= 20 else 0.0))
+        position_score = position_prior
+        penalty = boilerplate_penalty * 1.5
+
+        score = header_score + keyword_score + structure_score + position_score - penalty
+
+        results.append(
+            PageScore(
+                page=page,
+                score=score,
+                keyword_hits_total=keyword_total,
+                keyword_hits_unique=keyword_unique,
+                header_hits=header_hits,
+                bullet_block_count=bullet_blocks,
+                table_cell_block_count=table_cells,
+                position_prior=position_prior,
+                boilerplate_penalty=boilerplate_penalty,
+            )
+        )
+
+    return results
 
 
 def _normalize_text(text: str) -> str:

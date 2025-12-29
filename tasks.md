@@ -714,6 +714,72 @@ Make it easy for an agent (and you) to measure “done” against MVP success me
 
 ---
 
+## Phase 11: Performance & Cost Controls
+
+### Task 11.1: Add Page Triage Tasks
+Add a lightweight, heuristic page triage step to reduce chunking/embedding work on large clean PDFs.
+
+**Deliverables:**
+- Add Phase 11 tasks to `tasks.md` and `PROGRESS.md`
+- Define defaults and constraints (max pages, guardrails)
+
+**Acceptance:** Phase 11 tasks are tracked in `PROGRESS.md` and ready for sequential execution
+
+---
+
+### Task 11.2: Implement Page Scoring (Stage 2)
+Compute a cheap per-page score from extracted text/layout signals (no embeddings, no API calls).
+
+**Deliverables:**
+- Page scoring utilities in `src/pipeline/stages/s2_clean.py`:
+  - signal keyword counts/density
+  - high-value header detection (e.g., Executive Summary / Outlook / Allocation)
+  - structural signals (bullets, tables)
+  - light position prior (front + mid-doc boost)
+- Reason codes available for logging/debugging
+
+**Acceptance:** Unit tests verify scoring features and deterministic ordering on a synthetic document
+
+---
+
+### Task 11.3: Implement Page Filtering (Stage 2)
+Filter pages before section detection and downstream chunking/embedding, using guardrails and a hard cap.
+
+**Deliverables:**
+- Keep rules:
+  - always keep first 5 pages
+  - always keep pages with strong signal (>=3 unique signal keywords)
+  - always keep pages with high-value headers (Outlook/Allocation/etc.)
+  - keep neighbors (±1) of kept pages for context
+- Cap selected pages at 40 (configurable)
+- Only apply triage when document page_count exceeds a minimum threshold (configurable)
+
+**Acceptance:** Stage 2 integration tests confirm large documents are reduced while small docs remain unchanged
+
+---
+
+### Task 11.4: Add Tests for Page Triage Behavior
+Add unit and integration tests that cover page selection guardrails and edge cases.
+
+**Deliverables:**
+- Unit tests for selection behavior (caps, must-keep, neighbor expansion)
+- Integration test that ensures Stage 3 receives fewer pages/chunks for large inputs
+
+**Acceptance:** `pytest tests/` passes and triage behavior is covered by tests
+
+---
+
+### Task 11.5: Document Triage Defaults and Logging
+Make it easy to inspect triage outcomes and tune defaults from real PDFs.
+
+**Deliverables:**
+- Update `docs/PIPELINE.md` Stage 2 to describe triage sub-steps and defaults
+- Add Stage 2 logs: pages kept/total, top reasons, and cap/threshold settings
+
+**Acceptance:** Running on a sample PDF produces clear logs explaining which pages were kept and why
+
+---
+
 ## Task Dependencies
 
 ```
@@ -732,6 +798,8 @@ Phase 0 (Spec Alignment) → Phase 1 (Foundation) → Phase 2 (Taxonomy) → Pha
                         Phase 9 (Testing)
                                     ↓
                         Phase 10 (Polish)
+                                    ↓
+                        Phase 11 (Performance)
 ```
 
 ---
@@ -751,3 +819,4 @@ Phase 0 (Spec Alignment) → Phase 1 (Foundation) → Phase 2 (Taxonomy) → Pha
 | 8 | 8.1-8.3 | Pipeline orchestration, CLI |
 | 9 | 9.1-9.6 | Tests |
 | 10 | 10.1-10.5 | Type checking, linting, polish |
+| 11 | 11.1-11.5 | Page triage, cost controls |

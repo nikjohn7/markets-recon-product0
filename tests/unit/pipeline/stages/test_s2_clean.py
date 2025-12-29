@@ -5,11 +5,15 @@ from src.models.document import DocumentBlock, DocumentJSON
 from src.models.enums import BlockType
 from src.models.pipeline import CleanedDocument
 from src.pipeline.stages.s2_clean import (
+    PageScore,
+    PageTriageConfig,
     _classify_section,
     _detect_boilerplate,
     _detect_sections,
     _is_disclaimer,
     _normalize_text,
+    _score_pages,
+    _select_pages_for_triage,
     stage_clean,
 )
 
@@ -297,6 +301,123 @@ class TestSectionDetection:
         assert len(section_ids) == len(set(section_ids))
 
 
+class TestPageScoring:
+    """Test Stage 2 page scoring utilities (triage)."""
+
+    def test_score_pages_prioritizes_headers_and_keywords(self) -> None:
+        blocks = [
+            DocumentBlock(
+                block_id="1_0",
+                page=1,
+                text="Executive Summary",
+                block_type=BlockType.HEADING,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="1_1",
+                page=1,
+                text="We are overweight equities and bullish on credit.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="5_0",
+                page=5,
+                text="We upgrade duration and reduce risk; tactical allocation changes.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="9_0",
+                page=9,
+                text="Appendix: definitions and methodology.",
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            ),
+        ]
+
+        scores = {s.page: s for s in _score_pages(page_count=10, blocks=blocks)}
+
+        assert "executive_summary" in scores[1].header_hits
+        assert scores[1].keyword_hits_unique >= 2
+        assert scores[5].keyword_hits_unique >= 3
+        assert scores[1].score > scores[9].score
+        assert scores[5].score > scores[9].score
+
+    def test_score_pages_detects_structure_and_boilerplate(self) -> None:
+        blocks = [
+            DocumentBlock(
+                block_id="2_0",
+                page=2,
+                text="Table of Contents",
+                block_type=BlockType.HEADING,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_0",
+                page=4,
+                text="• Overweight equities",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_1",
+                page=4,
+                text="• Underweight duration",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+            DocumentBlock(
+                block_id="4_2",
+                page=4,
+                text="• Tactical allocation shift",
+                block_type=BlockType.BULLET,
+                confidence=1.0,
+            ),
+        ]
+
+        scores = {s.page: s for s in _score_pages(page_count=10, blocks=blocks)}
+
+        assert scores[2].boilerplate_penalty == 1.0
+        assert scores[4].bullet_block_count == 3
+
+
+class TestPageSelection:
+    """Test page triage selection behavior (caps, must-keep)."""
+
+    def test_select_pages_caps_guardrails_but_keeps_first_pages(self) -> None:
+        page_scores = [
+            PageScore(
+                page=page,
+                score=float(page),
+                keyword_hits_total=0,
+                keyword_hits_unique=0,
+                header_hits=("outlook",),
+                bullet_block_count=0,
+                table_cell_block_count=0,
+                position_prior=0.0,
+                boilerplate_penalty=0.0,
+            )
+            for page in range(1, 21)
+        ]
+
+        config = PageTriageConfig(
+            enabled=True,
+            min_page_count=1,
+            max_pages=10,
+            always_keep_first_pages=5,
+            always_keep_unique_keyword_threshold=3,
+            keep_header_pages=True,
+            neighbor_window=0,
+            segment_count=1,
+        )
+
+        selected = _select_pages_for_triage(page_scores, config)
+
+        assert selected[:5] == [1, 2, 3, 4, 5]
+        assert selected[-5:] == [16, 17, 18, 19, 20]
+        assert len(selected) == 10
+
 @pytest.mark.asyncio
 async def test_stage_clean_full_pipeline() -> None:
     """Test full Stage 2 cleaning pipeline."""
@@ -476,3 +597,169 @@ async def test_stage_clean_preserves_block_ids() -> None:
     # All remaining blocks should have original IDs
     for block_id in result_ids:
         assert block_id in original_ids
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_filters_large_documents() -> None:
+    """Stage 2 should filter pages for large docs before downstream indexing."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    doc_json = DocumentJSON(
+        document_id="triage_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(doc_json)
+    kept_pages = {block.page for block in result.blocks}
+
+    assert set(range(1, 6)).issubset(kept_pages)
+    assert len(kept_pages) == 40
+    assert 50 not in kept_pages
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_keeps_strong_signal_pages() -> None:
+    """Pages with strong signal keywords should be kept (and keep neighbors)."""
+    blocks = []
+    for page in range(1, 51):
+        text = f"Page {page} content."
+        if page == 50:
+            text = "We are overweight equities, underweight duration, and bullish on credit."
+        blocks.append(
+            DocumentBlock(
+                block_id=f"{page}_0",
+                page=page,
+                text=text,
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            )
+        )
+
+    doc_json = DocumentJSON(
+        document_id="triage_signal_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(doc_json)
+    kept_pages = {block.page for block in result.blocks}
+
+    assert 50 in kept_pages
+    assert 49 in kept_pages
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_can_be_disabled() -> None:
+    """Callers should be able to disable triage for debugging/recall."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    doc_json = DocumentJSON(
+        document_id="triage_disabled_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(
+        doc_json,
+        triage_config=PageTriageConfig(enabled=False, min_page_count=1),
+    )
+    kept_pages = {block.page for block in result.blocks}
+
+    assert len(kept_pages) == 50
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_skipped_for_ocr_documents() -> None:
+    """Triage should be skipped for documents with OCR/vision pages (not clean PDFs)."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    # Document with OCR pages should NOT be triaged
+    doc_with_ocr = DocumentJSON(
+        document_id="ocr_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+        ocr_pages=[10, 20, 30],
+    )
+
+    result = await stage_clean(doc_with_ocr)
+    kept_pages = {block.page for block in result.blocks}
+
+    # All 50 pages should be kept (no triage applied)
+    assert len(kept_pages) == 50
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_skipped_for_vision_documents() -> None:
+    """Triage should be skipped for documents with vision pages."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    # Document with vision pages should NOT be triaged
+    doc_with_vision = DocumentJSON(
+        document_id="vision_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+        vision_pages=[5, 15],
+    )
+
+    result = await stage_clean(doc_with_vision)
+    kept_pages = {block.page for block in result.blocks}
+
+    # All 50 pages should be kept (no triage applied)
+    assert len(kept_pages) == 50

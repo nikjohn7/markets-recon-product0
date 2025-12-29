@@ -126,25 +126,38 @@ DocumentJSON  # See SCHEMAS.md
 - `DocumentJSON` from S1
 
 ### Process
-1. **Remove boilerplate**:
-   - Detect repeated headers/footers across pages
-   - Remove but keep one instance
-   
-2. **Handle disclaimers**:
-   - Detect standard disclaimer patterns
-   - Mark as `BlockType.DISCLAIMER`
-   - Keep one canonical instance
-   
-3. **Normalize text**:
+1. **Normalize text**:
    - Fix hyphenation across line breaks
    - Normalize whitespace
    - Fix common OCR errors (if OCR was used)
-   
-4. **Detect sections**:
+
+2. **Remove boilerplate**:
+   - Detect repeated headers/footers across pages
+   - Remove but keep one instance
+
+3. **Page triage (large clean PDFs only)**:
+   - Score pages using cheap heuristics (no embeddings, no API calls):
+     - high-value headers: Executive Summary / Outlook / Allocation / Positioning
+     - signal keyword density (overweight/underweight/bullish/bearish/etc.)
+     - structural signals: bullet lists and table-like pages
+     - light position prior (front + mid-document boosts)
+   - Keep rules (high-recall guardrails):
+     - always keep first 5 pages
+     - always keep pages with >=3 unique signal keywords
+     - always keep pages with high-value header hits
+     - keep neighbors (±1) of kept pages for context
+   - Cap selected pages at 40 (default) before Stage 3 chunking/embedding
+
+4. **Handle disclaimers**:
+   - Detect standard disclaimer patterns
+   - Mark as `BlockType.DISCLAIMER`
+   - Keep one canonical instance
+
+5. **Detect sections**:
    - Use heading patterns to identify sections
    - Assign section labels to blocks
-   
-5. **Optional LLM classification** (if sections unclear):
+
+6. **Optional LLM classification** (if sections unclear):
    - Classify major sections: Macro, Equities, Fixed Income, Risks, Appendix
 
 ### Output
@@ -161,6 +174,7 @@ class CleanedDocument(BaseModel):
 - No duplicate consecutive blocks with identical text
 - Section boundaries identified
 - Boilerplate ratio < 30% of total blocks
+- For large clean PDFs, Stage 2 may reduce pages to a capped subset prior to indexing
 
 ### Error Conditions
 - Unable to detect any sections → Continue with flat structure (warning)

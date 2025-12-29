@@ -100,7 +100,39 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `10.4` Final Integration Test
 - [x] `10.5` Add MVP Evaluation Script
 
+### Phase 11: Performance & Cost Controls
+- [x] `11.1` Add Page Triage Tasks
+- [x] `11.2` Implement Page Scoring (Stage 2)
+- [x] `11.3` Implement Page Filtering (Stage 2)
+- [x] `11.4` Add Tests for Page Triage Behavior
+- [x] `11.5` Document Triage Defaults and Logging
+- [x] `11.6` Make Page Triage Configurable
+
 ## Task Notes
+
+### Task 11.1 — Complete (2025-12-28)
+- Added Phase 11 task definitions in `tasks.md`
+- Added Phase 11 checklist items in `PROGRESS.md`
+
+### Task 11.2 — Complete (2025-12-28)
+- Added Stage 2 page scoring helpers in `src/pipeline/stages/s2_clean.py`
+- Added unit tests in `tests/unit/pipeline/stages/test_s2_clean.py`
+
+### Task 11.3 — Complete (2025-12-28)
+- Implemented page triage filtering in `src/pipeline/stages/s2_clean.py`
+- Added Stage 2 triage tests in `tests/unit/pipeline/stages/test_s2_clean.py`
+
+### Task 11.4 — Complete (2025-12-28)
+- Added selection behavior tests in `tests/unit/pipeline/stages/test_s2_clean.py`
+- Added integration test comparing chunking workload in `tests/integration/test_stage_s2_clean.py`
+
+### Task 11.5 — Complete (2025-12-28)
+- Documented Stage 2 page triage behavior in `docs/PIPELINE.md`
+- Improved Stage 2 triage logging in `src/pipeline/stages/s2_clean.py`
+
+### Task 11.6 — Complete (2025-12-29)
+- Added `triage_config` override to `src/pipeline/stages/s2_clean.py`
+- Added disable-override test in `tests/unit/pipeline/stages/test_s2_clean.py`
 
 ### Task 0.1 — Complete (2025-12-16)
 - Created `docs/DECISIONS.md` with MVP tech stack decisions

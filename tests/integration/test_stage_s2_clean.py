@@ -5,7 +5,9 @@ from __future__ import annotations
 import pytest
 from src.models.document import DocumentBlock, DocumentJSON
 from src.models.enums import BlockType
+from src.models.pipeline import CleanedDocument, Section
 from src.pipeline.stages.s2_clean import stage_clean
+from src.retrieval.indexer import chunk_document
 
 
 @pytest.mark.asyncio
@@ -121,3 +123,55 @@ async def test_stage_clean_removes_boilerplate_and_flags_disclaimer():
 
     section_types = {section.section_type for section in cleaned.sections}
     assert "macro" in section_types
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_reduces_downstream_chunks_for_large_docs():
+    """Stage 2 triage should reduce Stage 3 chunking workload on large documents."""
+    long_text = ("We are overweight equities and underweight duration. " * 100).strip()
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page}: {long_text}",
+            block_type=BlockType.PARAGRAPH,
+            bbox=None,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    doc_json = DocumentJSON(
+        document_id="triage_chunk_doc",
+        blob_id="blob123",
+        file_hash="hash123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+        ocr_pages=[],
+        vision_pages=[],
+    )
+
+    triaged = await stage_clean(doc_json)
+    triaged_chunks = chunk_document(triaged)
+
+    baseline = CleanedDocument(
+        document_id="triage_chunk_doc_baseline",
+        blocks=blocks,
+        sections=[
+            Section(
+                section_id="triage_chunk_doc_baseline_sec_0",
+                title=None,
+                start_block_id=blocks[0].block_id,
+                end_block_id=blocks[-1].block_id,
+                section_type=None,
+            )
+        ],
+        removed_boilerplate_count=0,
+        disclaimer_block_id=None,
+    )
+    baseline_chunks = chunk_document(baseline)
+
+    assert len(triaged.blocks) < len(baseline.blocks)
+    assert len(triaged_chunks) < len(baseline_chunks)

@@ -9,6 +9,7 @@ Markets Recon transforms unstructured fund manager documents into evidence-ancho
 - **Evidence-Anchored Extraction**: Every allocation call includes citations with chunk IDs, page numbers, and text spans
 - **Retrieval-Grounded LLM**: Never asks the LLM to read full documents—always retrieves candidate chunks first
 - **Multi-Provider LLM Routing**: Stage-specific model selection for optimal cost/quality tradeoffs
+- **Page Triage**: Intelligent page filtering reduces embedding costs on large PDFs while preserving signal-rich content
 - **Confidence Scoring**: Automated quality assessment with review routing (HIGH→auto-publish, MEDIUM→spot-check, LOW→must-review)
 - **Asset Class Taxonomy**: 31 categories, 100+ sub-assets, 200+ synonym mappings
 - **Hallucination Prevention**: Explicit uncertainty handling—outputs `UNCERTAIN` with reason rather than guessing
@@ -17,8 +18,8 @@ Markets Recon transforms unstructured fund manager documents into evidence-ancho
 
 | Metric | Status |
 |--------|--------|
-| Implementation | **Phase 10 Complete** (all 10 pipeline stages + polish) |
-| Tests | **585 passing** across 60 test files |
+| Implementation | **Phase 11 Complete** (all 10 pipeline stages + performance optimizations) |
+| Tests | **594 passing** across 61 test files |
 | Type Safety | `mypy --strict` ✓ |
 | Code Quality | `ruff check` ✓ (0 violations) |
 | Source Files | 53 Python files |
@@ -169,7 +170,7 @@ The system processes documents through **11 stages (0-10)**, each with defined i
 |-------|---------|--------|
 | **S0** | SHA-256 deduplication, blob storage | `IngestResult` |
 | **S1** | PyMuPDF text/layout extraction | `DocumentJSON` |
-| **S2** | Boilerplate removal, section detection | `CleanedDocument` |
+| **S2** | Boilerplate removal, section detection, page triage | `CleanedDocument` |
 | **S3** | Chunking + OpenAI embeddings → ChromaDB | `DocumentIndex` |
 | **S4** | Manager name, dates, regions (LLM) | `DocumentProfile` |
 | **S5** | Keyword mining + LLM expansion | `CandidateSet` |

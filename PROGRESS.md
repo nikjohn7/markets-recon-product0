@@ -103,7 +103,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Phase 11: Performance & Cost Controls
 - [x] `11.1` Add Page Triage Tasks
 - [x] `11.2` Implement Page Scoring (Stage 2)
-- [ ] `11.3` Implement Page Filtering (Stage 2)
+- [x] `11.3` Implement Page Filtering (Stage 2)
 - [ ] `11.4` Add Tests for Page Triage Behavior
 - [ ] `11.5` Document Triage Defaults and Logging
 
@@ -116,6 +116,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 11.2 — Complete (2025-12-28)
 - Added Stage 2 page scoring helpers in `src/pipeline/stages/s2_clean.py`
 - Added unit tests in `tests/unit/pipeline/stages/test_s2_clean.py`
+
+### Task 11.3 — Complete (2025-12-28)
+- Implemented page triage filtering in `src/pipeline/stages/s2_clean.py`
+- Added Stage 2 triage tests in `tests/unit/pipeline/stages/test_s2_clean.py`
 
 ### Task 0.1 — Complete (2025-12-16)
 - Created `docs/DECISIONS.md` with MVP tech stack decisions

@@ -8,6 +8,7 @@ import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from math import ceil
 
 from src.exceptions import ExtractionError
 from src.models.document import DocumentBlock, DocumentJSON
@@ -101,6 +102,20 @@ class PageScore:
     table_cell_block_count: int
     position_prior: float
     boilerplate_penalty: float
+
+
+@dataclass(frozen=True)
+class PageTriageConfig:
+    """Configuration for heuristic page triage in Stage 2."""
+
+    enabled: bool = True
+    min_page_count: int = 40
+    max_pages: int = 40
+    always_keep_first_pages: int = 5
+    always_keep_unique_keyword_threshold: int = 3
+    keep_header_pages: bool = True
+    neighbor_window: int = 1
+    segment_count: int = 4
 
 
 def _count_keyword_hits(text_lower: str) -> tuple[int, int]:
@@ -205,6 +220,106 @@ def _score_pages(page_count: int, blocks: list[DocumentBlock]) -> list[PageScore
         )
 
     return results
+
+
+def _expand_neighbors(pages: set[int], page_count: int, window: int) -> set[int]:
+    if window <= 0:
+        return set(pages)
+
+    expanded = set(pages)
+    for page in list(pages):
+        for offset in range(1, window + 1):
+            if page - offset >= 1:
+                expanded.add(page - offset)
+            if page + offset <= page_count:
+                expanded.add(page + offset)
+    return expanded
+
+
+def _select_pages_for_triage(page_scores: list[PageScore], config: PageTriageConfig) -> list[int]:
+    """Select pages to keep using guardrails + top-N scoring.
+
+    Designed to be high-recall: always keep early pages and strongly signaled pages,
+    then fill remaining slots with the highest-scoring pages with light coverage constraints.
+    """
+    if not page_scores:
+        return []
+
+    page_count = len(page_scores)
+    max_pages = max(1, min(config.max_pages, page_count))
+    first_pages = max(0, min(config.always_keep_first_pages, page_count))
+
+    must_keep = set(range(1, first_pages + 1))
+
+    guardrail_pages: set[int] = set(must_keep)
+    for page_score in page_scores:
+        if config.keep_header_pages and page_score.header_hits:
+            guardrail_pages.add(page_score.page)
+        if page_score.keyword_hits_unique >= config.always_keep_unique_keyword_threshold:
+            guardrail_pages.add(page_score.page)
+
+    guardrail_pages = _expand_neighbors(guardrail_pages, page_count, config.neighbor_window)
+
+    scores_by_page = {s.page: s for s in page_scores}
+
+    # If guardrails exceed the cap, keep must-keep pages and then highest-scoring guardrail pages.
+    if len(guardrail_pages) >= max_pages:
+        remaining_guardrails = sorted(
+            (p for p in guardrail_pages if p not in must_keep),
+            key=lambda p: scores_by_page[p].score,
+            reverse=True,
+        )
+        kept = set(must_keep)
+        for page in remaining_guardrails:
+            if len(kept) >= max_pages:
+                break
+            kept.add(page)
+        return sorted(kept)
+
+    kept_pages = set(guardrail_pages)
+    remaining_slots = max_pages - len(kept_pages)
+
+    candidate_pages = [s.page for s in page_scores if s.page not in kept_pages]
+    candidate_pages.sort(key=lambda p: scores_by_page[p].score, reverse=True)
+
+    if remaining_slots <= 0:
+        return sorted(kept_pages)
+
+    # Light coverage: take top pages from each segment, then fill remaining globally.
+    segment_count = max(1, config.segment_count)
+    if segment_count > 1 and candidate_pages:
+        slots_per_segment = max(1, ceil(remaining_slots / segment_count))
+        segment_size = ceil(page_count / segment_count)
+
+        for segment_idx in range(segment_count):
+            if remaining_slots <= 0:
+                break
+            start_page = segment_idx * segment_size + 1
+            end_page = min(page_count, (segment_idx + 1) * segment_size)
+            segment_candidates = [
+                p for p in candidate_pages if start_page <= p <= end_page and p not in kept_pages
+            ]
+            segment_candidates.sort(key=lambda p: scores_by_page[p].score, reverse=True)
+            for page in segment_candidates[:slots_per_segment]:
+                if remaining_slots <= 0:
+                    break
+                kept_pages.add(page)
+                remaining_slots -= 1
+
+    if remaining_slots > 0:
+        for page in candidate_pages:
+            if remaining_slots <= 0:
+                break
+            if page in kept_pages:
+                continue
+            kept_pages.add(page)
+            remaining_slots -= 1
+
+    return sorted(kept_pages)
+
+
+def _filter_blocks_to_pages(blocks: list[DocumentBlock], pages_to_keep: set[int]) -> list[DocumentBlock]:
+    return [block for block in blocks if block.page in pages_to_keep]
 
 
 def _normalize_text(text: str) -> str:
@@ -371,6 +486,27 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                 logger.warning(
                     f"High boilerplate ratio: {boilerplate_ratio:.2%}. "
                     f"Document may have unusual structure."
+                )
+
+        # Optional page triage: filter pages before downstream chunking/embedding.
+        triage_config = PageTriageConfig()
+        if triage_config.enabled and doc_json.page_count >= triage_config.min_page_count:
+            page_scores = _score_pages(doc_json.page_count, cleaned_blocks)
+            selected_pages = _select_pages_for_triage(page_scores, triage_config)
+            selected_set = set(selected_pages)
+
+            if len(selected_set) < doc_json.page_count:
+                before_blocks = len(cleaned_blocks)
+                cleaned_blocks = _filter_blocks_to_pages(cleaned_blocks, selected_set)
+                after_blocks = len(cleaned_blocks)
+                logger.info(
+                    "Stage 2 page triage kept %d/%d pages (max=%d, min_pages=%d), blocks %d→%d",
+                    len(selected_set),
+                    doc_json.page_count,
+                    triage_config.max_pages,
+                    triage_config.min_page_count,
+                    before_blocks,
+                    after_blocks,
                 )
 
         # Find disclaimer block

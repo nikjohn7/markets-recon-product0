@@ -558,3 +558,70 @@ async def test_stage_clean_preserves_block_ids() -> None:
     # All remaining blocks should have original IDs
     for block_id in result_ids:
         assert block_id in original_ids
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_filters_large_documents() -> None:
+    """Stage 2 should filter pages for large docs before downstream indexing."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    doc_json = DocumentJSON(
+        document_id="triage_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(doc_json)
+    kept_pages = {block.page for block in result.blocks}
+
+    assert set(range(1, 6)).issubset(kept_pages)
+    assert len(kept_pages) == 40
+    assert 50 not in kept_pages
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_keeps_strong_signal_pages() -> None:
+    """Pages with strong signal keywords should be kept (and keep neighbors)."""
+    blocks = []
+    for page in range(1, 51):
+        text = f"Page {page} content."
+        if page == 50:
+            text = "We are overweight equities, underweight duration, and bullish on credit."
+        blocks.append(
+            DocumentBlock(
+                block_id=f"{page}_0",
+                page=page,
+                text=text,
+                block_type=BlockType.PARAGRAPH,
+                confidence=1.0,
+            )
+        )
+
+    doc_json = DocumentJSON(
+        document_id="triage_signal_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(doc_json)
+    kept_pages = {block.page for block in result.blocks}
+
+    assert 50 in kept_pages
+    assert 49 in kept_pages

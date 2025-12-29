@@ -106,6 +106,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 - [x] `11.3` Implement Page Filtering (Stage 2)
 - [x] `11.4` Add Tests for Page Triage Behavior
 - [x] `11.5` Document Triage Defaults and Logging
+- [x] `11.6` Make Page Triage Configurable
 
 ## Task Notes
 
@@ -128,6 +129,10 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 11.5 — Complete (2025-12-28)
 - Documented Stage 2 page triage behavior in `docs/PIPELINE.md`
 - Improved Stage 2 triage logging in `src/pipeline/stages/s2_clean.py`
+
+### Task 11.6 — Complete (2025-12-29)
+- Added `triage_config` override to `src/pipeline/stages/s2_clean.py`
+- Added disable-override test in `tests/unit/pipeline/stages/test_s2_clean.py`
 
 ### Task 0.1 — Complete (2025-12-16)
 - Created `docs/DECISIONS.md` with MVP tech stack decisions

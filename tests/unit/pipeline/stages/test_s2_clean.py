@@ -664,3 +664,36 @@ async def test_stage_clean_page_triage_keeps_strong_signal_pages() -> None:
 
     assert 50 in kept_pages
     assert 49 in kept_pages
+
+
+@pytest.mark.asyncio
+async def test_stage_clean_page_triage_can_be_disabled() -> None:
+    """Callers should be able to disable triage for debugging/recall."""
+    blocks = [
+        DocumentBlock(
+            block_id=f"{page}_0",
+            page=page,
+            text=f"Page {page} content.",
+            block_type=BlockType.PARAGRAPH,
+            confidence=1.0,
+        )
+        for page in range(1, 51)
+    ]
+
+    doc_json = DocumentJSON(
+        document_id="triage_disabled_doc",
+        blob_id="blob_123",
+        file_hash="hash_123",
+        blocks=blocks,
+        tables=[],
+        page_count=50,
+        extraction_coverage=1.0,
+    )
+
+    result = await stage_clean(
+        doc_json,
+        triage_config=PageTriageConfig(enabled=False, min_page_count=1),
+    )
+    kept_pages = {block.page for block in result.blocks}
+
+    assert len(kept_pages) == 50

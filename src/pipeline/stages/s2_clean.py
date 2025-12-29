@@ -448,11 +448,15 @@ def _detect_sections(document_id: str, blocks: list[DocumentBlock]) -> list[Sect
     return sections
 
 
-async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
+async def stage_clean(
+    doc_json: DocumentJSON,
+    triage_config: PageTriageConfig | None = None,
+) -> CleanedDocument:
     """Clean extracted document and detect sections.
 
     Args:
         doc_json: DocumentJSON from Stage 1
+        triage_config: Optional page triage configuration override
 
     Returns:
         CleanedDocument with cleaned blocks and detected sections
@@ -489,10 +493,13 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                 )
 
         # Optional page triage: filter pages before downstream chunking/embedding.
-        triage_config = PageTriageConfig()
-        if triage_config.enabled and doc_json.page_count >= triage_config.min_page_count:
+        active_triage_config = triage_config or PageTriageConfig()
+        if (
+            active_triage_config.enabled
+            and doc_json.page_count >= active_triage_config.min_page_count
+        ):
             page_scores = _score_pages(doc_json.page_count, cleaned_blocks)
-            selected_pages = _select_pages_for_triage(page_scores, triage_config)
+            selected_pages = _select_pages_for_triage(page_scores, active_triage_config)
             selected_set = set(selected_pages)
 
             if len(selected_set) < doc_json.page_count:
@@ -502,7 +509,7 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                     1
                     for p in selected_set
                     if scores_by_page[p].keyword_hits_unique
-                    >= triage_config.always_keep_unique_keyword_threshold
+                    >= active_triage_config.always_keep_unique_keyword_threshold
                 )
                 top_pages = sorted(selected_set, key=lambda p: scores_by_page[p].score, reverse=True)[
                     :5
@@ -522,8 +529,8 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                     "Stage 2 page triage kept %d/%d pages (max=%d, min_pages=%d), blocks %d→%d",
                     len(selected_set),
                     doc_json.page_count,
-                    triage_config.max_pages,
-                    triage_config.min_page_count,
+                    active_triage_config.max_pages,
+                    active_triage_config.min_page_count,
                     before_blocks,
                     after_blocks,
                 )

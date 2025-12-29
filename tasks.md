@@ -780,6 +780,17 @@ Make it easy to inspect triage outcomes and tune defaults from real PDFs.
 
 ---
 
+### Task 11.6: Make Page Triage Configurable
+Allow turning page triage on/off and tuning thresholds without editing Stage 2 internals.
+
+**Deliverables:**
+- Add an optional `triage_config` override parameter to `stage_clean(...)`
+- Add a unit test verifying triage can be disabled for large documents
+
+**Acceptance:** Callers can disable or tune triage via `PageTriageConfig(...)` and tests cover the override
+
+---
+
 ## Task Dependencies
 
 ```

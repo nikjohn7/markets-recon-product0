@@ -5,12 +5,15 @@ from src.models.document import DocumentBlock, DocumentJSON
 from src.models.enums import BlockType
 from src.models.pipeline import CleanedDocument
 from src.pipeline.stages.s2_clean import (
+    PageScore,
+    PageTriageConfig,
     _classify_section,
     _detect_boilerplate,
     _detect_sections,
     _is_disclaimer,
     _normalize_text,
     _score_pages,
+    _select_pages_for_triage,
     stage_clean,
 )
 
@@ -378,6 +381,42 @@ class TestPageScoring:
         assert scores[2].boilerplate_penalty == 1.0
         assert scores[4].bullet_block_count == 3
 
+
+class TestPageSelection:
+    """Test page triage selection behavior (caps, must-keep)."""
+
+    def test_select_pages_caps_guardrails_but_keeps_first_pages(self) -> None:
+        page_scores = [
+            PageScore(
+                page=page,
+                score=float(page),
+                keyword_hits_total=0,
+                keyword_hits_unique=0,
+                header_hits=("outlook",),
+                bullet_block_count=0,
+                table_cell_block_count=0,
+                position_prior=0.0,
+                boilerplate_penalty=0.0,
+            )
+            for page in range(1, 21)
+        ]
+
+        config = PageTriageConfig(
+            enabled=True,
+            min_page_count=1,
+            max_pages=10,
+            always_keep_first_pages=5,
+            always_keep_unique_keyword_threshold=3,
+            keep_header_pages=True,
+            neighbor_window=0,
+            segment_count=1,
+        )
+
+        selected = _select_pages_for_triage(page_scores, config)
+
+        assert selected[:5] == [1, 2, 3, 4, 5]
+        assert selected[-5:] == [16, 17, 18, 19, 20]
+        assert len(selected) == 10
 
 @pytest.mark.asyncio
 async def test_stage_clean_full_pipeline() -> None:

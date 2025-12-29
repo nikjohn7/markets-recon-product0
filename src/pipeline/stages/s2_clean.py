@@ -496,6 +496,25 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
             selected_set = set(selected_pages)
 
             if len(selected_set) < doc_json.page_count:
+                scores_by_page = {s.page: s for s in page_scores}
+                header_pages_selected = sum(1 for p in selected_set if scores_by_page[p].header_hits)
+                strong_keyword_pages_selected = sum(
+                    1
+                    for p in selected_set
+                    if scores_by_page[p].keyword_hits_unique
+                    >= triage_config.always_keep_unique_keyword_threshold
+                )
+                top_pages = sorted(selected_set, key=lambda p: scores_by_page[p].score, reverse=True)[
+                    :5
+                ]
+                top_summary = ", ".join(
+                    (
+                        f"p{p}:s={scores_by_page[p].score:.2f}"
+                        f" kw={scores_by_page[p].keyword_hits_unique}"
+                        f" hdr={'+'.join(scores_by_page[p].header_hits) or '-'}"
+                    )
+                    for p in top_pages
+                )
                 before_blocks = len(cleaned_blocks)
                 cleaned_blocks = _filter_blocks_to_pages(cleaned_blocks, selected_set)
                 after_blocks = len(cleaned_blocks)
@@ -507,6 +526,12 @@ async def stage_clean(doc_json: DocumentJSON) -> CleanedDocument:
                     triage_config.min_page_count,
                     before_blocks,
                     after_blocks,
+                )
+                logger.info(
+                    "Stage 2 page triage summary: header_pages=%d strong_keyword_pages=%d top=%s",
+                    header_pages_selected,
+                    strong_keyword_pages_selected,
+                    top_summary,
                 )
 
         # Find disclaimer block

@@ -218,11 +218,14 @@ async def stage_summaries(
         )
 
         # Step 3: Call LLM
+        # Use higher max_tokens since summary output can be large (executive summary,
+        # search descriptor, key takeaways with citations)
         logger.debug("Calling LLM for summary generation")
         llm_response = await llm_client.complete_json(
             prompt=prompt,
             response_model=SummaryGenerationLLM,
             stage=PipelineStage.SUMMARIES,
+            max_tokens=12000,
         )
         logger.info("LLM summary generation completed")
 

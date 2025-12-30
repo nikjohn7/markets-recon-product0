@@ -163,6 +163,7 @@ For each call, independently verify:
    - No fabricated reasoning or unsupported claims
 
 4. **Evidence Strength**: How well does the evidence support the call?
+   - MUST be exactly one of: STRONG, MODERATE, WEAK (no other values allowed)
    - STRONG: Explicit "we are overweight X" type language
    - MODERATE: Clear implied positioning ("we prefer", "we favor")
    - WEAK: Ambiguous or requires significant inference
@@ -188,6 +189,12 @@ Mark as not verified (call_verified=false) if:
 - Cite specific text when disagreeing
 - Provide corrected direction if you disagree
 - Calculate agreement_rate as (verified_count / total_count)
+
+## Strict Value Requirements
+- suggested_call MUST be exactly one of: OVERWEIGHT, NEUTRAL, UNDERWEIGHT, UNCERTAIN, or null
+- evidence_strength MUST be exactly one of: STRONG, MODERATE, WEAK
+- overall_quality MUST be exactly one of: HIGH, MEDIUM, LOW
+- DO NOT use any other values for these fields
 
 ## Output (JSON only, no explanation)
 """

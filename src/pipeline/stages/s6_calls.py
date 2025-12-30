@@ -27,6 +27,21 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Normalize LLM direction variations to valid IndicatorDirection values
+DIRECTION_NORMALIZATION: dict[str, str] = {
+    "IMPROVING": "RISING",
+    "INCREASING": "RISING",
+    "UP": "RISING",
+    "DECLINING": "FALLING",
+    "DECREASING": "FALLING",
+    "WORSENING": "FALLING",
+    "DOWN": "FALLING",
+    "FLAT": "STABLE",
+    "UNCHANGED": "STABLE",
+    "MIXED": "VOLATILE",
+    "UNCERTAIN": "VOLATILE",
+}
+
 
 class CallLLM(BaseModel):
     """LLM output schema for a single allocation call."""
@@ -107,9 +122,13 @@ def _parse_key_indicator(indicator_dict: dict[str, str]) -> KeyIndicator:
         # Default why_it_matters if not provided, truncate to 200 chars
         why_it_matters = indicator_dict.get("why_it_matters", "See rationale")[:200]
 
+        # Normalize direction - handle common LLM variations
+        raw_direction = indicator_dict["direction"].upper()
+        normalized_direction = DIRECTION_NORMALIZATION.get(raw_direction, raw_direction)
+
         return KeyIndicator(
             name=name,
-            direction=IndicatorDirection(indicator_dict["direction"]),
+            direction=IndicatorDirection(normalized_direction),
             why_it_matters=why_it_matters,
         )
     except (KeyError, ValueError, PydanticValidationError) as exc:

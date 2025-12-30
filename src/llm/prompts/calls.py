@@ -223,13 +223,17 @@ Extract ALL allocation calls from the excerpts. An allocation call is an explici
 
 ## Extraction Rules
 
-### Call Direction
+### Call Direction (STRICT - use only these exact values)
+- call MUST be exactly one of: OVERWEIGHT, UNDERWEIGHT, NEUTRAL, UNCERTAIN
+- DO NOT use any other values (e.g., no "BULLISH", "BEARISH", "POSITIVE", "NEGATIVE")
 - OVERWEIGHT: "overweight", "prefer", "favor", "constructive", "bullish", "positive", "increase allocation", "add", "like"
 - UNDERWEIGHT: "underweight", "avoid", "cautious on", "bearish", "negative", "reduce allocation", "trim", "dislike"
 - NEUTRAL: "neutral", "benchmark weight", "hold", "no strong view", "market weight"
 - UNCERTAIN: Use when language is ambiguous or conflicting
 
-### Conviction (only if stated)
+### Conviction (STRICT - use only these exact values or null)
+- conviction MUST be exactly one of: HIGH, MEDIUM, LOW, or null
+- DO NOT use any other values (e.g., no "VERY_HIGH", "STRONG", "WEAK")
 - HIGH: "high conviction", "strong preference", "very constructive", "strongly"
 - MEDIUM: implied or moderate language
 - LOW: "slight preference", "marginally", "modest"
@@ -247,20 +251,27 @@ Extract ALL allocation calls from the excerpts. An allocation call is an explici
 
 ### Key Indicators
 - Extract specific indicators mentioned (inflation, growth, policy)
-- Note direction: RISING, FALLING, STABLE, VOLATILE
+- Direction MUST be exactly one of: RISING, FALLING, STABLE, VOLATILE
+  - Use RISING for improving/increasing trends
+  - Use FALLING for declining/worsening trends
+  - Use STABLE for flat/unchanged conditions
+  - Use VOLATILE for uncertain/mixed conditions
+- DO NOT use any other direction values - only these four are valid
 
 ### Citations
 - MANDATORY: Every call needs at least 1 citation
 - Include chunk_id, page, and relevant text_span (≤200 chars)
 
-## Overall Sentiment
+## Overall Sentiment (STRICT - use only these exact values)
 Also extract the document's overall sentiment:
+- overall_sentiment MUST be exactly one of: NET_POSITIVE, NEUTRAL, NET_NEGATIVE
+- DO NOT use any other values (e.g., no "BULLISH", "BEARISH", "POSITIVE", "NEGATIVE", "MIXED")
 - NET_POSITIVE: Generally optimistic, constructive outlook
 - NEUTRAL: Balanced, mixed signals
 - NET_NEGATIVE: Cautious, bearish outlook
 
 Provide:
-- overall_sentiment: One of the above
+- overall_sentiment: One of the above (exactly NET_POSITIVE, NEUTRAL, or NET_NEGATIVE)
 - sentiment_rationale: 2-3 bullets explaining why
 - sentiment_citations: References supporting sentiment assessment
 

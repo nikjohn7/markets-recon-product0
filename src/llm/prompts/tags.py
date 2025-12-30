@@ -173,10 +173,17 @@ Generate tags in these categories:
 {schema}
 
 ## Rules
-1. ONLY use tags from the allowed lists (except novel_themes)
+1. ONLY use tags from the allowed lists above (except novel_themes)
 2. If a theme/risk is not discussed, do not include it
 3. Limit to most relevant tags per category
-4. Tag names must be lowercase and match exactly as listed
+4. Tag names must be lowercase and match EXACTLY as listed - no variations allowed
+
+## STRICT: Valid Values Only
+- theme_tags: MUST only contain values from the Theme Tags list above - NO OTHER VALUES
+- risk_tags: MUST only contain values from the Risk Tags list above - NO OTHER VALUES
+- macro_regime_tags: MUST only contain values from the Macro Regime Tags list above - NO OTHER VALUES
+- If you cannot find an exact match, do NOT include that tag - use novel_themes instead
+- DO NOT invent, modify, or create new tag names
 
 ## Mapping Guidance
 

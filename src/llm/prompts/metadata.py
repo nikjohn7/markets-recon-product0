@@ -165,15 +165,18 @@ Extract the document profile. Use ONLY information from the excerpts above.
 3. as_of_date: The "as of" date if different from publication date
    - Common patterns: "Data as of", "Views as of"
 
-4. document_type: One of the following:
+4. document_type: MUST be exactly one of these values (no variations):
 {document_types}
+   - DO NOT use any other values - only these exact strings are valid
 
 5. asset_classes_covered: List all major asset classes discussed
-   - Use these terms: EQUITIES, FIXED_INCOME, ALTERNATIVES, CURRENCIES, COMMODITIES
+   - MUST use exactly these terms (no variations): EQUITIES, FIXED_INCOME, ALTERNATIVES, CURRENCIES, COMMODITIES
+   - DO NOT use any other values - only these five exact strings are valid
    - Only include if substantively discussed, not just mentioned
 
 6. regions: List geographic regions covered
-   - Use: US, EUROPE, UK, JAPAN, CHINA, EM (Emerging Markets), GLOBAL
+   - MUST use exactly these values (no variations): US, EUROPE, UK, JAPAN, CHINA, EM, GLOBAL
+   - DO NOT use any other values - only these seven exact strings are valid
 
 7. citations: For each key field, cite the chunk_id and page where you found it
    - Include a text_span (≤200 chars) with the relevant quote

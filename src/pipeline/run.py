@@ -217,7 +217,10 @@ def _persist_results(
     stages: list[str],
     elapsed: float,
 ) -> None:
-    """Persist pipeline results to database atomically."""
+    """Persist pipeline results to database atomically.
+
+    Handles re-runs by deleting existing records for the document before inserting.
+    """
     with db.get_connection() as conn:
         # Update pipeline run
         conn.execute(
@@ -244,6 +247,19 @@ def _persist_results(
                 analyst_attention_required=result.confidence.analyst_attention_required,
                 status="completed",
             )
+        )
+
+        # Delete existing records for re-runs (upsert pattern)
+        conn.execute(
+            db.allocation_calls.delete().where(
+                db.allocation_calls.c.document_id == result.document_id
+            )
+        )
+        conn.execute(
+            db.summaries.delete().where(db.summaries.c.document_id == result.document_id)
+        )
+        conn.execute(
+            db.document_tags.delete().where(db.document_tags.c.document_id == result.document_id)
         )
 
         # Insert allocation calls

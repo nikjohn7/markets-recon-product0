@@ -72,10 +72,15 @@ def _parse_citation(citation_dict: dict[str, str | int]) -> Citation:
         ValidationError: If citation is invalid
     """
     try:
+        # Truncate text_span to 200 chars (Citation model max_length)
+        text_span = None
+        if citation_dict.get("text_span"):
+            text_span = str(citation_dict["text_span"])[:200]
+
         return Citation(
             chunk_id=str(citation_dict["chunk_id"]),
             page=int(citation_dict["page"]),
-            text_span=str(citation_dict["text_span"]) if citation_dict.get("text_span") else None,
+            text_span=text_span,
         )
     except (KeyError, ValueError, PydanticValidationError) as exc:
         raise ValidationError(f"Invalid citation format: {citation_dict}") from exc
@@ -85,7 +90,7 @@ def _parse_key_indicator(indicator_dict: dict[str, str]) -> KeyIndicator:
     """Parse key indicator from LLM output dict.
 
     Args:
-        indicator_dict: Dict with name, direction, why_it_matters
+        indicator_dict: Dict with name/indicator, direction, optional why_it_matters
 
     Returns:
         KeyIndicator object
@@ -94,10 +99,18 @@ def _parse_key_indicator(indicator_dict: dict[str, str]) -> KeyIndicator:
         ValidationError: If indicator is invalid
     """
     try:
+        # Accept both "name" and "indicator" as field names (LLM variations)
+        name = indicator_dict.get("name") or indicator_dict.get("indicator")
+        if not name:
+            raise KeyError("name or indicator")
+
+        # Default why_it_matters if not provided, truncate to 200 chars
+        why_it_matters = indicator_dict.get("why_it_matters", "See rationale")[:200]
+
         return KeyIndicator(
-            name=indicator_dict["name"],
+            name=name,
             direction=IndicatorDirection(indicator_dict["direction"]),
-            why_it_matters=indicator_dict["why_it_matters"],
+            why_it_matters=why_it_matters,
         )
     except (KeyError, ValueError, PydanticValidationError) as exc:
         raise ValidationError(f"Invalid key indicator format: {indicator_dict}") from exc
@@ -230,10 +243,13 @@ async def stage_calls(
     prompt = build_call_extraction_prompt(candidate_set.candidates, profile)
 
     # Call LLM with JSON schema
+    # Call extraction produces verbose output (rationale, indicators, citations per call)
+    # so we need a higher token limit than the default 4096
     llm_output = await llm_client.complete_json(
         prompt=prompt,
         response_model=CallExtractionLLM,
         stage=PipelineStage.CALLS,
+        max_tokens=16384,
     )
 
     # Validate against guardrails (citations, taxonomy, hallucination)

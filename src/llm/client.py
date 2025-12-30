@@ -68,7 +68,7 @@ class ProviderConfig:
 PROVIDER_CONFIGS: dict[LLMProvider, ProviderConfig] = {
     LLMProvider.ANTHROPIC: ProviderConfig(
         base_url="",  # Not used - native SDK
-        model_name="claude-haiku-4-5-20241022",
+        model_name="claude-haiku-4-5",
         default_temperature=0.0,
     ),
     LLMProvider.MEGALLM: ProviderConfig(

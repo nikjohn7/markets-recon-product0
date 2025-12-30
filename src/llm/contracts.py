@@ -25,11 +25,26 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound=BaseModel)
 
+DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
 HALLUCINATION_MARKERS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\d{4}-\d{2}-\d{2}"),
     re.compile(r"\d+(?:\.\d+)?%"),
     re.compile(r'\\"(?:[^"\\]|\\.){50,}\\"'),
 )
+
+MONTH_NAMES = {
+    "01": ("january", "jan"),
+    "02": ("february", "feb"),
+    "03": ("march", "mar"),
+    "04": ("april", "apr"),
+    "05": ("may",),
+    "06": ("june", "jun"),
+    "07": ("july", "jul"),
+    "08": ("august", "aug"),
+    "09": ("september", "sep", "sept"),
+    "10": ("october", "oct"),
+    "11": ("november", "nov"),
+    "12": ("december", "dec"),
+}
 
 
 def validate_llm_output(
@@ -101,6 +116,41 @@ def validate_taxonomy(output: BaseModel) -> None:
             )
 
 
+def _is_date_grounded(iso_date: str, source_text: str) -> bool:
+    """Check if an ISO date (YYYY-MM-DD) is grounded in source text.
+
+    Dates are considered grounded if:
+    - The year appears in the source, AND
+    - The month appears (as number with leading zero, or as month name)
+
+    Args:
+        iso_date: Date string in YYYY-MM-DD format.
+        source_text: Combined text from source chunks.
+
+    Returns:
+        True if the date components are found in source text.
+    """
+    parts = iso_date.split("-")
+    if len(parts) != 3:
+        return False
+
+    year, month, _ = parts
+    source_lower = source_text.lower()
+
+    # Year must appear in source
+    if year not in source_text:
+        return False
+
+    # Month can appear as number (with or without leading zero) or name
+    month_int = month.lstrip("0") or "0"
+    if month in source_text or month_int in source_text:
+        return True
+
+    # Check for month name variations
+    month_names = MONTH_NAMES.get(month, ())
+    return any(name in source_lower for name in month_names)
+
+
 def find_hallucination_markers(
     output: BaseModel,
     source_chunks: Sequence[Chunk | RetrievedChunk],
@@ -118,6 +168,12 @@ def find_hallucination_markers(
     source_text = " ".join(chunk.text for chunk in source_chunks)
     hallucinations: set[str] = set()
 
+    # Check dates separately with intelligent matching
+    for date_match in DATE_PATTERN.findall(output_text):
+        if not _is_date_grounded(date_match, source_text):
+            hallucinations.add(date_match)
+
+    # Check other hallucination markers
     for pattern in HALLUCINATION_MARKERS:
         for match in pattern.findall(output_text):
             # Strip surrounding escaped quotes and unescape JSON escape sequences

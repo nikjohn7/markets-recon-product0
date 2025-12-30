@@ -183,3 +183,67 @@ def test_find_hallucination_markers_ignores_unquoted_long_text():
     ]
     matches = find_hallucination_markers(output, chunks)
     assert not matches
+
+
+def test_find_hallucination_markers_allows_iso_date_with_month_name_in_source():
+    """ISO date should be allowed when year and month name exist in source."""
+    output = SimpleOutput(note="Publication date: 2025-06-01")
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text="Asset Allocation Outlook - June 2025",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert not matches
+
+
+def test_find_hallucination_markers_allows_iso_date_with_abbreviated_month():
+    """ISO date should be allowed when year and abbreviated month exist in source."""
+    output = SimpleOutput(note="As of 2024-09-15")
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text="Market Commentary Sept 2024",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert not matches
+
+
+def test_find_hallucination_markers_flags_date_with_wrong_month():
+    """ISO date should be flagged when month doesn't match source."""
+    output = SimpleOutput(note="Report from 2025-07-01")
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text="Quarterly Outlook - June 2025",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert "2025-07-01" in matches
+
+
+def test_find_hallucination_markers_flags_date_with_wrong_year():
+    """ISO date should be flagged when year doesn't match source."""
+    output = SimpleOutput(note="Published 2024-06-01")
+    chunks = [
+        Chunk(
+            chunk_id="doc_1",
+            block_ids=["b1"],
+            page=1,
+            text="Asset Allocation Outlook - June 2025",
+            section=None,
+        )
+    ]
+    matches = find_hallucination_markers(output, chunks)
+    assert "2024-06-01" in matches

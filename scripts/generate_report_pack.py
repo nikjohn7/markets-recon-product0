@@ -28,6 +28,10 @@ from src.models.core import Citation
 from src.models.output import ProcessedDocument
 from src.models.summaries import DocumentSummaries
 from src.models.tags import Tag, TagSet
+from src.taxonomy.hierarchy import (
+    get_category_display_name,
+    get_sub_asset_display_name,
+)
 
 
 @dataclass(frozen=True)
@@ -169,6 +173,18 @@ def humanize_token(value: str | None) -> str:
     return value.replace("_", " ").title()
 
 
+def get_display_name(code: str, is_category: bool = False) -> str:
+    """Get human-readable display name for asset class codes.
+
+    Falls back to humanize_token if no display name is defined.
+    """
+    if is_category:
+        display = get_category_display_name(code)
+    else:
+        display = get_sub_asset_display_name(code)
+    return display if display else humanize_token(code)
+
+
 def format_date(value: date | None) -> str:
     """Format a date for display."""
     if value is None:
@@ -222,27 +238,27 @@ def render_pills(items: Sequence[str]) -> str:
 
 
 def render_citations(citations: Sequence[Citation]) -> str:
-    """Render citations with page references and excerpts."""
+    """Render citations with page references and excerpts.
+
+    Only shows excerpt text if available; otherwise just shows page number.
+    """
     if not citations:
         return '<p class="muted">No citations provided.</p>'
     rendered: list[str] = []
     for citation in citations:
-        excerpt = (
-            html.escape(citation.text_span, quote=True)
-            if citation.text_span
-            else '<span class="muted">No excerpt captured.</span>'
-        )
-        blocks = ", ".join(citation.block_ids)
-        meta_bits = [f"Page {citation.page}", f"Chunk {citation.chunk_id}"]
-        if blocks:
-            meta_bits.append(f"Blocks {blocks}")
-        meta = " | ".join(meta_bits)
-        rendered.append(
-            "<div class=\"citation\">"
-            f"<div class=\"citation-meta\">{html.escape(meta, quote=True)}</div>"
-            f"<div class=\"citation-text\">{excerpt}</div>"
-            "</div>"
-        )
+        meta = f"Page {citation.page}"
+        if citation.text_span:
+            # Show full citation with excerpt
+            excerpt = html.escape(citation.text_span, quote=True)
+            rendered.append(
+                "<div class=\"citation\">"
+                f"<div class=\"citation-meta\">{html.escape(meta, quote=True)}</div>"
+                f"<div class=\"citation-text\">{excerpt}</div>"
+                "</div>"
+            )
+        else:
+            # No excerpt - just show page reference inline
+            rendered.append(f"<span class=\"citation-meta\">{html.escape(meta, quote=True)}</span>")
     return "\n".join(rendered)
 
 
@@ -288,13 +304,17 @@ def render_call(call: AllocationCall, index: int) -> str:
     else:
         indicators = '<p class="muted">No indicators listed.</p>'
 
+    # Use human-readable display names for asset classes
+    sub_asset_display = get_display_name(call.sub_asset_class, is_category=False)
+    category_display = get_display_name(call.asset_class_category, is_category=True)
+
     return (
         "<details class=\"call-card\">"
         "<summary>"
-        f"<div class=\"call-title\">Call {index}: {html.escape(call.sub_asset_class, quote=True)}</div>"
+        f"<div class=\"call-title\">Call {index}: {html.escape(sub_asset_display, quote=True)}</div>"
         "<div class=\"call-badges\">"
         f"{direction_badge}"
-        f"<span class=\"badge badge--outline\">{html.escape(call.asset_class_category, quote=True)}</span>"
+        f"<span class=\"badge badge--outline\">{html.escape(category_display, quote=True)}</span>"
         f"<span class=\"badge badge--outline\">Conviction {html.escape(conviction_text, quote=True)}</span>"
         f"<span class=\"badge badge--outline\">Confidence {format_percent(call.confidence)}</span>"
         "</div>"
@@ -343,8 +363,6 @@ def render_summary_block(summaries: DocumentSummaries) -> str:
         f"<p>{escape_text(summaries.search_descriptor)}</p>"
         "<h4>Key Takeaways</h4>"
         f"{takeaways_html}"
-        "<h4>Summary Citations</h4>"
-        f"{render_citations(summaries.citations)}"
         "</div>"
     )
 
@@ -505,8 +523,8 @@ def render_calls_block(calls: Sequence[AllocationCall]) -> str:
     overview_rows = "\n".join(
         "<tr>"
         f"<td>{idx + 1}</td>"
-        f"<td>{html.escape(call.asset_class_category, quote=True)}</td>"
-        f"<td>{html.escape(call.sub_asset_class, quote=True)}</td>"
+        f"<td>{html.escape(get_display_name(call.asset_class_category, is_category=True), quote=True)}</td>"
+        f"<td>{html.escape(get_display_name(call.sub_asset_class, is_category=False), quote=True)}</td>"
         f"<td>{humanize_token(call.call.value)}</td>"
         f"<td>{humanize_token(call.conviction.value) if call.conviction else 'Not stated'}</td>"
         f"<td>{format_percent(call.confidence)}</td>"
@@ -861,7 +879,9 @@ def wrap_reveal(content: str, delay: float) -> str:
     return f'<div class="reveal" style="animation-delay:{delay:.2f}s">{content}</div>'
 
 
-def render_document(entry: ReportEntry, pack_title: str, generated_at: datetime) -> str:
+def render_document(
+    entry: ReportEntry, pack_title: str, generated_at: datetime, show_index_link: bool = True
+) -> str:
     """Render a single document report page."""
     doc = entry.doc
     profile = doc.profile
@@ -895,6 +915,8 @@ def render_document(entry: ReportEntry, pack_title: str, generated_at: datetime)
         render_metadata_block(doc, entry),
     ]
     staggered = "\n".join(wrap_reveal(section, 0.08 + idx * 0.06) for idx, section in enumerate(sections))
+    # Only show "Back to index" link when there are multiple documents
+    index_link = '<a class="nav-link" href="index.html">Back to index</a>' if show_index_link else ""
     body = (
         "<div class=\"page\">"
         "<header class=\"hero reveal\">"
@@ -908,7 +930,7 @@ def render_document(entry: ReportEntry, pack_title: str, generated_at: datetime)
         "<div class=\"meta-line\">"
         f"Document ID {html.escape(doc.document_id, quote=True)}"
         "</div>"
-        "<a class=\"nav-link\" href=\"index.html\">Back to index</a>"
+        f"{index_link}"
         "</header>"
         f"{staggered}"
         "<footer>"
@@ -1008,13 +1030,19 @@ def resolve_entries(
 
 
 def write_reports(entries: Sequence[ReportEntry], pack_title: str, output_dir: Path) -> None:
-    """Write HTML reports and index."""
+    """Write HTML reports and index.
+
+    Only generates index.html when there are multiple documents.
+    """
     generated_at = datetime.now(timezone.utc)
+    show_index_link = len(entries) > 1
     for entry in entries:
-        html_content = render_document(entry, pack_title, generated_at)
+        html_content = render_document(entry, pack_title, generated_at, show_index_link)
         entry.report_file.write_text(html_content, encoding="utf-8")
-    index_html = render_index(entries, pack_title, generated_at)
-    (output_dir / "index.html").write_text(index_html, encoding="utf-8")
+    # Only generate index.html for multiple documents
+    if show_index_link:
+        index_html = render_index(entries, pack_title, generated_at)
+        (output_dir / "index.html").write_text(index_html, encoding="utf-8")
 
 
 def main() -> int:

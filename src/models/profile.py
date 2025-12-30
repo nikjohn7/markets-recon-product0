@@ -31,3 +31,4 @@ class DocumentProfile(BaseModel):
     # Null handling
     manager_name_uncertain: bool = False
     publication_date_uncertain: bool = False
+    as_of_date_uncertain: bool = False

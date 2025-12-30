@@ -169,6 +169,7 @@ CATEGORY_DISPLAY_NAMES: dict[str, str] = {
     "ALT_REAL_ESTATE_NA": "Alternatives: Real Estate (North America)",
     "ALT_REAL_ESTATE_UK": "Alternatives: Real Estate (UK)",
     "ALT_REAL_ESTATE_EU": "Alternatives: Real Estate (EU)",
+    "ALT_REAL_ESTATE_RESIDENTIAL": "Alternatives: Residential Real Estate",
     "ALT_RE_INFRA": "Alternatives: Real Estate/Infrastructure",
     # Equities
     "EQ_DM_CAPS": "Equities: Developed Market Caps",
@@ -187,9 +188,11 @@ CATEGORY_DISPLAY_NAMES: dict[str, str] = {
     "FI_SOV_APAC": "Fixed Income: Sovereigns (APAC)",
     "FI_SOV_EUROPE": "Fixed Income: Sovereigns (Europe)",
     "FI_SOV_NA": "Fixed Income: Sovereigns (North America)",
+    "FI_SOV_US": "Fixed Income: US Sovereigns",
     "FI_SPECIALTY": "Fixed Income: Specialty",
     # Currencies
     "FX_CURRENCIES": "Currencies",
+    "CURR": "Currencies",
     # Asset Allocation
     "AA_BROAD": "Asset Allocation",
 }
@@ -298,8 +301,14 @@ SUB_ASSET_DISPLAY_NAMES: dict[str, str] = {
     "CAD": "Canadian Dollar",
     "CNY": "Chinese Yuan",
     "EM_FX_BASKET": "EM Currency Basket",
+    "EM_FX": "EM Currencies",
     "ASIA_FX_BASKET": "Asia Currency Basket",
     "DIGITAL_ASSETS": "Digital Assets/Bitcoin",
+    # Additional LLM output variations
+    "UST_10Y": "US 10-Year Treasuries",
+    "UST_2Y": "US 2-Year Treasuries",
+    "UST_30Y": "US 30-Year Treasuries",
+    "EU_PERIPHERY": "European Periphery",
 }
 
 # =============================================================================

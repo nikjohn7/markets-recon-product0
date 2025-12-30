@@ -95,6 +95,11 @@ def get_metadata_extraction_schema() -> dict[str, object]:
                 "type": ["string", "null"],
                 "description": "'As of' date in YYYY-MM-DD format if different from publication date",
             },
+            "as_of_date_uncertain": {
+                "type": "boolean",
+                "default": False,
+                "description": "True if as-of date was inferred or unclear",
+            },
             "document_type": {
                 "type": "string",
                 "enum": [dt.value for dt in DocumentType],
@@ -164,6 +169,7 @@ Extract the document profile. Use ONLY information from the excerpts above.
 
 3. as_of_date: The "as of" date if different from publication date
    - Common patterns: "Data as of", "Views as of"
+   - If unclear or inferred, set as_of_date_uncertain=true
 
 4. document_type: MUST be exactly one of these values (no variations):
 {document_types}

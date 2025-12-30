@@ -51,6 +51,7 @@ class DocumentProfileLLM(BaseModel):
 
     manager_name_uncertain: bool = False
     publication_date_uncertain: bool = False
+    as_of_date_uncertain: bool = False
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -152,6 +153,10 @@ def _build_document_profile(
         publication_date_uncertain = llm_output.publication_date_uncertain
 
     as_of_date = _parse_date(llm_output.as_of_date)
+    if llm_output.as_of_date is not None and as_of_date is None:
+        as_of_date_uncertain = True
+    else:
+        as_of_date_uncertain = llm_output.as_of_date_uncertain
 
     profile = DocumentProfile(
         document_id=cleaned_doc.document_id,
@@ -167,6 +172,7 @@ def _build_document_profile(
         citations=llm_output.citations,
         manager_name_uncertain=manager_name_uncertain,
         publication_date_uncertain=publication_date_uncertain,
+        as_of_date_uncertain=as_of_date_uncertain,
     )
     return profile
 

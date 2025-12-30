@@ -17,7 +17,7 @@ def test_settings_load_from_env_file(tmp_path: Path) -> None:
         tmp_path,
         DATABASE_URL="sqlite:///./data/test.db",
         BLOB_STORAGE_PATH="./data/pdfs",
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",
@@ -29,7 +29,7 @@ def test_settings_load_from_env_file(tmp_path: Path) -> None:
 
     assert settings.database_url == "sqlite:///./data/test.db"
     assert settings.blob_storage_path == Path("./data/pdfs")
-    assert settings.ohmygpt_api_key.get_secret_value() == "ohmygpt-key"
+    assert settings.anthropic_api_key.get_secret_value() == "anthropic-key"
     assert settings.megallm_api_key.get_secret_value() == "megallm-key"
     assert settings.nebius_api_key.get_secret_value() == "nebius-key"
     assert settings.deepinfra_api_key.get_secret_value() == "deepinfra-key"
@@ -40,7 +40,7 @@ def test_settings_load_from_env_file(tmp_path: Path) -> None:
 def test_defaults_apply_for_storage_and_logging(tmp_path: Path) -> None:
     env_file = build_env_file(
         tmp_path,
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",
@@ -57,7 +57,7 @@ def test_defaults_apply_for_storage_and_logging(tmp_path: Path) -> None:
 def test_deepinfra_embeddings_provider_allows_missing_openai_key(tmp_path: Path) -> None:
     env_file = build_env_file(
         tmp_path,
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",
@@ -73,7 +73,7 @@ def test_deepinfra_embeddings_provider_allows_missing_openai_key(tmp_path: Path)
 def test_openai_embeddings_provider_requires_openai_key(tmp_path: Path) -> None:
     env_file = build_env_file(
         tmp_path,
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",
@@ -89,7 +89,7 @@ def test_missing_required_field_raises_error(tmp_path: Path) -> None:
         tmp_path,
         DATABASE_URL="sqlite:///./data/test.db",
         BLOB_STORAGE_PATH="./data/pdfs",
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         LOG_LEVEL="INFO",
     )
 
@@ -102,7 +102,7 @@ def test_invalid_log_level_is_rejected(tmp_path: Path) -> None:
         tmp_path,
         DATABASE_URL="sqlite:///./data/test.db",
         BLOB_STORAGE_PATH="./data/pdfs",
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",
@@ -119,7 +119,7 @@ def test_empty_blob_storage_path_is_rejected(tmp_path: Path) -> None:
         tmp_path,
         DATABASE_URL="sqlite:///./data/test.db",
         BLOB_STORAGE_PATH="",
-        OHMYGPT_API_KEY="ohmygpt-key",
+        ANTHROPIC_API_KEY="anthropic-key",
         MEGALLM_API_KEY="megallm-key",
         NEBIUS_API_KEY="nebius-key",
         DEEPINFRA_API_KEY="deepinfra-key",

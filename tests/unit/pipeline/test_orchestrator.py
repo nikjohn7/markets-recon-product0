@@ -242,7 +242,7 @@ async def test_process_pdf_full_pipeline(mock_pdf_file: Path) -> None:
         mock_confidence.return_value = _make_confidence()
 
         # Mock LLM client methods
-        mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="ohmygpt"))
+        mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="anthropic"))
         mock_llm.get_config = MagicMock(return_value=MagicMock(model_name="test-model"))
 
         result = await process_pdf(mock_pdf_file, db=mock_db, llm_client=mock_llm)
@@ -275,7 +275,7 @@ async def test_process_pdf_stage_failure(mock_pdf_file: Path) -> None:
     mock_db = MagicMock()
     mock_db.execute = MagicMock()
     mock_llm = MagicMock()
-    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="ohmygpt"))
+    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="anthropic"))
     mock_llm.get_config = MagicMock(return_value=MagicMock(model_name="test-model"))
 
     with (
@@ -299,7 +299,7 @@ async def test_process_pdf_persists_results(mock_pdf_file: Path) -> None:
     mock_conn.__exit__ = MagicMock(return_value=False)
     mock_db.execute = MagicMock()
     mock_llm = MagicMock()
-    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="ohmygpt"))
+    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="anthropic"))
     mock_llm.get_config = MagicMock(return_value=MagicMock(model_name="test-model"))
 
     with (
@@ -347,7 +347,7 @@ async def test_process_pdf_with_source_metadata(mock_pdf_file: Path) -> None:
     mock_db = MagicMock()
     mock_db.execute = MagicMock()
     mock_llm = MagicMock()
-    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="ohmygpt"))
+    mock_llm.get_provider_for_stage = MagicMock(return_value=MagicMock(value="anthropic"))
     mock_llm.get_config = MagicMock(return_value=MagicMock(model_name="test-model"))
 
     with (

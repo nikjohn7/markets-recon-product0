@@ -386,7 +386,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
 ### Task 5.1 — Complete (2025-12-19)
 - Implemented **multi-provider LLM client** in [`src/llm/client.py`](src/llm/client.py)
 - Supports 4 providers via OpenAI-compatible API:
-  - **OhMyGPT** (Claude Haiku 4.5) → Metadata & Call Extraction
+  - **Anthropic** (Claude Haiku 4.5) → Metadata & Call Extraction
   - **MegaLLM** (GPT-OSS-120b) → Candidate Retrieval
   - **Nebius** (GLM-4.5-Air) → Verification & Summary Generation
   - **DeepInfra** (Qwen3-235B) → Tooltip & Tag Generation
@@ -400,7 +400,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - Retry logic with exponential backoff (3 retries, 1s/2s/4s delays)
   - Safe logging: prompts/responses hashed, truncated previews in DEBUG mode
 - Updated [`src/config/settings.py`](src/config/settings.py) with new API key settings:
-  - `OHMYGPT_API_KEY`, `MEGALLM_API_KEY`, `NEBIUS_API_KEY`, `DEEPINFRA_API_KEY`
+  - `ANTHROPIC_API_KEY`, `MEGALLM_API_KEY`, `NEBIUS_API_KEY`, `DEEPINFRA_API_KEY`
 - Updated [`.env.example`](.env.example) with all required API keys
 - Created comprehensive test suite in [`tests/unit/llm/test_client.py`](tests/unit/llm/test_client.py)
   - 18 test cases covering: initialization, provider config, stage routing, completion, JSON parsing, helper methods, logging
@@ -470,7 +470,7 @@ Do **not** maintain derived dashboards here (totals, percentages, per-phase prog
   - **Model version tracking**: Captures LLM provider model name in output metadata
 - Helper functions: `_parse_citation()`, `_parse_key_indicator()`, `_parse_allocation_call()`, `_check_duplicate_calls()`, `_build_call_extraction_output()`
 - LLM models: `CallLLM` (single call schema), `CallExtractionLLM` (full extraction output schema)
-- Uses `PipelineStage.CALLS` with OhMyGPT provider (Claude Haiku 4.5) for call extraction
+- Uses `PipelineStage.CALLS` with Anthropic provider (Claude Haiku 4.5) for call extraction
 - Created comprehensive test suite in `tests/unit/pipeline/stages/test_s6_calls.py`
   - 10 test cases covering: successful extraction, uncertain calls, duplicate detection, multiple calls, empty candidates, citation parsing, key risks, model version, prompt building
   - Tests validate: CallExtractionOutput structure, sentiment extraction, review flags, UNCERTAIN handling, duplicate call rejection

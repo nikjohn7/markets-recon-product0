@@ -1,10 +1,10 @@
 """Multi-provider LLM client with unified interface for pipeline stages.
 
-Supports multiple providers via OpenAI-compatible API:
-- OhMyGPT (Claude Haiku 4.5)
-- MegaLLM (GPT-OSS-120b)
-- Nebius (GLM-4.5-Air)
-- DeepInfra (Qwen3-235B)
+Supports multiple providers:
+- Anthropic (Claude Haiku 4.5) - Native SDK
+- MegaLLM (GPT-OSS-120b) - OpenAI-compatible API
+- Nebius (GLM-4.5-Air) - OpenAI-compatible API
+- DeepInfra (Qwen3-235B) - OpenAI-compatible API
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, TypeVar
 
+import anthropic
+from anthropic import AsyncAnthropic
 from openai import APIConnectionError, APIError, AsyncOpenAI, RateLimitError
 from pydantic import BaseModel
 
@@ -34,7 +36,7 @@ T = TypeVar("T", bound=BaseModel)
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
 
-    OHMYGPT = "ohmygpt"  # Claude Haiku 4.5
+    ANTHROPIC = "anthropic"  # Claude Haiku 4.5
     MEGALLM = "megallm"  # GPT-OSS-120b
     NEBIUS = "nebius"  # GLM-4.5-Air
     DEEPINFRA = "deepinfra"  # Qwen3-235B
@@ -64,9 +66,9 @@ class ProviderConfig:
 
 # Provider configurations
 PROVIDER_CONFIGS: dict[LLMProvider, ProviderConfig] = {
-    LLMProvider.OHMYGPT: ProviderConfig(
-        base_url="https://apic1.ohmycdn.com/api/v1/ai/openai/cc-omg",
-        model_name="claude-haiku-4-5",
+    LLMProvider.ANTHROPIC: ProviderConfig(
+        base_url="",  # Not used - native SDK
+        model_name="claude-haiku-4-5-20241022",
         default_temperature=0.0,
     ),
     LLMProvider.MEGALLM: ProviderConfig(
@@ -89,9 +91,9 @@ PROVIDER_CONFIGS: dict[LLMProvider, ProviderConfig] = {
 
 # Stage to provider mapping
 STAGE_PROVIDER_MAP: dict[PipelineStage, LLMProvider] = {
-    PipelineStage.METADATA: LLMProvider.OHMYGPT,  # Claude Haiku 4.5
+    PipelineStage.METADATA: LLMProvider.ANTHROPIC,  # Claude Haiku 4.5
     PipelineStage.CANDIDATES: LLMProvider.MEGALLM,  # GPT-OSS-120b
-    PipelineStage.CALLS: LLMProvider.OHMYGPT,  # Claude Haiku 4.5
+    PipelineStage.CALLS: LLMProvider.ANTHROPIC,  # Claude Haiku 4.5
     PipelineStage.VERIFICATION: LLMProvider.NEBIUS,  # GLM-4.5-Air
     PipelineStage.SUMMARIES: LLMProvider.NEBIUS,  # GLM-4.5-Air
     PipelineStage.TOOLTIPS: LLMProvider.DEEPINFRA,  # Qwen3-235B
@@ -106,7 +108,8 @@ class LLMClient:
     or explicit provider selection for flexibility.
 
     Attributes:
-        clients: Dict of AsyncOpenAI clients per provider
+        openai_clients: Dict of AsyncOpenAI clients per provider (MegaLLM, Nebius, DeepInfra)
+        anthropic_client: AsyncAnthropic client for Anthropic provider
         max_retries: Maximum number of retry attempts on rate limits
         base_delay: Base delay in seconds for exponential backoff
     """
@@ -126,22 +129,31 @@ class LLMClient:
         """
         self.max_retries = max_retries
         self.base_delay = base_delay
-        self.clients: dict[LLMProvider, AsyncOpenAI] = {}
+        self.openai_clients: dict[LLMProvider, AsyncOpenAI] = {}
+        self.anthropic_client: AsyncAnthropic | None = None
 
         # Load API keys from settings if not provided
         if api_keys is None:
             settings = get_settings()
             api_keys = {
-                LLMProvider.OHMYGPT: settings.ohmygpt_api_key.get_secret_value(),
+                LLMProvider.ANTHROPIC: settings.anthropic_api_key.get_secret_value(),
                 LLMProvider.MEGALLM: settings.megallm_api_key.get_secret_value(),
                 LLMProvider.NEBIUS: settings.nebius_api_key.get_secret_value(),
                 LLMProvider.DEEPINFRA: settings.deepinfra_api_key.get_secret_value(),
             }
 
-        # Initialize clients for each provider
+        # Initialize Anthropic client separately (native SDK)
+        if LLMProvider.ANTHROPIC in api_keys:
+            self.anthropic_client = AsyncAnthropic(
+                api_key=api_keys[LLMProvider.ANTHROPIC],
+            )
+
+        # Initialize OpenAI-compatible clients for other providers
         for provider, config in PROVIDER_CONFIGS.items():
+            if provider == LLMProvider.ANTHROPIC:
+                continue  # Skip - handled above with native SDK
             if provider in api_keys:
-                self.clients[provider] = AsyncOpenAI(
+                self.openai_clients[provider] = AsyncOpenAI(
                     api_key=api_keys[provider],
                     base_url=config.base_url,
                 )
@@ -200,15 +212,193 @@ class LLMClient:
                 raise ValueError("Either stage or provider must be specified")
             provider = self.get_provider_for_stage(stage)
 
-        if provider not in self.clients:
-            raise LLMError(f"No API key configured for provider: {provider.value}")
-
         config = self.get_config(provider)
-        client = self.clients[provider]
 
         # Use defaults from config if not specified
         max_tokens = max_tokens or config.max_tokens
         temperature = temperature if temperature is not None else config.default_temperature
+
+        # Route to appropriate implementation
+        if provider == LLMProvider.ANTHROPIC:
+            return await self._complete_anthropic(
+                prompt=prompt,
+                stage=stage,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+        else:
+            return await self._complete_openai(
+                prompt=prompt,
+                provider=provider,
+                stage=stage,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system_prompt=system_prompt,
+            )
+
+    async def _complete_anthropic(
+        self,
+        prompt: str,
+        stage: PipelineStage | None,
+        max_tokens: int,
+        temperature: float,
+        system_prompt: str | None,
+    ) -> str:
+        """Call Anthropic API using native SDK.
+
+        Args:
+            prompt: The prompt text to send
+            stage: Pipeline stage for logging
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            system_prompt: Optional system prompt
+
+        Returns:
+            The model's response text
+
+        Raises:
+            LLMError: If API call fails after all retries
+        """
+        if self.anthropic_client is None:
+            raise LLMError("No API key configured for provider: anthropic")
+
+        config = self.get_config(LLMProvider.ANTHROPIC)
+        prompt_hash = self._hash_text(prompt)
+        prompt_tokens = self.count_tokens(prompt)
+
+        # Safe logging
+        logger.info(
+            "LLM request",
+            extra={
+                "provider": "anthropic",
+                "model": config.model_name,
+                "stage": stage.value if stage else None,
+                "prompt_hash": prompt_hash,
+                "prompt_tokens": prompt_tokens,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            },
+        )
+
+        if logger.isEnabledFor(logging.DEBUG):
+            preview = self._truncate_text(prompt, max_length=200)
+            logger.debug(f"Prompt preview: {preview}")
+
+        # Build messages - Anthropic format
+        messages: list[anthropic.types.MessageParam] = [{"role": "user", "content": prompt}]
+
+        # Build create kwargs - only include system if provided
+        create_kwargs: dict[str, object] = {
+            "model": config.model_name,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "messages": messages,
+        }
+        if system_prompt:
+            create_kwargs["system"] = system_prompt
+
+        # Retry loop with exponential backoff
+        last_error: Exception | None = None
+        for attempt in range(self.max_retries):
+            try:
+                response = await self.anthropic_client.messages.create(**create_kwargs)  # type: ignore[call-overload]
+
+                # Extract text from content blocks
+                response_text = self._extract_anthropic_text(response)
+                response_hash = self._hash_text(response_text)
+
+                logger.info(
+                    "LLM response received",
+                    extra={
+                        "provider": "anthropic",
+                        "model": config.model_name,
+                        "response_hash": response_hash,
+                        "input_tokens": response.usage.input_tokens,
+                        "output_tokens": response.usage.output_tokens,
+                    },
+                )
+
+                if logger.isEnabledFor(logging.DEBUG):
+                    preview = self._truncate_text(response_text, max_length=200)
+                    logger.debug(f"Response preview: {preview}")
+
+                return response_text
+
+            except anthropic.RateLimitError as e:
+                last_error = e
+                if attempt < self.max_retries - 1:
+                    delay = self.base_delay * (2**attempt)
+                    logger.warning(
+                        f"Rate limit hit on anthropic, retrying in {delay}s "
+                        f"(attempt {attempt + 1}/{self.max_retries})"
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(f"Rate limit exceeded after {self.max_retries} attempts")
+
+            except (anthropic.APIError, anthropic.APIConnectionError) as e:
+                last_error = e
+                logger.error(f"API error from anthropic: {e}")
+                break
+
+            except Exception as e:
+                last_error = e
+                logger.error(f"Unexpected error during LLM call to anthropic: {e}")
+                break
+
+        error_msg = f"LLM API call failed (anthropic): {last_error}"
+        raise LLMError(error_msg) from last_error
+
+    def _extract_anthropic_text(self, response: anthropic.types.Message) -> str:
+        """Extract text content from Anthropic response.
+
+        Anthropic returns content as a list of content blocks.
+        Each block can be TextBlock or ToolUseBlock.
+        We concatenate all text blocks.
+
+        Args:
+            response: Anthropic Message response
+
+        Returns:
+            Concatenated text from all text blocks
+        """
+        text_parts = []
+        for block in response.content:
+            if block.type == "text":
+                text_parts.append(block.text)
+        return "".join(text_parts)
+
+    async def _complete_openai(
+        self,
+        prompt: str,
+        provider: LLMProvider,
+        stage: PipelineStage | None,
+        max_tokens: int,
+        temperature: float,
+        system_prompt: str | None,
+    ) -> str:
+        """Call OpenAI-compatible API.
+
+        Args:
+            prompt: The prompt text to send
+            provider: The LLM provider to use
+            stage: Pipeline stage for logging
+            max_tokens: Maximum tokens in response
+            temperature: Sampling temperature
+            system_prompt: Optional system prompt
+
+        Returns:
+            The model's response text
+
+        Raises:
+            LLMError: If API call fails after all retries
+        """
+        if provider not in self.openai_clients:
+            raise LLMError(f"No API key configured for provider: {provider.value}")
+
+        config = self.get_config(provider)
+        client = self.openai_clients[provider]
 
         prompt_hash = self._hash_text(prompt)
         prompt_tokens = self.count_tokens(prompt)

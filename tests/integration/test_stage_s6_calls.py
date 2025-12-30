@@ -18,7 +18,7 @@ from src.pipeline.stages.s6_calls import stage_calls
 @pytest.mark.asyncio
 async def test_stage_calls_with_mock_llm(mock_llm_client):
     """Stage 6 should return structured calls with model metadata."""
-    mock_llm_client.get_provider_for_stage = Mock(return_value=LLMProvider.OHMYGPT)
+    mock_llm_client.get_provider_for_stage = Mock(return_value=LLMProvider.ANTHROPIC)
     mock_llm_client.get_config = Mock(
         return_value=ProviderConfig(
             base_url="http://example.com",

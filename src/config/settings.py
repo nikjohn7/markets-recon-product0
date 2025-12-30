@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     )
 
     # LLM Provider API Keys
-    ohmygpt_api_key: SecretStr = Field(..., alias="OHMYGPT_API_KEY")  # Claude Haiku 4.5
+    anthropic_api_key: SecretStr = Field(..., alias="ANTHROPIC_API_KEY")  # Claude Haiku 4.5
     megallm_api_key: SecretStr = Field(..., alias="MEGALLM_API_KEY")  # GPT-OSS-120b
     nebius_api_key: SecretStr = Field(..., alias="NEBIUS_API_KEY")  # GLM-4.5-Air
     deepinfra_api_key: SecretStr = Field(..., alias="DEEPINFRA_API_KEY")  # Qwen3-235B

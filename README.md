@@ -126,7 +126,7 @@ Create a `.env` file with the following API keys:
 
 ```bash
 # LLM Providers (stage-specific routing)
-OHMYGPT_API_KEY=...      # Claude Haiku 4.5 (Metadata & Calls)
+ANTHROPIC_API_KEY=...    # Claude Haiku 4.5 (Metadata & Calls)
 MEGALLM_API_KEY=...      # GPT-OSS-120b (Candidates)
 NEBIUS_API_KEY=...       # GLM-4.5-Air (Summaries)
 DEEPINFRA_API_KEY=...    # Qwen3-235B (Tooltips & Tags)
@@ -256,7 +256,7 @@ Attention flags that trigger review:
 | Vector Index | ChromaDB (in-memory) |
 | Embeddings | OpenAI text-embedding-3-small |
 | Database | SQLite (MVP) / PostgreSQL (production) |
-| LLM Providers | OhMyGPT, MegaLLM, Nebius, DeepInfra |
+| LLM Providers | Anthropic, MegaLLM, Nebius, DeepInfra |
 | Type Checking | mypy (strict mode) |
 | Linting | Ruff |
 | Testing | pytest + pytest-asyncio |

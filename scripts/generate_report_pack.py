@@ -623,6 +623,21 @@ def base_css() -> str:
         font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Palatino", serif;
         margin-top: 0;
     }
+    h3 {
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+    }
+    h4 {
+        margin-top: 28px;
+        margin-bottom: 12px;
+        font-size: 0.92rem;
+        color: var(--ink);
+        letter-spacing: 0.01em;
+    }
+    h4:first-child {
+        margin-top: 0;
+    }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
     .page {
@@ -654,8 +669,12 @@ def base_css() -> str:
     }
     .hero .meta-line {
         color: var(--muted);
-        margin-top: 6px;
-        font-size: 0.95rem;
+        margin-top: 8px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    .hero .meta-line:first-of-type {
+        margin-top: 12px;
     }
     .nav-link {
         display: inline-block;
@@ -666,111 +685,174 @@ def base_css() -> str:
         background: var(--card);
         border: 1px solid var(--line);
         border-radius: 16px;
-        padding: 24px;
+        padding: 28px 32px;
         box-shadow: var(--shadow);
-        margin-top: 24px;
+        margin-top: 28px;
+    }
+    .card p {
+        line-height: 1.65;
+        margin: 12px 0;
+    }
+    .card > p:last-child {
+        margin-bottom: 0;
     }
     .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 16px;
+        gap: 20px;
+    }
+    .grid + h4 {
+        margin-top: 32px;
+    }
+    .table + h4 {
+        margin-top: 36px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+    }
+    p + h4 {
+        margin-top: 28px;
+    }
+    ul + h4 {
+        margin-top: 28px;
+    }
+    .pill-row + h4 {
+        margin-top: 28px;
+    }
+    ul + .citation:first-of-type,
+    p + .citation:first-of-type {
+        margin-top: 16px;
     }
     .metric-label {
         color: var(--muted);
         text-transform: uppercase;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         letter-spacing: 0.08em;
+        font-weight: 500;
     }
     .metric-value {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        margin-top: 4px;
+        margin-top: 6px;
+        line-height: 1.4;
     }
     .badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 4px 10px;
+        padding: 5px 11px;
         border-radius: 999px;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         background: #eef1f1;
         color: var(--neutral);
+        white-space: nowrap;
     }
-    .badge--positive { background: rgba(31, 111, 74, 0.15); color: var(--positive); }
-    .badge--negative { background: rgba(155, 44, 44, 0.15); color: var(--negative); }
-    .badge--warning { background: rgba(176, 107, 24, 0.2); color: var(--warning); }
-    .badge--neutral { background: rgba(91, 100, 108, 0.2); color: var(--neutral); }
-    .badge--alert { background: rgba(185, 55, 44, 0.2); color: var(--alert); }
+    .badge--positive { background: rgba(31, 111, 74, 0.12); color: var(--positive); }
+    .badge--negative { background: rgba(155, 44, 44, 0.12); color: var(--negative); }
+    .badge--warning { background: rgba(176, 107, 24, 0.15); color: var(--warning); }
+    .badge--neutral { background: rgba(91, 100, 108, 0.15); color: var(--neutral); }
+    .badge--alert { background: rgba(185, 55, 44, 0.15); color: var(--alert); }
     .badge--outline {
         background: transparent;
         border: 1px solid var(--line);
         color: var(--muted);
+        font-weight: 500;
     }
     .pill-row {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
+        margin-top: 8px;
     }
     .pill {
         border: 1px solid var(--line);
         background: #fbfaf7;
-        padding: 4px 10px;
+        padding: 5px 12px;
         border-radius: 999px;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
+        color: var(--ink);
+        letter-spacing: 0.01em;
     }
     .table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 12px;
-        font-size: 0.9rem;
+        margin-top: 16px;
+        font-size: 0.88rem;
     }
     .table th, .table td {
         border-bottom: 1px solid var(--line);
-        padding: 10px 8px;
+        padding: 12px 10px;
         text-align: left;
         vertical-align: top;
     }
     .table th {
         color: var(--muted);
         font-weight: 600;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.06em;
+        padding-bottom: 10px;
+    }
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .table tbody tr:hover {
+        background: rgba(12, 74, 74, 0.02);
     }
     ul {
-        margin: 8px 0 0 18px;
+        margin: 12px 0 0 20px;
         padding: 0;
+    }
+    ul li {
+        margin-bottom: 6px;
+        line-height: 1.5;
+    }
+    ul li:last-child {
+        margin-bottom: 0;
     }
     .call-card {
         border: 1px solid var(--line);
         border-radius: 12px;
-        padding: 12px 16px;
-        margin-bottom: 12px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
         background: #fcfbf8;
+        transition: border-color 0.2s ease;
+        position: relative;
+    }
+    .call-card:last-child {
+        margin-bottom: 0;
+    }
+    .call-card:hover {
+        border-color: #d0c9be;
     }
     .call-card summary {
         cursor: pointer;
         list-style: none;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
     }
     .call-card summary::-webkit-details-marker { display: none; }
     .call-card summary::after {
         content: "+";
-        margin-left: auto;
-        font-weight: 700;
+        position: absolute;
+        right: 20px;
+        top: 16px;
+        font-weight: 600;
+        font-size: 1.1rem;
         color: var(--muted);
+        transition: transform 0.2s ease;
     }
     .call-card[open] summary::after {
-        content: "-";
+        content: "";
+        transform: rotate(45deg);
     }
     .call-title {
         font-weight: 700;
         font-size: 1rem;
+        padding-right: 32px;
     }
     .call-badges {
         display: flex;
@@ -778,59 +860,112 @@ def base_css() -> str:
         gap: 8px;
     }
     .call-body {
-        margin-top: 12px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
         display: grid;
-        gap: 16px;
+        gap: 20px;
+    }
+    .call-body h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 0.85rem;
     }
     .call-grid {
         display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     }
     .call-meta {
         display: grid;
         gap: 8px;
         color: var(--muted);
+        font-size: 0.9rem;
+        padding: 12px 16px;
+        background: rgba(12, 74, 74, 0.03);
+        border-radius: 8px;
     }
     .call-review {
         color: var(--alert);
         font-weight: 600;
     }
-    .citation {
-        border-left: 3px solid var(--accent);
-        padding-left: 12px;
+    .call-indicators {
+        margin-top: 8px;
+    }
+    .call-indicators h4 {
+        margin-bottom: 8px;
+    }
+    .call-citations {
+        margin-top: 8px;
+    }
+    .call-citations h4 {
         margin-bottom: 12px;
     }
+    .citation {
+        border-left: 3px solid var(--accent);
+        padding-left: 14px;
+        margin-bottom: 16px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+    }
+    .citation:last-child {
+        margin-bottom: 0;
+    }
     .citation-meta {
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         color: var(--muted);
-        margin-bottom: 4px;
+        margin-bottom: 5px;
+        font-weight: 600;
     }
     .citation-text {
-        font-size: 0.9rem;
+        font-size: 0.88rem;
+        line-height: 1.55;
+        color: var(--ink);
+        font-style: italic;
     }
     .takeaway {
         border: 1px solid var(--line);
-        border-radius: 12px;
-        padding: 12px;
-        margin-bottom: 12px;
-        background: #fbf9f4;
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        background: linear-gradient(135deg, #fbf9f4 0%, #f8f6f0 100%);
+    }
+    .takeaway:last-child {
+        margin-bottom: 0;
     }
     .takeaway-text {
         font-weight: 600;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        line-height: 1.5;
+    }
+    .takeaway-citations {
+        font-size: 0.78rem;
+    }
+    .takeaway-citations .citation-meta {
+        display: inline;
+        margin-bottom: 0;
     }
     .tag-group {
-        margin-top: 12px;
+        margin-top: 24px;
+    }
+    .tag-group:first-of-type {
+        margin-top: 0;
+    }
+    .tag-group h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
     }
     .muted { color: var(--muted); }
     footer {
         color: var(--muted);
-        font-size: 0.85rem;
-        margin-top: 40px;
+        font-size: 0.82rem;
+        margin-top: 48px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
         text-align: center;
+        letter-spacing: 0.02em;
     }
     .reveal {
         animation: rise 0.6s ease forwards;
@@ -848,9 +983,13 @@ def base_css() -> str:
         }
     }
     @media (max-width: 720px) {
-        .page { padding: 28px 16px 48px; }
-        .hero { padding: 22px; }
-        .table th, .table td { font-size: 0.8rem; }
+        .page { padding: 24px 16px 40px; }
+        .hero { padding: 22px 20px; }
+        .card { padding: 22px 20px; }
+        .table th, .table td { font-size: 0.82rem; padding: 10px 8px; }
+        .call-card { padding: 14px 16px; }
+        .call-card summary::after { right: 16px; top: 14px; }
+        h4 { margin-top: 24px; }
     }
     """
 

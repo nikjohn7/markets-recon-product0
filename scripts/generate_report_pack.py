@@ -193,18 +193,28 @@ def format_date(value: date | None) -> str:
 
 
 def format_datetime(value: datetime | None) -> str:
-    """Format a datetime for display."""
+    """Format a datetime for display in human-readable format."""
     if value is None:
-        return "Not stated"
+        return ""
     dt = value
-    if dt.tzinfo is None:
-        return dt.isoformat(sep=" ", timespec="seconds")
-    return dt.astimezone(timezone.utc).isoformat(sep=" ", timespec="seconds")
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc)
+    return dt.strftime("%d %b %Y %H:%M UTC")
 
 
 def format_seconds(value: float) -> str:
     """Format seconds with two decimal places."""
     return f"{value:.2f}s"
+
+
+def has_value(value: str | None) -> bool:
+    """Check if a value is meaningful (not None, empty, or 'Not stated')."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        stripped = value.strip()
+        return stripped != "" and stripped.lower() != "not stated"
+    return True
 
 
 def format_percent(value: float | None) -> str:
@@ -229,36 +239,51 @@ def render_list(items: Sequence[str]) -> str:
     return f"<ul>{bullets}</ul>"
 
 
-def render_pills(items: Sequence[str]) -> str:
-    """Render a list of strings as pill tags."""
+def render_pills(items: Sequence[str], category: str = "") -> str:
+    """Render a list of strings as pill tags with optional category color."""
     if not items:
-        return '<span class="muted">Not stated</span>'
-    pills = "\n".join(f'<span class="pill">{html.escape(item, quote=True)}</span>' for item in items)
+        return ""
+    pill_class = f"pill pill--{category}" if category else "pill"
+    pills = "\n".join(f'<span class="{pill_class}">{html.escape(item, quote=True)}</span>' for item in items)
     return f'<div class="pill-row">{pills}</div>'
 
 
 def render_citations(citations: Sequence[Citation]) -> str:
     """Render citations with page references and excerpts.
 
+    Groups citations by page number and combines excerpts from the same page.
     Only shows excerpt text if available; otherwise just shows page number.
     """
     if not citations:
-        return '<p class="muted">No citations provided.</p>'
-    rendered: list[str] = []
+        return ""
+
+    # Group citations by page
+    from collections import defaultdict
+    page_groups: dict[int, list[str]] = defaultdict(list)
     for citation in citations:
-        meta = f"Page {citation.page}"
         if citation.text_span:
-            # Show full citation with excerpt
-            excerpt = html.escape(citation.text_span, quote=True)
+            page_groups[citation.page].append(citation.text_span)
+        else:
+            # Mark that this page was cited even without text
+            if citation.page not in page_groups:
+                page_groups[citation.page] = []
+
+    # Sort pages and render
+    rendered: list[str] = []
+    for page in sorted(page_groups.keys()):
+        excerpts = page_groups[page]
+        if excerpts:
+            # Combine all excerpts from same page
+            combined_text = " ... ".join(html.escape(e, quote=True) for e in excerpts)
             rendered.append(
                 "<div class=\"citation\">"
-                f"<div class=\"citation-meta\">{html.escape(meta, quote=True)}</div>"
-                f"<div class=\"citation-text\">{excerpt}</div>"
+                f"<div class=\"citation-meta\">p.{page}</div>"
+                f"<div class=\"citation-text\">{combined_text}</div>"
                 "</div>"
             )
         else:
-            # No excerpt - just show page reference inline
-            rendered.append(f"<span class=\"citation-meta\">{html.escape(meta, quote=True)}</span>")
+            # Just page reference, no excerpt
+            rendered.append(f"<span class=\"citation-meta\">p.{page}</span>")
     return "\n".join(rendered)
 
 
@@ -266,21 +291,52 @@ def badge_class(value: str) -> str:
     """Map sentiment/call direction/confidence to a badge class."""
     positive = {"OVERWEIGHT", "NET_POSITIVE", "HIGH"}
     negative = {"UNDERWEIGHT", "NET_NEGATIVE", "LOW"}
-    warning = {"UNCERTAIN", "MEDIUM"}
+    warning = {"UNCERTAIN"}
+    medium = {"MEDIUM"}
     if value in positive:
         return "badge badge--positive"
     if value in negative:
         return "badge badge--negative"
     if value in warning:
         return "badge badge--warning"
+    if value in medium:
+        return "badge badge--medium"
     return "badge badge--neutral"
 
 
-def render_call(call: AllocationCall, index: int) -> str:
+def confidence_dot_class(confidence: float | None) -> str:
+    """Return CSS class for confidence dot indicator."""
+    if confidence is None:
+        return "confidence-dot--medium"
+    if confidence >= 0.80:
+        return "confidence-dot--high"
+    if confidence >= 0.60:
+        return "confidence-dot--medium"
+    return "confidence-dot--low"
+
+
+def render_confidence_with_indicator(confidence: float | None) -> str:
+    """Render confidence percentage with a colored dot indicator."""
+    dot_class = confidence_dot_class(confidence)
+    return (
+        f'<span class="confidence-indicator">'
+        f'<span class="confidence-dot {dot_class}"></span>'
+        f'{format_percent(confidence)}'
+        f'</span>'
+    )
+
+
+def render_call(call: AllocationCall, index: int, call_id: str) -> str:
     """Render a single allocation call detail block."""
     call_direction = call.call.value
     direction_badge = f'<span class="{badge_class(call_direction)}">{humanize_token(call_direction)}</span>'
-    conviction_text = humanize_token(call.conviction.value) if call.conviction else "Not stated"
+    conviction_text = humanize_token(call.conviction.value) if call.conviction else ""
+
+    # Conviction badge - only show if conviction is specified
+    conviction_badge = ""
+    if call.conviction:
+        conviction_badge = f'<span class="badge badge--outline">Conviction {html.escape(conviction_text, quote=True)}</span>'
+
     review_flag = ""
     if call.needs_analyst_review:
         review_reason = escape_text(call.review_reason) if call.review_reason else "Review required"
@@ -292,49 +348,65 @@ def render_call(call: AllocationCall, index: int) -> str:
             "<tr>"
             f"<td>{html.escape(ind.name, quote=True)}</td>"
             f"<td>{html.escape(humanize_token(ind.direction.value), quote=True)}</td>"
-            f"<td>{escape_text(ind.why_it_matters)}</td>"
             "</tr>"
             for ind in call.key_indicators
         )
         indicators = (
             "<table class=\"table\">"
-            "<thead><tr><th>Indicator</th><th>Direction</th><th>Why it matters</th></tr></thead>"
+            "<thead><tr><th>Indicator</th><th>Direction</th></tr></thead>"
             f"<tbody>{indicator_rows}</tbody></table>"
         )
-    else:
-        indicators = '<p class="muted">No indicators listed.</p>'
 
     # Use human-readable display names for asset classes
     sub_asset_display = get_display_name(call.sub_asset_class, is_category=False)
     category_display = get_display_name(call.asset_class_category, is_category=True)
 
+    # Build call-meta section conditionally
+    meta_items = []
+    if has_value(call.time_horizon):
+        meta_items.append(f"<div><strong>Time horizon:</strong> {html.escape(call.time_horizon, quote=True)}</div>")
+    if has_value(call.tooltip_text):
+        meta_items.append(f"<div><strong>Tooltip:</strong> {html.escape(call.tooltip_text, quote=True)}</div>")
+    meta_html = f'<div class="call-meta">{" ".join(meta_items)}</div>' if meta_items else ""
+
+    # Build call-grid columns conditionally
+    grid_cols = []
+    if call.rationale_bullets:
+        grid_cols.append(f"<div><h4>Rationale</h4>{render_list(call.rationale_bullets)}</div>")
+    if call.key_risks:
+        grid_cols.append(f"<div><h4>Key Risks</h4>{render_list(call.key_risks)}</div>")
+    if call.actionable_takeaways:
+        grid_cols.append(f"<div><h4>Actionable Takeaways</h4>{render_list(call.actionable_takeaways)}</div>")
+    grid_html = f'<div class="call-grid">{"".join(grid_cols)}</div>' if grid_cols else ""
+
+    # Indicators section - only show if present
+    indicators_html = f'<div class="call-indicators"><h4>Key Indicators</h4>{indicators}</div>' if indicators else ""
+
+    # Citations section - only show if present
+    citations_html = ""
+    if call.citations:
+        citations_html = f'<div class="call-citations"><h4>Citations</h4>{render_citations(call.citations)}</div>'
+
+    # Review section - only show if needed
+    review_html = f'<div class="call-review">{review_flag}</div>' if review_flag else ""
+
     return (
-        "<details class=\"call-card\">"
+        f"<details class=\"call-card\" id=\"{html.escape(call_id, quote=True)}\">"
         "<summary>"
         f"<div class=\"call-title\">Call {index}: {html.escape(sub_asset_display, quote=True)}</div>"
         "<div class=\"call-badges\">"
         f"{direction_badge}"
         f"<span class=\"badge badge--outline\">{html.escape(category_display, quote=True)}</span>"
-        f"<span class=\"badge badge--outline\">Conviction {html.escape(conviction_text, quote=True)}</span>"
+        f"{conviction_badge}"
         f"<span class=\"badge badge--outline\">Confidence {format_percent(call.confidence)}</span>"
         "</div>"
         "</summary>"
         "<div class=\"call-body\">"
-        f"<div class=\"call-meta\"><div><strong>Time horizon:</strong> {escape_text(call.time_horizon)}</div>"
-        f"<div><strong>Tooltip:</strong> {escape_text(call.tooltip_text)}</div></div>"
-        f"<div class=\"call-review\">{review_flag}</div>"
-        "<div class=\"call-grid\">"
-        "<div><h4>Rationale</h4>"
-        f"{render_list(call.rationale_bullets)}</div>"
-        "<div><h4>Key Risks</h4>"
-        f"{render_list(call.key_risks)}</div>"
-        "<div><h4>Actionable Takeaways</h4>"
-        f"{render_list(call.actionable_takeaways)}</div>"
-        "</div>"
-        "<div class=\"call-indicators\"><h4>Key Indicators</h4>"
-        f"{indicators}</div>"
-        "<div class=\"call-citations\"><h4>Citations</h4>"
-        f"{render_citations(call.citations)}</div>"
+        f"{meta_html}"
+        f"{review_html}"
+        f"{grid_html}"
+        f"{indicators_html}"
+        f"{citations_html}"
         "</div>"
         "</details>"
     )
@@ -343,11 +415,14 @@ def render_call(call: AllocationCall, index: int) -> str:
 def render_summary_block(summaries: DocumentSummaries) -> str:
     """Render the document summary section."""
     takeaways = []
-    for takeaway in summaries.key_takeaways:
+    for idx, takeaway in enumerate(summaries.key_takeaways, 1):
         takeaways.append(
             "<div class=\"takeaway\">"
+            f"<div class=\"takeaway-number\">{idx}</div>"
+            "<div class=\"takeaway-content\">"
             f"<div class=\"takeaway-text\">{escape_text(takeaway.text)}</div>"
             f"<div class=\"takeaway-citations\">{render_citations(takeaway.citations)}</div>"
+            "</div>"
             "</div>"
         )
     takeaways_html = "\n".join(takeaways) if takeaways else '<p class="muted">No takeaways.</p>'
@@ -368,7 +443,59 @@ def render_summary_block(summaries: DocumentSummaries) -> str:
 
 
 def render_tag_block(tags: TagSet) -> str:
-    """Render tags and classifications."""
+    """Render tags and classifications with limited display per category."""
+    max_tags = 7  # Show at most 7 tags per category
+
+    # Build tag groups conditionally (only show non-empty categories)
+    tag_groups = []
+    if tags.asset_class_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Asset Classes</h4>"
+            f"{render_pills(tags.asset_class_tags[:max_tags], 'asset')}</div>"
+        )
+    if tags.region_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Regions</h4>"
+            f"{render_pills(tags.region_tags[:max_tags], 'region')}</div>"
+        )
+    if tags.theme_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Themes</h4>"
+            f"{render_pills(tags.theme_tags[:max_tags], 'theme')}</div>"
+        )
+    if tags.risk_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Risks</h4>"
+            f"{render_pills(tags.risk_tags[:max_tags], 'risk')}</div>"
+        )
+    if tags.instrument_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Instruments</h4>"
+            f"{render_pills(tags.instrument_tags[:max_tags], 'instrument')}</div>"
+        )
+    if tags.style_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Styles</h4>"
+            f"{render_pills(tags.style_tags[:max_tags], 'style')}</div>"
+        )
+    if tags.macro_regime_tags:
+        tag_groups.append(
+            f"<div class=\"tag-group\"><h4>Macro Regimes</h4>"
+            f"{render_pills(tags.macro_regime_tags[:max_tags], 'macro')}</div>"
+        )
+
+    groups_html = "\n".join(tag_groups)
+
+    # All Tags table in collapsible details
+    all_tags_html = ""
+    if tags.all_tags:
+        all_tags_html = (
+            "<details class=\"all-tags-details\">"
+            f"<summary>All Tags ({len(tags.all_tags)})</summary>"
+            f"<div class=\"all-tags-content\">{render_all_tags(tags.all_tags)}</div>"
+            "</details>"
+        )
+
     return (
         "<div class=\"card\">"
         "<h3>Tags</h3>"
@@ -376,22 +503,8 @@ def render_tag_block(tags: TagSet) -> str:
         f"<div><div class=\"metric-label\">Tag confidence</div>"
         f"<div class=\"metric-value\">{format_percent(tags.confidence)}</div></div>"
         "</div>"
-        "<div class=\"tag-group\"><h4>Asset Classes</h4>"
-        f"{render_pills(tags.asset_class_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Regions</h4>"
-        f"{render_pills(tags.region_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Themes</h4>"
-        f"{render_pills(tags.theme_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Risks</h4>"
-        f"{render_pills(tags.risk_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Instruments</h4>"
-        f"{render_pills(tags.instrument_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Styles</h4>"
-        f"{render_pills(tags.style_tags)}</div>"
-        "<div class=\"tag-group\"><h4>Macro Regimes</h4>"
-        f"{render_pills(tags.macro_regime_tags)}</div>"
-        "<h4>All Tags</h4>"
-        f"{render_all_tags(tags.all_tags)}"
+        f"{groups_html}"
+        f"{all_tags_html}"
         "</div>"
     )
 
@@ -422,40 +535,51 @@ def render_confidence_block(confidence: ConfidenceResult) -> str:
     verification = (
         f"<div><strong>Verification agreement:</strong> {format_percent(confidence.verification_agreement)}</div>"
         if confidence.verification_agreement is not None
-        else "<div><strong>Verification agreement:</strong> Not stated</div>"
+        else ""
     )
-    disagreed = render_list(confidence.disagreed_fields)
+    disagreed = render_list(confidence.disagreed_fields) if confidence.disagreed_fields else ""
     field_rows = "\n".join(
         "<tr>"
         f"<td>{html.escape(field.field_name, quote=True)}</td>"
-        f"<td>{format_percent(field.confidence)}</td>"
-        f"<td>{format_percent(field.evidence_strength)}</td>"
+        f"<td>{render_confidence_with_indicator(field.confidence)}</td>"
+        f"<td>{render_confidence_with_indicator(field.evidence_strength)}</td>"
         f"<td>{'Yes' if field.has_explicit_evidence else 'No'}</td>"
         f"<td>{', '.join(html.escape(r, quote=True) for r in field.reasons) if field.reasons else ''}</td>"
         "</tr>"
         for field in confidence.field_confidences
     )
+    # Only show attention required if true
+    attention_html = ""
+    if confidence.analyst_attention_required:
+        attention_html = (
+            "<div><div class=\"metric-label\">Attention required</div>"
+            "<div class=\"metric-value\"><span class=\"badge badge--alert\">Yes</span></div></div>"
+        )
+    # Only show attention reasons if there are any
+    attention_reasons_html = ""
+    if confidence.attention_reasons:
+        attention_reasons_html = f"<h4>Attention Reasons</h4>{reasons}"
+    # Only show disagreed fields if there are any
+    disagreed_html = ""
+    if confidence.disagreed_fields:
+        disagreed_html = f"<div><strong>Disagreed fields:</strong></div>{disagreed}"
     return (
         "<div class=\"card\">"
         "<h3>Confidence and Review Status</h3>"
         "<div class=\"grid\">"
         f"<div><div class=\"metric-label\">Overall confidence</div>"
-        f"<div class=\"metric-value\">{format_percent(confidence.overall_confidence)}</div></div>"
+        f"<div class=\"metric-value\">{render_confidence_with_indicator(confidence.overall_confidence)}</div></div>"
         f"<div><div class=\"metric-label\">Confidence band</div>"
         f"<div class=\"metric-value\">"
         f"<span class=\"{badge_class(confidence.confidence_band.value)}\">"
         f"{humanize_token(confidence.confidence_band.value)}</span></div></div>"
-        f"<div><div class=\"metric-label\">Attention required</div>"
-        f"<div class=\"metric-value\">{'Yes' if confidence.analyst_attention_required else 'No'}</div></div>"
+        f"{attention_html}"
         f"<div><div class=\"metric-label\">Extraction coverage</div>"
-        f"<div class=\"metric-value\">{format_percent(confidence.extraction_coverage)}</div></div>"
+        f"<div class=\"metric-value\">{render_confidence_with_indicator(confidence.extraction_coverage)}</div></div>"
         "</div>"
-        "<h4>Attention Reasons</h4>"
-        f"{reasons}"
-        "<h4>Verification</h4>"
+        f"{attention_reasons_html}"
         f"{verification}"
-        "<div><strong>Disagreed fields:</strong></div>"
-        f"{disagreed}"
+        f"{disagreed_html}"
         "<h4>Field Confidences</h4>"
         "<table class=\"table\">"
         "<thead><tr><th>Field</th><th>Confidence</th><th>Evidence</th><th>Explicit</th><th>Reasons</th></tr></thead>"
@@ -467,35 +591,86 @@ def render_confidence_block(confidence: ConfidenceResult) -> str:
 def render_profile_block(doc: ProcessedDocument) -> str:
     """Render document profile metadata."""
     profile = doc.profile
-    asset_classes = render_pills(profile.asset_classes_covered)
-    regions = render_pills(profile.regions)
-    flags = (
-        "<ul>"
-        f"<li>Manager uncertain: {'Yes' if profile.manager_name_uncertain else 'No'}</li>"
-        f"<li>Publication date uncertain: {'Yes' if profile.publication_date_uncertain else 'No'}</li>"
-        f"<li>As-of date uncertain: {'Yes' if profile.as_of_date_uncertain else 'No'}</li>"
-        "</ul>"
+
+    # Build grid items conditionally
+    grid_items = []
+    if has_value(profile.manager_name):
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Manager</div>"
+            f"<div class=\"metric-value\">{html.escape(profile.manager_name, quote=True)}</div></div>"
+        )
+    if has_value(profile.title):
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Title</div>"
+            f"<div class=\"metric-value\">{html.escape(profile.title, quote=True)}</div></div>"
+        )
+    if profile.document_type:
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Document type</div>"
+            f"<div class=\"metric-value\">{humanize_token(profile.document_type.value)}</div></div>"
+        )
+    if profile.publication_date:
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Publication date</div>"
+            f"<div class=\"metric-value\">{format_date(profile.publication_date)}</div></div>"
+        )
+    if profile.as_of_date:
+        grid_items.append(
+            f"<div><div class=\"metric-label\">As-of date</div>"
+            f"<div class=\"metric-value\">{format_date(profile.as_of_date)}</div></div>"
+        )
+    if has_value(profile.time_horizon):
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Time horizon</div>"
+            f"<div class=\"metric-value\">{html.escape(profile.time_horizon, quote=True)}</div></div>"
+        )
+    if has_value(profile.intended_audience):
+        grid_items.append(
+            f"<div><div class=\"metric-label\">Intended audience</div>"
+            f"<div class=\"metric-value\">{html.escape(profile.intended_audience, quote=True)}</div></div>"
+        )
+
+    grid_html = "\n".join(grid_items) if grid_items else ""
+
+    # Asset classes and regions - only show if present
+    asset_classes_html = ""
+    if profile.asset_classes_covered:
+        asset_classes_html = f"<h4>Asset classes covered</h4>{render_pills(profile.asset_classes_covered)}"
+
+    regions_html = ""
+    if profile.regions:
+        regions_html = f"<h4>Regions</h4>{render_pills(profile.regions)}"
+
+    # Only show uncertainty flags if any are true
+    flags_html = ""
+    has_uncertainty = (
+        profile.manager_name_uncertain
+        or profile.publication_date_uncertain
+        or profile.as_of_date_uncertain
     )
+    if has_uncertainty:
+        flag_items = []
+        if profile.manager_name_uncertain:
+            flag_items.append("<li>Manager name uncertain</li>")
+        if profile.publication_date_uncertain:
+            flag_items.append("<li>Publication date uncertain</li>")
+        if profile.as_of_date_uncertain:
+            flag_items.append("<li>As-of date uncertain</li>")
+        flags_html = f"<h4>Uncertainty Flags</h4><ul>{''.join(flag_items)}</ul>"
+
+    # Citations - only show if present
+    citations_html = ""
+    if profile.citations:
+        citations_html = f"<h4>Profile Citations</h4>{render_citations(profile.citations)}"
+
     return (
         "<div class=\"card\">"
         "<h3>Document Profile</h3>"
-        "<div class=\"grid\">"
-        f"<div><div class=\"metric-label\">Manager</div><div class=\"metric-value\">{escape_text(profile.manager_name)}</div></div>"
-        f"<div><div class=\"metric-label\">Title</div><div class=\"metric-value\">{escape_text(profile.title)}</div></div>"
-        f"<div><div class=\"metric-label\">Document type</div><div class=\"metric-value\">{humanize_token(profile.document_type.value)}</div></div>"
-        f"<div><div class=\"metric-label\">Publication date</div><div class=\"metric-value\">{format_date(profile.publication_date)}</div></div>"
-        f"<div><div class=\"metric-label\">As-of date</div><div class=\"metric-value\">{format_date(profile.as_of_date)}</div></div>"
-        f"<div><div class=\"metric-label\">Time horizon</div><div class=\"metric-value\">{escape_text(profile.time_horizon)}</div></div>"
-        f"<div><div class=\"metric-label\">Intended audience</div><div class=\"metric-value\">{escape_text(profile.intended_audience)}</div></div>"
-        "</div>"
-        "<h4>Asset classes covered</h4>"
-        f"{asset_classes}"
-        "<h4>Regions</h4>"
-        f"{regions}"
-        "<h4>Uncertainty Flags</h4>"
-        f"{flags}"
-        "<h4>Profile Citations</h4>"
-        f"{render_citations(profile.citations)}"
+        f"<div class=\"grid\">{grid_html}</div>"
+        f"{asset_classes_html}"
+        f"{regions_html}"
+        f"{flags_html}"
+        f"{citations_html}"
         "</div>"
     )
 
@@ -519,21 +694,29 @@ def render_calls_block(calls: Sequence[AllocationCall]) -> str:
     """Render all allocation calls."""
     if not calls:
         return "<div class=\"card\"><h3>Allocation Calls</h3><p>No calls extracted.</p></div>"
-    call_details = "\n".join(render_call(call, idx + 1) for idx, call in enumerate(calls))
+
+    # Generate call IDs for linking table rows to details
+    call_ids = [f"call-{idx + 1}" for idx in range(len(calls))]
+    call_details = "\n".join(
+        render_call(call, idx + 1, call_id)
+        for idx, (call, call_id) in enumerate(zip(calls, call_ids))
+    )
+
+    # Overview table rows with data-call-id for click-to-expand
     overview_rows = "\n".join(
-        "<tr>"
+        f"<tr data-call-id=\"{call_id}\" class=\"clickable-row\">"
         f"<td>{idx + 1}</td>"
         f"<td>{html.escape(get_display_name(call.asset_class_category, is_category=True), quote=True)}</td>"
         f"<td>{html.escape(get_display_name(call.sub_asset_class, is_category=False), quote=True)}</td>"
         f"<td>{humanize_token(call.call.value)}</td>"
-        f"<td>{humanize_token(call.conviction.value) if call.conviction else 'Not stated'}</td>"
+        f"<td>{humanize_token(call.conviction.value) if call.conviction else ''}</td>"
         f"<td>{format_percent(call.confidence)}</td>"
-        f"<td>{'Yes' if call.needs_analyst_review else 'No'}</td>"
+        f"<td>{'Yes' if call.needs_analyst_review else ''}</td>"
         "</tr>"
-        for idx, call in enumerate(calls)
+        for idx, (call, call_id) in enumerate(zip(calls, call_ids))
     )
     overview = (
-        "<table class=\"table\">"
+        "<table class=\"table calls-overview\">"
         "<thead><tr><th>#</th><th>Category</th><th>Sub-Asset</th><th>Call</th>"
         "<th>Conviction</th><th>Confidence</th><th>Review</th></tr></thead>"
         f"<tbody>{overview_rows}</tbody></table>"
@@ -550,7 +733,7 @@ def render_calls_block(calls: Sequence[AllocationCall]) -> str:
 
 
 def render_metadata_block(doc: ProcessedDocument, entry: ReportEntry) -> str:
-    """Render processing metadata."""
+    """Render processing metadata in a collapsible section."""
     pdf_info = '<span class="muted">Source PDF not bundled.</span>'
     if entry.pdf_rel:
         pdf_info = f'<a href="{html.escape(entry.pdf_rel, quote=True)}">Open PDF</a>'
@@ -570,8 +753,9 @@ def render_metadata_block(doc: ProcessedDocument, entry: ReportEntry) -> str:
         "</ul>"
     )
     return (
-        "<div class=\"card\">"
-        "<h3>Processing Metadata</h3>"
+        "<details class=\"metadata-details\">"
+        "<summary>Processing Metadata</summary>"
+        "<div class=\"metadata-content\">"
         "<div class=\"grid\">"
         f"<div><div class=\"metric-label\">Document ID</div><div class=\"metric-value\">"
         f"{html.escape(doc.document_id, quote=True)}</div></div>"
@@ -587,6 +771,7 @@ def render_metadata_block(doc: ProcessedDocument, entry: ReportEntry) -> str:
         "<h4>Component IDs</h4>"
         f"{component_ids}"
         "</div>"
+        "</details>"
     )
 
 
@@ -606,8 +791,8 @@ def base_css() -> str:
         --warning: #b06b18;
         --neutral: #5b646c;
         --alert: #b9372c;
-        --shadow: 0 4px 12px rgba(31, 27, 22, 0.06), 0 1px 2px rgba(31, 27, 22, 0.04);
-        --shadow-hover: 0 12px 24px rgba(31, 27, 22, 0.1), 0 4px 8px rgba(31, 27, 22, 0.04);
+        --shadow: 0 6px 20px rgba(31, 27, 22, 0.10), 0 2px 6px rgba(31, 27, 22, 0.06);
+        --shadow-hover: 0 12px 32px rgba(31, 27, 22, 0.14), 0 4px 12px rgba(31, 27, 22, 0.06);
     }
     * { box-sizing: border-box; }
     body {
@@ -639,9 +824,9 @@ def base_css() -> str:
         margin-bottom: 12px;
         font-size: 0.85rem;
         color: var(--neutral);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
+        font-family: "Inter", "Segoe UI", "BF Pro", "Avenir Next", "Gill Sans", sans-serif;
         font-weight: 600;
+        letter-spacing: 0.01em;
     }
     h4:first-child {
         margin-top: 0;
@@ -689,6 +874,18 @@ def base_css() -> str:
         align-items: center;
         gap: 6px;
     }
+    .hero-stats {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+    .hero-stat {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
     .nav-link {
         display: inline-block;
         margin-top: 16px;
@@ -710,8 +907,11 @@ def base_css() -> str:
     }
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(4, 1fr);
         gap: 24px;
+    }
+    @media (max-width: 1024px) {
+        .grid { grid-template-columns: repeat(3, 1fr); }
     }
     .grid + h4 { margin-top: 32px; }
     .table + h4 {
@@ -721,9 +921,7 @@ def base_css() -> str:
     }
     .metric-label {
         color: var(--muted);
-        text-transform: uppercase;
-        font-size: 0.7rem;
-        letter-spacing: 0.06em;
+        font-size: 0.75rem;
         font-weight: 600;
         margin-bottom: 4px;
     }
@@ -753,6 +951,7 @@ def base_css() -> str:
     .badge--negative { background: #fdf2f2; color: var(--negative); border-color: rgba(155, 44, 44, 0.1); }
     .badge--warning { background: #fff8eb; color: var(--warning); border-color: rgba(176, 107, 24, 0.1); }
     .badge--neutral { background: #f3f5f6; color: var(--neutral); border-color: rgba(91, 100, 108, 0.1); }
+    .badge--medium { background: #e8eef4; color: #4a6785; border-color: rgba(74, 103, 133, 0.15); }
     .badge--outline {
         background: transparent;
         border: 1px solid var(--line);
@@ -774,6 +973,14 @@ def base_css() -> str:
         transition: background 0.1s;
     }
     .pill:hover { background: #f0ebe3; }
+    /* Colored pill variants by category */
+    .pill--asset { background: #f0f5f5; border-color: rgba(12, 74, 74, 0.2); }
+    .pill--region { background: #eef3f8; border-color: rgba(65, 105, 145, 0.2); }
+    .pill--theme { background: #f0f6f0; border-color: rgba(31, 111, 74, 0.2); }
+    .pill--risk { background: #fdf5f5; border-color: rgba(155, 44, 44, 0.15); }
+    .pill--instrument { background: #f5f3f0; border-color: rgba(140, 120, 90, 0.2); }
+    .pill--style { background: #f5f2f8; border-color: rgba(120, 90, 140, 0.2); }
+    .pill--macro { background: #fff7f0; border-color: rgba(176, 107, 24, 0.2); }
     .table {
         width: 100%;
         border-collapse: collapse;
@@ -796,12 +1003,22 @@ def base_css() -> str:
         font-variant-numeric: tabular-nums;
         vertical-align: top;
     }
-    /* Simple zebra striping for data density */
+    /* Zebra striping for data density */
     .table tbody tr:nth-child(even) {
-        background-color: rgba(0,0,0,0.015);
+        background-color: rgba(0,0,0,0.025);
     }
     .table tbody tr:hover {
-        background: rgba(12, 74, 74, 0.03);
+        background: rgba(12, 74, 74, 0.06);
+    }
+    .table tbody tr.clickable-row {
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .table tbody tr.clickable-row:hover {
+        background: rgba(12, 74, 74, 0.10);
+    }
+    .table tbody tr:first-child td {
+        padding-top: 14px;
     }
     
     ul { margin: 8px 0 0 20px; padding: 0; }
@@ -810,8 +1027,8 @@ def base_css() -> str:
     .call-card {
         border: 1px solid var(--line);
         border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 16px;
+        padding: 18px 24px;
+        margin-bottom: 12px;
         background: #fcfbf8;
         transition: all 0.2s ease;
         box-shadow: 0 1px 3px rgba(0,0,0,0.02);
@@ -828,26 +1045,32 @@ def base_css() -> str:
     }
     .call-card summary::-webkit-details-marker { display: none; }
     .call-card summary::after {
-        content: "+";
+        content: "›";
         position: absolute;
         right: 0;
         top: 0;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 400;
         font-size: 1.5rem;
-        color: var(--muted);
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--accent);
+        background: rgba(12, 74, 74, 0.08);
+        border-radius: 50%;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         line-height: 1;
     }
+    .call-card summary:hover::after {
+        background: rgba(12, 74, 74, 0.15);
+    }
     .call-card[open] summary::after {
-        transform: rotate(45deg);
+        transform: rotate(90deg);
+        background: rgba(12, 74, 74, 0.12);
     }
     .call-title { font-weight: 700; font-size: 1.05rem; }
-    .call-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .call-badges { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .call-body {
         margin-top: 24px;
         padding-top: 20px;
@@ -895,14 +1118,135 @@ def base_css() -> str:
         color: var(--ink);
         font-style: italic;
         font-family: Georgia, serif;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
     .takeaway {
         border: 1px solid rgba(12, 74, 74, 0.15);
         border-left: 4px solid var(--accent);
         border-radius: 8px;
         padding: 16px 20px;
-        margin-bottom: 16px;
+        margin-bottom: 12px;
         background: #fbf9f4;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    .takeaway-number {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        background: var(--accent);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        font-family: "Inter", sans-serif;
+    }
+    .takeaway-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .takeaway-text {
+        line-height: 1.6;
+        margin-bottom: 8px;
+    }
+    .takeaway-citations {
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+    /* Confidence indicators */
+    .confidence-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .confidence-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .confidence-dot--high { background: var(--positive); }
+    .confidence-dot--medium { background: var(--warning); }
+    .confidence-dot--low { background: var(--negative); }
+    /* Collapsible metadata section */
+    .metadata-details {
+        margin-top: 24px;
+    }
+    .metadata-details summary {
+        cursor: pointer;
+        list-style: none;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px 28px;
+        box-shadow: var(--shadow);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-family: "Iowan Old Style", "Palatino Linotype", serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--ink);
+        transition: all 0.2s;
+    }
+    .metadata-details summary::-webkit-details-marker { display: none; }
+    .metadata-details summary:hover { border-color: #d0c9be; }
+    .metadata-details summary::after {
+        content: "Show details";
+        font-family: "Inter", sans-serif;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--accent);
+        background: rgba(12, 74, 74, 0.08);
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+    .metadata-details[open] summary::after {
+        content: "Hide details";
+    }
+    .metadata-details[open] summary {
+        border-radius: 12px 12px 0 0;
+        border-bottom: none;
+    }
+    .metadata-details .metadata-content {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 24px 28px;
+        box-shadow: var(--shadow);
+    }
+    /* Collapsible All Tags section */
+    .all-tags-details {
+        margin-top: 24px;
+    }
+    .all-tags-details summary {
+        cursor: pointer;
+        list-style: none;
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 8px 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .all-tags-details summary::-webkit-details-marker { display: none; }
+    .all-tags-details summary::before {
+        content: "›";
+        font-size: 1.2rem;
+        transition: transform 0.2s;
+    }
+    .all-tags-details[open] summary::before {
+        transform: rotate(90deg);
+    }
+    .all-tags-details .all-tags-content {
+        margin-top: 12px;
     }
     footer {
         color: var(--muted);
@@ -912,6 +1256,21 @@ def base_css() -> str:
         border-top: 1px solid var(--line);
         text-align: center;
         letter-spacing: 0.02em;
+    }
+    .footer-brand {
+        font-family: "Iowan Old Style", "Palatino Linotype", serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 8px;
+    }
+    .footer-meta {
+        margin-bottom: 12px;
+    }
+    .footer-disclaimer {
+        font-size: 0.72rem;
+        color: var(--muted);
+        opacity: 0.7;
     }
     .reveal {
         animation: rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -925,19 +1284,34 @@ def base_css() -> str:
         .reveal { animation: none; opacity: 1; transform: none; }
     }
     @media print {
-        body { background: white; color: black; }
+        body { background: white; color: black; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .page { max-width: 100%; padding: 0; margin: 0; }
-        .hero, .card, .call-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+        .hero, .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; page-break-inside: avoid; margin-top: 16px; }
+        .call-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; page-break-inside: avoid; }
         .reveal { animation: none; opacity: 1; transform: none; }
-        .call-card[open] .call-body { display: block; }
+        /* Force all details open for print */
         details { display: block; }
+        details > summary { display: none; }
+        details .call-body { display: block !important; margin-top: 0; border-top: none; }
+        .call-card summary::after { display: none; }
+        .call-title { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
+        .call-badges { margin-bottom: 16px; }
         a { text-decoration: none; color: black; }
-        @page { margin: 2cm; }
+        .badge { border: 1px solid #999; }
+        .citation { background: #f5f5f5; }
+        @page { margin: 1.5cm; }
+    }
+    @media (max-width: 960px) {
+        .grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .call-grid { grid-template-columns: 1fr; gap: 24px; }
+        .call-meta { flex-direction: column; gap: 8px; }
     }
     @media (max-width: 720px) {
         .page { padding: 24px 16px; }
         .hero { padding: 24px 20px; }
         .card { padding: 24px 20px; }
+        .grid { grid-template-columns: 1fr; gap: 16px; }
+        .call-card { padding: 16px 18px; }
     }
     """
 
@@ -945,6 +1319,21 @@ def base_css() -> str:
 def render_page(title: str, body: str) -> str:
     """Wrap body content in a full HTML page."""
     css = base_css()
+    # JavaScript for interactive calls table
+    js = """
+    <script>
+    document.querySelectorAll('.calls-overview tr[data-call-id]').forEach(row => {
+        row.addEventListener('click', () => {
+            const callId = row.dataset.callId;
+            const card = document.getElementById(callId);
+            if (card) {
+                card.open = true;
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+    </script>
+    """
     return (
         "<!doctype html>"
         "<html lang=\"en\">"
@@ -956,6 +1345,7 @@ def render_page(title: str, body: str) -> str:
         "</head>"
         "<body>"
         f"{body}"
+        f"{js}"
         "</body>"
         "</html>"
     )
@@ -974,6 +1364,13 @@ def render_document(
     profile = doc.profile
     title = f"{profile.manager_name} - {profile.title}"
 
+    # Only show attention required if actually required
+    attention_html = ""
+    if doc.confidence.analyst_attention_required:
+        attention_html = (
+            "<div><div class=\"metric-label\">Attention required</div>"
+            "<div class=\"metric-value\"><span class=\"badge badge--alert\">Yes</span></div></div>"
+        )
     overview = (
         "<div class=\"card\">"
         "<div class=\"grid\">"
@@ -985,8 +1382,7 @@ def render_document(
         f"<div><div class=\"metric-label\">Confidence band</div>"
         f"<div class=\"metric-value\"><span class=\"{badge_class(doc.confidence.confidence_band.value)}\">"
         f"{humanize_token(doc.confidence.confidence_band.value)}</span></div></div>"
-        f"<div><div class=\"metric-label\">Attention required</div>"
-        f"<div class=\"metric-value\">{'Yes' if doc.confidence.analyst_attention_required else 'No'}</div></div>"
+        f"{attention_html}"
         "</div>"
         "</div>"
     )
@@ -1004,6 +1400,15 @@ def render_document(
     staggered = "\n".join(wrap_reveal(section, 0.08 + idx * 0.06) for idx, section in enumerate(sections))
     # Only show "Back to index" link when there are multiple documents
     index_link = '<a class="nav-link" href="index.html">Back to index</a>' if show_index_link else ""
+    # Hero quick stats line
+    confidence_pct = format_percent(doc.confidence.overall_confidence)
+    quick_stats = (
+        f"<div class=\"hero-stats\">"
+        f"<span class=\"{badge_class(doc.overall_sentiment.value)}\">{humanize_token(doc.overall_sentiment.value)}</span>"
+        f"<span class=\"hero-stat\">{len(doc.allocation_calls)} calls</span>"
+        f"<span class=\"hero-stat\">{confidence_pct} confidence</span>"
+        f"</div>"
+    )
     body = (
         "<div class=\"page\">"
         "<header class=\"hero reveal\">"
@@ -1014,14 +1419,19 @@ def render_document(
         f" | Published {format_date(profile.publication_date)}"
         f" | As of {format_date(profile.as_of_date)}"
         "</div>"
-        "<div class=\"meta-line\">"
-        f"Document ID {html.escape(doc.document_id, quote=True)}"
-        "</div>"
+        f"{quick_stats}"
         f"{index_link}"
         "</header>"
         f"{staggered}"
         "<footer>"
-        f"Generated {format_datetime(generated_at)} | {html.escape(pack_title, quote=True)}"
+        "<div class=\"footer-brand\">Markets Recon</div>"
+        "<div class=\"footer-meta\">"
+        f"Generated {format_datetime(generated_at)} · "
+        f"{len(doc.allocation_calls)} calls · "
+        f"{format_percent(doc.confidence.overall_confidence)} confidence · "
+        f"v{html.escape(doc.pipeline_version, quote=True)}"
+        "</div>"
+        "<div class=\"footer-disclaimer\">For professional use only. AI-generated analysis requires human review.</div>"
         "</footer>"
         "</div>"
     )

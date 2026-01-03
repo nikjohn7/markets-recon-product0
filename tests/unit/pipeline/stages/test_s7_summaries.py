@@ -20,6 +20,7 @@ from src.pipeline.stages.s7_summaries import (
     _retrieve_key_passages,
     stage_summaries,
 )
+from src.pipeline.stages.s10_confidence import score_summary_evidence
 from src.retrieval.indexer import DocumentIndex
 
 
@@ -31,7 +32,13 @@ class DummyLLMClient:
         self.last_prompt: str | None = None
         self.last_stage = None
 
-    async def complete_json(self, prompt: str, response_model, stage):  # noqa: ARG002
+    async def complete_json(  # noqa: PLR0913
+        self,
+        prompt: str,
+        response_model,  # noqa: ARG002
+        stage,  # noqa: ARG002
+        **kwargs,  # noqa: ARG002
+    ):
         self.last_prompt = prompt
         self.last_stage = stage
         return self.response
@@ -236,7 +243,8 @@ async def test_stage_summaries_generates_complete_output():
     assert len(output.key_takeaways) == 3
     assert all(len(t.citations) >= 1 for t in output.key_takeaways)
     assert len(output.citations) == 2
-    assert output.confidence == 0.9
+    key_passages = await _retrieve_key_passages(mock_index, profile, call_extraction)
+    assert output.confidence == pytest.approx(score_summary_evidence(output, key_passages))
 
 
 @pytest.mark.asyncio

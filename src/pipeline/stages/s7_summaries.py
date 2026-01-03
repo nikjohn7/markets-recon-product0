@@ -17,6 +17,7 @@ from src.llm.client import LLMClient, PipelineStage
 from src.llm.prompts.summaries import build_summary_generation_prompt
 from src.models.core import Citation
 from src.models.summaries import DocumentSummaries, KeyTakeaway
+from src.pipeline.stages.s10_confidence import score_summary_evidence
 
 if TYPE_CHECKING:
     from src.models.calls import CallExtractionOutput
@@ -273,6 +274,9 @@ async def stage_summaries(
             citations=all_citations,
             confidence=llm_response.confidence,
         )
+
+        evidence_confidence = score_summary_evidence(summaries, key_passages)
+        summaries = summaries.model_copy(update={"confidence": evidence_confidence})
 
         logger.info(
             f"[Stage 7] Summary generation completed: "

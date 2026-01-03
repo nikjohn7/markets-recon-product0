@@ -412,8 +412,13 @@ def render_call(call: AllocationCall, index: int, call_id: str) -> str:
     )
 
 
-def render_summary_block(summaries: DocumentSummaries) -> str:
+def render_summary_block(
+    summaries: DocumentSummaries,
+    *,
+    evidence_confidence: float | None = None,
+) -> str:
     """Render the document summary section."""
+    displayed_confidence = evidence_confidence if evidence_confidence is not None else summaries.confidence
     takeaways = []
     for idx, takeaway in enumerate(summaries.key_takeaways, 1):
         takeaways.append(
@@ -430,8 +435,8 @@ def render_summary_block(summaries: DocumentSummaries) -> str:
         "<div class=\"card\">"
         "<h3>Executive Summary</h3>"
         "<div class=\"grid\">"
-        f"<div><div class=\"metric-label\">Summary confidence</div>"
-        f"<div class=\"metric-value\">{format_percent(summaries.confidence)}</div></div>"
+        f"<div><div class=\"metric-label\">Summary evidence score</div>"
+        f"<div class=\"metric-value\">{format_percent(displayed_confidence)}</div></div>"
         "</div>"
         f"<p>{escape_text(summaries.executive_summary)}</p>"
         "<h4>Search Descriptor</h4>"
@@ -1390,7 +1395,13 @@ def render_document(
     sections = [
         overview,
         render_profile_block(doc),
-        render_summary_block(doc.summaries),
+        render_summary_block(
+            doc.summaries,
+            evidence_confidence=next(
+                (field.confidence for field in doc.confidence.field_confidences if field.field_name == "summary"),
+                None,
+            ),
+        ),
         render_sentiment_block(doc),
         render_calls_block(doc.allocation_calls),
         render_tag_block(doc.tags),

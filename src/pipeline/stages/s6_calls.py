@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic import ValidationError as PydanticValidationError
@@ -168,23 +168,107 @@ def _parse_allocation_call(call_llm: CallLLM) -> AllocationCall:
     )
 
 
-def _check_duplicate_calls(calls: list[AllocationCall]) -> None:
-    """Verify no duplicate (category, sub_asset) pairs exist.
+T = TypeVar("T")
 
-    Args:
-        calls: List of allocation calls
 
-    Raises:
-        ValidationError: If duplicate calls detected
+def _merge_unique(
+    primary: list[T],
+    secondary: list[T],
+    *,
+    limit: int,
+    key_fn: Callable[[T], object] | None = None,
+) -> list[T]:
+    """Merge two lists, preserving order, removing duplicates, and capping length."""
+    merged: list[T] = []
+    seen: set[object] = set()
+
+    def _key(item: T) -> object:
+        return key_fn(item) if key_fn else item
+
+    for item in [*primary, *secondary]:
+        item_key = _key(item)
+        if item_key in seen:
+            continue
+        merged.append(item)
+        seen.add(item_key)
+        if len(merged) >= limit:
+            break
+    return merged
+
+
+def _merge_duplicate_calls(primary: AllocationCall, secondary: AllocationCall) -> AllocationCall:
+    """Merge a duplicate AllocationCall into a single best-effort call.
+
+    Prefers the higher-confidence call's direction, then fills missing optional fields
+    (e.g. conviction) from the lower-confidence call when safe.
     """
-    seen: set[tuple[str, str]] = set()
+    conviction = primary.conviction or secondary.conviction
+    time_horizon = primary.time_horizon or secondary.time_horizon
+
+    citations = _merge_unique(
+        primary.citations,
+        secondary.citations,
+        limit=3,
+        key_fn=lambda c: (c.chunk_id, c.page, c.text_span),
+    )
+    rationale_bullets = _merge_unique(primary.rationale_bullets, secondary.rationale_bullets, limit=4)
+    key_risks = _merge_unique(primary.key_risks, secondary.key_risks, limit=3)
+    key_indicators = _merge_unique(
+        primary.key_indicators,
+        secondary.key_indicators,
+        limit=5,
+        key_fn=lambda ind: ind.name.strip().lower(),
+    )
+
+    needs_analyst_review = primary.needs_analyst_review or secondary.needs_analyst_review or True
+    review_reasons = [r for r in [primary.review_reason, secondary.review_reason] if r]
+    review_reasons.append("Duplicate call merged from multiple mentions")
+    review_reason = "; ".join(review_reasons)
+
+    return primary.model_copy(
+        update={
+            "conviction": conviction,
+            "time_horizon": time_horizon,
+            "citations": citations,
+            "rationale_bullets": rationale_bullets,
+            "key_risks": key_risks,
+            "key_indicators": key_indicators,
+            "confidence": max(primary.confidence, secondary.confidence),
+            "needs_analyst_review": needs_analyst_review,
+            "review_reason": review_reason,
+        }
+    )
+
+
+def _dedupe_calls(calls: list[AllocationCall]) -> list[AllocationCall]:
+    """Deduplicate calls by (category, sub_asset), merging duplicates.
+
+    LLMs can emit duplicates when the same positioning is discussed in multiple passages.
+    Deduplicating avoids failing the whole pipeline while still surfacing an analyst-review flag.
+    """
+    by_key: dict[tuple[str, str], AllocationCall] = {}
+    order: list[tuple[str, str]] = []
     for call in calls:
         key = (call.asset_class_category, call.sub_asset_class)
-        if key in seen:
-            raise ValidationError(
-                f"Duplicate call detected: {call.asset_class_category} / {call.sub_asset_class}"
-            )
-        seen.add(key)
+        if key not in by_key:
+            by_key[key] = call
+            order.append(key)
+            continue
+
+        existing = by_key[key]
+        if call.confidence > existing.confidence:
+            primary, secondary = call, existing
+        else:
+            primary, secondary = existing, call
+
+        logger.warning(
+            "Duplicate call detected; merging duplicates for %s / %s",
+            key[0],
+            key[1],
+        )
+        by_key[key] = _merge_duplicate_calls(primary, secondary)
+
+    return [by_key[key] for key in order]
 
 
 def _build_call_extraction_output(
@@ -212,8 +296,7 @@ def _build_call_extraction_output(
         _parse_allocation_call(call_llm) for call_llm in llm_output.allocation_calls
     ]
 
-    # Check for duplicate calls
-    _check_duplicate_calls(allocation_calls)
+    allocation_calls = _dedupe_calls(allocation_calls)
 
     # Parse sentiment citations
     sentiment_citations = [_parse_citation(c) for c in llm_output.sentiment_citations]

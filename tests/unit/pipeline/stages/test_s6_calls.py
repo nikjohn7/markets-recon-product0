@@ -21,7 +21,7 @@ class DummyLLMClient:
         self.last_prompt: str | None = None
         self.last_stage = None
 
-    async def complete_json(self, prompt: str, response_model, stage):  # noqa: ARG002
+    async def complete_json(self, prompt: str, response_model, stage, **kwargs):  # noqa: ARG002
         self.last_prompt = prompt
         self.last_stage = stage
         return self.response
@@ -206,8 +206,8 @@ async def test_stage_calls_handles_uncertain_calls():
 
 
 @pytest.mark.asyncio
-async def test_stage_calls_detects_duplicate_calls():
-    """Stage 6 raises ValidationError for duplicate (category, sub_asset) pairs."""
+async def test_stage_calls_merges_duplicate_calls():
+    """Stage 6 merges duplicate (category, sub_asset) pairs and flags review."""
     profile = _make_profile("doc_calls_3")
     candidate_set = _make_candidate_set(
         "doc_calls_3",
@@ -259,9 +259,18 @@ async def test_stage_calls_detects_duplicate_calls():
     )
 
     llm_client = DummyLLMClient(response=llm_output)
+    output = await stage_calls(profile, candidate_set, llm_client=llm_client)
 
-    with pytest.raises(ValidationError, match="Duplicate call detected: EQ_DM / EQ_US"):
-        await stage_calls(profile, candidate_set, llm_client=llm_client)
+    assert len(output.allocation_calls) == 1
+    call = output.allocation_calls[0]
+    assert call.asset_class_category == "EQ_DM"
+    assert call.sub_asset_class == "EQ_US"
+    assert call.call == CallDirection.OVERWEIGHT
+    assert call.conviction == Conviction.HIGH
+    assert call.confidence == 0.9
+    assert call.needs_analyst_review is True
+    assert call.review_reason and "Duplicate call merged" in call.review_reason
+    assert len(call.citations) == 2
 
 
 @pytest.mark.asyncio

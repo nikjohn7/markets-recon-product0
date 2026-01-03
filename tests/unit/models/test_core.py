@@ -37,9 +37,9 @@ class TestCitation:
     def test_text_span_max_200_chars(self) -> None:
         # Exactly 200 chars should work
         Citation(chunk_id="c1", page=1, text_span="x" * 200)
-        # 201 chars should fail
-        with pytest.raises(ValidationError):
-            Citation(chunk_id="c1", page=1, text_span="x" * 201)
+        # 201 chars should be truncated
+        c = Citation(chunk_id="c1", page=1, text_span="x" * 201)
+        assert c.text_span == "x" * 200
 
 
 class TestBoundingBox:

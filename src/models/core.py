@@ -3,7 +3,7 @@
 Citation and BoundingBox are foundational models referenced by many other schemas.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Citation(BaseModel, frozen=True):
@@ -19,6 +19,13 @@ class Citation(BaseModel, frozen=True):
     text_span: str | None = Field(
         None, max_length=200, description="Relevant text excerpt (≤200 chars)"
     )
+
+    @field_validator("text_span", mode="before")
+    @classmethod
+    def truncate_text_span(cls, value: object) -> object:
+        if isinstance(value, str) and len(value) > 200:
+            return value[:200]
+        return value
 
 
 class BoundingBox(BaseModel):

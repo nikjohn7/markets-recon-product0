@@ -1,26 +1,25 @@
 ---
 name: testing
-description: Testing requirements and standards for this project. Use when writing tests, running test suites, creating fixtures, or validating test coverage. Requires pytest.
+description: Testing requirements and standards for pytest/coverage in this project. Use when writing tests, running pytest, creating fixtures, or validating test coverage.
 ---
 
 # Testing Requirements
 
 **Full specification:** See [`docs/TESTING.md`](docs/TESTING.md)
 
-## Test Commands
+## When to Use
 
-```bash
-# Run all tests
-pytest tests/ -v
+- You are writing or updating tests (unit/integration/e2e)
+- You are running `pytest` or evaluating coverage for a change
+- You are creating fixtures or golden output tests
 
-# Run specific test categories
-pytest tests/unit/ -v
-pytest tests/integration/ -v
-pytest tests/e2e/ -v
+## When Not to Use
 
-# Run with coverage
-pytest tests/ --cov=src --cov-report=term-missing
-```
+- You only need the canonical “what to run before commit” command set (use `.claude/skills/pre-commit/SKILL.md` instead)
+
+## Commands
+
+For the project’s canonical `pytest` + coverage commands (and the exact pre-commit sequence), use `.claude/skills/pre-commit/SKILL.md`.
 
 ## Minimum Coverage Requirements
 

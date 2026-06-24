@@ -333,6 +333,70 @@ def score_call_evidence(
     return (evidence_score * 0.5) + (explicit_score * 0.5)
 
 
+def _score_statement_against_citations(
+    statement: str,
+    citations: list[Citation],
+    source_chunks: Sequence[EvidenceChunk],
+) -> float:
+    """Score how well citations support a short synthesized statement.
+
+    Unlike score_evidence_strength (used for extracted fields), summaries are usually
+    paraphrased and will not be explicitly present in the source text. For this reason,
+    we score alignment primarily via word overlap against cited evidence (plus optional
+    text_span snippets).
+    """
+    if not citations:
+        return 0.0
+
+    best_score = 0.0
+    for citation in citations:
+        chunk = _get_chunk_by_id(citation.chunk_id, source_chunks)
+        evidence_parts: list[str] = []
+        if chunk:
+            evidence_parts.append(chunk.text)
+        if citation.text_span:
+            evidence_parts.append(citation.text_span)
+        if not evidence_parts:
+            continue
+        evidence_text = " ".join(evidence_parts)
+        best_score = max(best_score, compute_word_overlap(statement, evidence_text))
+
+    return best_score
+
+
+def score_summary_evidence(
+    summaries: DocumentSummaries,
+    source_chunks: Sequence[EvidenceChunk],
+) -> float:
+    """Score evidence support for the document summaries (0-1).
+
+    Summary text is synthetic, so "explicit mention" checks tend to under-score it.
+    Instead we combine:
+    - Alignment of key takeaways to their citations (primary signal)
+    - Top-level citation count (does the executive summary cite enough evidence?)
+    - Citation page diversity (are we relying on a single spot?)
+    """
+    takeaway_scores = [
+        _score_statement_against_citations(t.text, t.citations, source_chunks)
+        for t in summaries.key_takeaways
+    ]
+    alignment_score = statistics.mean(takeaway_scores) if takeaway_scores else 0.0
+
+    top_level_citation_count = len(summaries.citations)
+    citation_count_score = min(1.0, top_level_citation_count / 4.0)
+
+    all_pages = {c.page for c in summaries.citations}
+    for takeaway in summaries.key_takeaways:
+        all_pages.update(c.page for c in takeaway.citations)
+    page_diversity_score = min(1.0, len(all_pages) / 4.0)
+
+    return (
+        alignment_score * 0.60
+        + citation_count_score * 0.20
+        + page_diversity_score * 0.20
+    )
+
+
 # --- Document-Level Confidence (Task 7.3) ---
 
 # Weights per CONFIDENCE.md
@@ -404,9 +468,7 @@ def compute_document_confidence(
     call_scores = [c.confidence for c in calls]
     avg_call_score = statistics.mean(call_scores) if call_scores else 0.5
 
-    summary_score = score_evidence_strength(
-        summaries.executive_summary, summaries.citations, source_chunks
-    )
+    summary_score = score_summary_evidence(summaries, source_chunks)
 
     # Weighted aggregate
     overall = (
@@ -448,8 +510,12 @@ def compute_document_confidence(
         FieldConfidence(
             field_name="summary",
             confidence=summary_score,
-            reasons=["summary_evidence"],
-            has_explicit_evidence=summary_score > 0.5,
+            reasons=[
+                "summary_evidence",
+                f"{len(summaries.citations)} summary citations",
+                f"{len(summaries.key_takeaways)} takeaways",
+            ],
+            has_explicit_evidence=len(summaries.citations) >= 2,
             evidence_strength=summary_score,
         ),
     ]

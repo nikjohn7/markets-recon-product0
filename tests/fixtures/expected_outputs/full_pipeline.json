@@ -26,7 +26,8 @@
       }
     ],
     "manager_name_uncertain": false,
-    "publication_date_uncertain": false
+    "publication_date_uncertain": false,
+    "as_of_date_uncertain": false
   },
   "allocation_calls": [
     {
@@ -197,7 +198,7 @@
         "text_span": null
       }
     ],
-    "confidence": 0.81
+    "confidence": 0.7111
   },
   "tags": {
     "document_id": "<document_id>",
@@ -319,7 +320,7 @@
   "confidence": {
     "document_id": "<document_id>",
     "extraction_coverage": 1.0,
-    "overall_confidence": 0.7273,
+    "overall_confidence": 0.7896,
     "confidence_band": "MEDIUM",
     "field_confidences": [
       {
@@ -352,12 +353,14 @@
       },
       {
         "field_name": "summary",
-        "confidence": 0.4,
+        "confidence": 0.7111,
         "reasons": [
-          "summary_evidence"
+          "summary_evidence",
+          "2 summary citations",
+          "3 takeaways"
         ],
-        "has_explicit_evidence": false,
-        "evidence_strength": 0.4
+        "has_explicit_evidence": true,
+        "evidence_strength": 0.7111
       }
     ],
     "analyst_attention_required": false,

@@ -1,11 +1,21 @@
 ---
 name: git-workflow
-description: Git commit and branching workflow for this project. Use when committing code, creating branches, or opening PRs. Enforces task-based commits, phase branches, and professional commit messages.
+description: Git workflow for commit/PR/branch/rebase in this project. Use when committing, branching, rebasing, or opening a PR (pull request). Enforces task-based commits, phase branches, and professional commit messages.
 ---
 
 # Git Workflow
 
 This project follows a strict git workflow tied to `PROGRESS.md` task tracking.
+
+## When to Use
+
+- You are about to `git commit`, create a new branch, rebase, or open a PR (pull request)
+- You are finishing a task in `PROGRESS.md` and want the correct commit message + staging rules
+
+## When Not to Use
+
+- You are doing a quick local experiment you do not plan to commit
+- You are mid-task and not ready to stage/commit yet
 
 ## Branching Rules
 

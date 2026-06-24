@@ -14,6 +14,7 @@ from src.models.enums import CallDirection, Conviction, DocumentType, Sentiment
 from src.models.pipeline import RetrievedChunk
 from src.models.profile import DocumentProfile
 from src.pipeline.stages.s7_summaries import stage_summaries
+from src.pipeline.stages.s10_confidence import score_summary_evidence
 from src.retrieval.indexer import DocumentIndex
 
 
@@ -124,7 +125,7 @@ async def test_stage_summaries_with_mock_llm(mock_llm_client):
     )
 
     assert summaries.document_id == "doc_summary"
-    assert summaries.confidence == pytest.approx(0.81)
+    assert summaries.confidence == pytest.approx(score_summary_evidence(summaries, retrieved_chunks))
     assert len(summaries.key_takeaways) == 3
 
 

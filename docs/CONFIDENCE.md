@@ -136,6 +136,34 @@ def has_explicit_call_language(
     return 0.0  # No explicit language
 ```
 
+### Summary Evidence Score (0-1)
+
+Summaries are **synthetic** (paraphrased) and generally will not appear verbatim in the
+source document. Scoring the full executive summary using "explicit mention" heuristics
+causes systematically low scores.
+
+Instead, the summary evidence score is computed from:
+- **Takeaway alignment**: word overlap between each `key_takeaway.text` and its cited evidence
+- **Citation count**: do we have enough top-level citations supporting the executive summary?
+- **Page diversity**: are citations spread across multiple pages (less reliance on a single spot)?
+
+```python
+def score_summary_evidence(
+    summaries: DocumentSummaries,
+    source_chunks: list[Chunk],
+) -> float:
+    takeaway_scores = [
+        max(word_overlap(t.text, cited_text(c, source_chunks)) for c in t.citations)
+        for t in summaries.key_takeaways
+    ]
+    alignment = mean(takeaway_scores) if takeaway_scores else 0.0
+
+    citation_count = min(1.0, len(summaries.citations) / 4.0)
+    page_diversity = min(1.0, unique_pages(summaries) / 4.0)
+
+    return 0.60 * alignment + 0.20 * citation_count + 0.20 * page_diversity
+```
+
 ### 3. Cross-Pass Agreement Score (0-1)
 
 Measures agreement between independent extraction passes.
@@ -246,8 +274,10 @@ def compute_document_confidence(
     call_scores = [call.confidence for call in calls]
     avg_call_score = statistics.mean(call_scores) if call_scores else 0.5
     
-    summary_score = score_evidence_strength(
-        summaries.executive_summary, summaries.citations, get_chunks(doc)
+    # NOTE: Summary text is synthetic (paraphrased) and usually won't appear verbatim
+    # in the source chunks. Scoring it with "explicit mention" tends to under-score.
+    summary_score = score_summary_evidence(
+        summaries, get_chunks(doc)
     )
     
     # Weighted aggregate

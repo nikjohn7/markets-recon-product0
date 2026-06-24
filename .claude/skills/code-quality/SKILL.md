@@ -1,13 +1,22 @@
 ---
 name: code-quality
-description: Code standards and style requirements for this project. Use when writing new code, reviewing code, or refactoring. Enforces typing, Pydantic usage, error handling patterns, and style conventions.
+description: Code standards and style requirements for this project (typing, mypy --strict, lint/ruff, Pydantic). Use when writing new code, reviewing code, or refactoring.
 ---
 
 # Code Quality Standards
 
+## When to Use
+
+- You are implementing or refactoring code and want the project’s standards (typing, Pydantic boundaries, error handling)
+- You are fixing `mypy`/typing issues or addressing lint/ruff feedback
+
+## When Not to Use
+
+- You only need the canonical “what to run before commit” command set (use `.claude/skills/pre-commit/SKILL.md` instead)
+
 ## Absolute Requirements
 
-1. **Type everything.** No `Any` unless unavoidable. Use `mypy --strict`.
+1. **Type everything.** No `Any` unless unavoidable. Type-check in strict mode (see `.claude/skills/pre-commit/SKILL.md` for the exact `mypy` command).
 2. **Pydantic for all data.** No raw dicts crossing function boundaries.
 3. **Every LLM output validated** against schema before use.
 4. **Citations mandatory.** If a field comes from the document, include `citations: list[Citation]`.

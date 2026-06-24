@@ -1,11 +1,20 @@
 ---
 name: pre-commit
-description: Pre-commit checklist for code validation before committing. Use before staging files for commit to verify type checking, linting, tests, and code quality requirements pass.
+description: Pre-commit checklist and commands (mypy, ruff lint, pytest, coverage) to run before commit/PR. Use before staging files for commit to verify checks pass.
 ---
 
 # Pre-Commit Checklist
 
 Run these checks **before committing code** to ensure quality standards are met.
+
+## When to Use
+
+- You are about to `git commit` or open a PR and want the canonical check sequence
+- You are triaging failures from `mypy`, `ruff` (lint), or `pytest`
+
+## When Not to Use
+
+- You are in a quick local experiment loop and explicitly do not want to pay the full check cost yet
 
 ## Required Checks
 
@@ -44,6 +53,14 @@ Run all checks in sequence:
 
 ```bash
 mypy src/ --strict && ruff check src/ tests/ --select=E9,F63,F7,F82 && pytest tests/
+```
+
+## Helper Script
+
+Run the same sequence via:
+
+```bash
+bash .claude/skills/pre-commit/scripts/run.sh
 ```
 
 If any check fails, fix the issues before committing.
